@@ -64,15 +64,30 @@ function activeTemplateName()
 function siteLogo($type = null)
 {
     $name = $type ? "/logo_$type.png" : '/logo.png';
-    $path = getFilePath('logo_icon') . $name;
-    $v = (file_exists($path) && is_file($path)) ? '?v=' . filemtime($path) : '';
-    return getImage($path) . $v;
+    $relPath = getFilePath('logo_icon') . $name;
+    $fullPath = public_path($relPath);
+    if (!file_exists($fullPath)) {
+        $fullPath = base_path('../' . $relPath);
+    }
+    if (!file_exists($fullPath)) {
+        $fullPath = $relPath;
+    }
+    $v = file_exists($fullPath) ? '?v=' . filemtime($fullPath) : '?v=' . time();
+    return asset($relPath) . $v;
 }
+
 function siteFavicon()
 {
-    $path = getFilePath('logo_icon') . '/favicon.png';
-    $v = (file_exists($path) && is_file($path)) ? '?v=' . filemtime($path) : '';
-    return getImage($path) . $v;
+    $relPath = getFilePath('logo_icon') . '/favicon.png';
+    $fullPath = public_path($relPath);
+    if (!file_exists($fullPath)) {
+        $fullPath = base_path('../' . $relPath);
+    }
+    if (!file_exists($fullPath)) {
+        $fullPath = $relPath;
+    }
+    $v = file_exists($fullPath) ? '?v=' . filemtime($fullPath) : '?v=' . time();
+    return asset($relPath) . $v;
 }
 
 function loadReCaptcha()
