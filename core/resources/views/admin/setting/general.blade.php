@@ -1,0 +1,213 @@
+@extends('admin.layouts.app')
+@section('panel')
+    <div class="row mb-none-30">
+        <div class="col-lg-12 col-md-12 mb-30">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        @csrf
+                        <div class="row">
+                            <div class="col-xl-3 col-sm-6">
+                                <div class="form-group ">
+                                    <label> @lang('Site Title')</label>
+                                    <input class="form-control" type="text" name="site_name" required value="{{gs('site_name')}}">
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-sm-6">
+                                <div class="form-group ">
+                                    <label>@lang('Currency')</label>
+                                    <input class="form-control" type="text" name="cur_text" required value="{{gs('cur_text')}}">
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-sm-6">
+                                <div class="form-group ">
+                                    <label>@lang('Currency Symbol')</label>
+                                    <input class="form-control" type="text" name="cur_sym" required value="{{gs('cur_sym')}}">
+                                </div>
+                            </div>
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label class="required"> @lang('Timezone')</label>
+                                <select class="select2 form-control" name="timezone" >
+                                    @foreach($timezones as $key => $timezone)
+                                    <option value="{{ @$key}}" @selected(@$key == $currentTimezone)>{{ __($timezone) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label class="required"> @lang('Site Base Color')</label>
+                                <div class="input-group">
+                                    <span class="input-group-text p-0 border-0">
+                                        <input type='text' class="form-control colorPicker" value="{{gs('base_color')}}">
+                                    </span>
+                                    <input type="text" class="form-control colorCode" name="base_color" value="{{ gs('base_color') }}">
+                                </div>
+                            </div>
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label> @lang('Record to Display Per page')</label>
+                                <select class="select2 form-control" name="paginate_number" data-minimum-results-for-search="-1">
+                                    <option value="20" @selected(gs('paginate_number') == 20 )>@lang('20 items per page')</option>
+                                    <option value="50" @selected(gs('paginate_number') == 50 )>@lang('50 items per page')</option>
+                                    <option value="100" @selected(gs('paginate_number') == 100 )>@lang('100 items per page')</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group col-xl-3 col-sm-6 ">
+                                <label class="required"> @lang('Currency Showing Format')</label>
+                                <select class="select2 form-control" name="currency_format" data-minimum-results-for-search="-1">
+                                    <option value="1" @selected(gs('currency_format') == Status::CUR_BOTH)>@lang('Show Currency Text and Symbol Both')</option>
+                                    <option value="2" @selected(gs('currency_format') == Status::CUR_TEXT)>@lang('Show Currency Text Only')</option>
+                                    <option value="3" @selected(gs('currency_format') == Status::CUR_SYM)>@lang('Show Currency Symbol Only')</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label> @lang('Account Selling Fixed Charge')</label>
+                                <div class="input-group">
+                                    <input class="form-control" name="fixed_charge" type="number" value="{{ gs('fixed_charge') }}" step="any">
+                                    <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                </div>
+                            </div>
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label> @lang('Account Selling Percent Charge')</label>
+                                <div class="input-group">
+                                    <input type="number" step="any" name="percentage_charge" value="{{ gs('percentage_charge') }}"  class="form-control">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h4 class="mb-3">@lang('Notification Banner Settings')</h4>
+                        <div class="row">
+                            <div class="form-group col-xl-3 col-sm-6">
+                                <label>@lang('Banner Status')</label>
+                                <input type="checkbox" data-width="100%" data-size="large" data-onstyle="-success" data-offstyle="-danger" data-bs-toggle="toggle" data-height="50" data-on="@lang('Enable')" data-off="@lang('Disable')" name="banner_status" @if(gs('banner_status')) checked @endif>
+                            </div>
+                            <div class="col-xl-12">
+                                <div class="form-group">
+                                    <label>@lang('Banner Message')</label>
+                                    <textarea class="form-control nicEdit" name="banner_message" rows="3" placeholder="@lang('e.g. Special Offer: Get 20% off today!')">{{gs('banner_message')}}</textarea>
+                                </div>
+                            </div>
+                            <div class="col-xl-4 col-sm-6">
+                                <div class="form-group">
+                                    <label>@lang('CTA Button Text')</label>
+                                    <input class="form-control" type="text" name="banner_cta_text" value="{{gs('banner_cta_text')}}" placeholder="@lang('e.g. Send message us')">
+                                </div>
+                            </div>
+                            <div class="col-xl-4 col-sm-6">
+                                <div class="form-group">
+                                    <label>@lang('CTA Button Link')</label>
+                                    <input class="form-control" type="text" name="banner_cta_link" value="{{gs('banner_cta_link')}}" placeholder="@lang('e.g. https://wa.me/1234567890')">
+                                    <small class="text-muted">@lang('You can use <b>[username]</b> and <b>[email]</b> to dynamically insert the logged-in user\'s details in the link.')</small>
+                                </div>
+                            </div>
+                            <div class="form-group col-xl-4 col-sm-6">
+                                <label> @lang('Banner Theme')</label>
+                                <select class="form-control" name="banner_color">
+                                    <option value="primary" @selected(gs('banner_color') == 'primary')>🟦 @lang('Primary (Blue)')</option>
+                                    <option value="success" @selected(gs('banner_color') == 'success')>🟩 @lang('Success (Green)')</option>
+                                    <option value="danger" @selected(gs('banner_color') == 'danger')>🟥 @lang('Danger (Red)')</option>
+                                    <option value="warning" @selected(gs('banner_color') == 'warning')>🟨 @lang('Warning (Yellow)')</option>
+                                    <option value="info" @selected(gs('banner_color') == 'info')>🩵 @lang('Info (Light Blue)')</option>
+                                    <option value="dark" @selected(gs('banner_color') == 'dark')>⬛ @lang('Dark')</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0"><i class="lab la-whatsapp text--success me-1"></i> @lang('Admin WhatsApp Alert Settings')</h4>
+                            <button type="button" class="btn btn-sm btn-outline--primary addWaNumberBtn">
+                                <i class="las la-plus"></i> @lang('Add Number')
+                            </button>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            @lang('Configure WhatsApp numbers (with country code, e.g. 923006859611 or 8801712345678) to receive instant alert notifications when any account cookie expires.')
+                        </p>
+                        <div class="row waNumberContainer mb-3">
+                            @php
+                                $waNumbers = (array) gs('admin_whatsapp');
+                                if (empty($waNumbers)) {
+                                    $waNumbers = [''];
+                                }
+                            @endphp
+                            @foreach($waNumbers as $index => $num)
+                                <div class="col-md-6 col-lg-4 mb-2 waNumberRow">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="lab la-whatsapp"></i></span>
+                                        <input type="text" name="admin_whatsapp[]" class="form-control" value="{{ $num }}" placeholder="@lang('e.g. 923006859611')">
+                                        <button type="button" class="btn btn-outline--danger removeWaNumberBtn">
+                                            <i class="las la-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+
+@push('script-lib')
+<script src="{{ asset('assets/admin/js/spectrum.js') }}"></script>
+@endpush
+
+@push('style-lib')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/spectrum.css') }}">
+@endpush
+
+@push('script')
+    <script>
+        (function ($) {
+            "use strict";
+
+
+            $('.colorPicker').spectrum({
+                color: $(this).data('color'),
+                change: function (color) {
+                    $(this).parent().siblings('.colorCode').val(color.toHexString().replace(/^#?/, ''));
+                }
+            });
+
+            $('.colorCode').on('input', function () {
+                var clr = $(this).val();
+                $(this).parents('.input-group').find('.colorPicker').spectrum({
+                    color: clr,
+                });
+            });
+
+            $('.addWaNumberBtn').on('click', function () {
+                var html = `
+                    <div class="col-md-6 col-lg-4 mb-2 waNumberRow">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="lab la-whatsapp"></i></span>
+                            <input type="text" name="admin_whatsapp[]" class="form-control" placeholder="e.g. 923006859611">
+                            <button type="button" class="btn btn-outline--danger removeWaNumberBtn">
+                                <i class="las la-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                $('.waNumberContainer').append(html);
+            });
+
+            $(document).on('click', '.removeWaNumberBtn', function () {
+                if ($('.waNumberRow').length > 1) {
+                    $(this).closest('.waNumberRow').remove();
+                } else {
+                    $(this).closest('.waNumberRow').find('input').val('');
+                }
+            });
+        })(jQuery);
+
+    </script>
+@endpush
+

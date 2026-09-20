@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Models;
+
+use App\Constants\Status;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Traits\GlobalStatus;
+
+class AccountListing extends Model
+{
+    use GlobalStatus;
+
+    protected $casts = [
+        'account_info' => 'object',
+        'cookie_checked_at' => 'datetime',
+        'cookie_status' => 'integer',
+        'last_synced_at' => 'datetime',
+    ];
+
+    public function cookieStatusBadge(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $html = '';
+                
+                // If managed by Admin Extension live sync, show clean unified sync status
+                if (!empty($this->last_synced_at)) {
+                    $syncTime = diffForHumans($this->last_synced_at);
+                    $source = $this->last_sync_source === 'admin_extension' ? 'Admin Edge Extension' : 'Auto Sync';
+                    
+                    $html = '<span class="badge badge--success"><i class="las la-check-circle"></i> ' . trans('Valid') . '</span>';
+                    $html .= '<span class="badge badge--primary d-block mt-1" style="font-size: 10px; padding: 3px 6px;" title="Fresh cookies delivered from ' . $source . ' at ' . $this->last_synced_at . '"><i class="las la-sync"></i> ' . trans('Synced') . ' ' . $syncTime . '</span>';
+                    return $html;
+                }
+
+                // Standard accounts (not synced by admin extension)
+                $checkedTime = $this->cookie_checked_at ? diffForHumans($this->cookie_checked_at) : null;
+                
+                if ($this->cookie_status === 1) {
+                    $html = '<span class="badge badge--success" title="Checked: ' . ($checkedTime ?: 'recently') . '"><i class="las la-check-circle"></i> ' . trans('Valid') . '</span>';
+                } elseif ($this->cookie_status === 0) {
+                    $err = $this->cookie_check_error ? 'Error: ' . e($this->cookie_check_error) : 'Expired/Invalid';
+                    $html = '<span class="badge badge--danger" title="' . $err . '"><i class="las la-times-circle"></i> ' . trans('Invalid') . '</span>';
+                } else {
+                    $html = '<span class="badge badge--secondary"><i class="las la-question-circle"></i> ' . trans('Unchecked') . '</span>';
+                }
+                
+                if ($checkedTime) {
+                    $html .= '<small class="text-muted d-block mt-1" style="font-size: 10px;">' . $checkedTime . '</small>';
+                }
+
+                return $html;
+            }
+        );
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(AccountListingImage::class);
+    }
+
+    public function socialMedia()
+    {
+        return $this->belongsTo(SocialMedia::class);
+    }
+
+    public function accountCredential()
+    {
+        return $this->hasOne(AccountCredential::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function assignedUsersCount()
+    {
+        return User::active()
+            ->where(function($q) {
+                $q->whereJsonContains('account_ids', (int) $this->id)
+                  ->orWhereJsonContains('account_ids', (string) $this->id);
+            })
+            ->count();
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', Status::LISTING_PENDING);
+    }
+    public function scopeActive($query)
+    {
+        return $query->where('status', Status::LISTING_ACTIVE);
+    }
+    public function scopeInactive($query)
+    {
+        return $query->where('status', Status::LISTING_INACTIVE);
+    }
+    public function scopeRejected($query)
+    {
+        return $query->where('status', Status::LISTING_REJECTED);
+    }
+    public function scopeDraft($query)
+    {
+        return $query->where('status', Status::LISTING_DRAFT);
+    }
+    public function scopeSold($query)
+    {
+        return $query->where('status', Status::LISTING_SOLD);
+    }
+
+    public function scopePricingModelAuction($query)
+    {
+        return $query->where('pricing_model', Status::AUCTION);
+    }
+    
+    public function scopeActiveSocialMedia($query)
+    {
+        return $query->whereHas('socialMedia', function ($q) {
+            $q->active();
+        });
+    }
+    public function scopeActiveCategory($query)
+    {
+        return $query->whereHas('category', function ($q) {
+            $q->active();
+        });
+    }
+    public function scopeCheckPreviousDate($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('pricing_model', Status::FIXED)->orWhere(function ($q) {
+                $q->where('pricing_model', Status::AUCTION)->whereDate('auction_deadline', '>=', today());
+            });
+        });
+    }
+
+    public function scopeMyBidCount($query)
+    {
+        return $query->withCount(['accountBidding as my_bid_count' => function($query){
+            $query->where('user_id',auth()->id());
+        }]);
+    }
+    public function scopeMyBid($query)
+    {
+        return $query->with(['accountBidding'=>function($q){
+            $q->where('user_id',auth()->id());
+        }]);
+    }
+
+    public function statusBadge(): Attribute
+    {
+        return new Attribute(function () {
+            $html = '';
+            if ($this->status == Status::LISTING_ACTIVE) {
+                $html = '<span class="badge badge--success">' . trans("Active") . '</span>';
+            } elseif ($this->status == Status::LISTING_INACTIVE) {
+                $html = '<span class="badge badge--primary">' . trans("Inactive") . '</span>';
+            }
+            return $html;
+        });
+    }
+}

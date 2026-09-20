@@ -1,0 +1,34 @@
+# Dependencies
+/vendor/
+/node_modules/
+core/vendor/
+core/node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+core/.env
+core/.env.*
+!core/.env.example
+
+# Laravel storage & logs
+core/storage/logs/*.log
+core/storage/framework/cache/*
+core/storage/framework/sessions/*
+core/storage/framework/views/*
+core/storage/debugbar/*
+core/temp/*
+!core/storage/**/.gitignore
+!core/temp/.gitignore
+
+# System / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

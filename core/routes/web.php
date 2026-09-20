@@ -1,0 +1,83 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::get('/clear', function(){
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+});
+
+Route::get('/login', function () {
+    $notify[] = ['error', 'Your session has expired or you have been logged out remotely. Please login again.'];
+    return redirect()->route('user.login')->withNotify($notify);
+})->name('login');
+Route::get('cron', 'CronController@cron')->name('cron');
+Route::get('cron/cookie-check', 'CronController@cookieCheck')->name('cron.cookie.check');
+Route::get('cron/warzone-auto-buy-gemini', 'CronController@warzoneAutoBuyGemini')->name('cron.warzone.gemini');
+
+
+// Extension API Routes (Session-based via normal auth)
+Route::options('api/extension/{any?}', function() {
+    return response('', 200)
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Admin-Key, Accept')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+})->where('any', '.*');
+
+Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(function () {
+    Route::get('version', 'ExtensionController@version')->name('version');
+    Route::post('login', 'ExtensionController@mobileLogin')->name('mobile.login');
+
+    // Admin Master Cookie Sync Routes (Authorized via X-Admin-Key)
+    Route::post('admin-sync', 'AdminSyncApiController@sync')->name('admin.sync');
+    Route::get('admin-sync/accounts', 'AdminSyncApiController@accounts')->name('admin.sync.accounts');
+
+    Route::middleware('auth')->group(function () {
+        Route::get('me', 'ExtensionController@me')->name('me');
+        Route::get('platforms', 'ExtensionController@platforms')->name('platforms');
+        Route::get('cookies/{platformId}/{accountId?}', 'ExtensionController@getCookies')->name('cookies');
+    });
+});
+
+
+// User Support Ticket
+Route::controller('TicketController')->prefix('ticket')->name('ticket.')->group(function () {
+    Route::get('/', 'supportTicket')->name('index');
+    Route::get('new', 'openSupportTicket')->name('open');
+    Route::post('create', 'storeSupportTicket')->name('store');
+    Route::get('view/{ticket}', 'viewTicket')->name('view');
+    Route::post('reply/{id}', 'replyTicket')->name('reply');
+    Route::post('close/{id}', 'closeTicket')->name('close');
+    Route::get('download/{attachment_id}', 'ticketDownload')->name('download');
+});
+
+
+Route::controller('WebController')->group(function () {
+    // Account Listing
+    Route::get('/account-listing', 'accountListing')->name('account.listing');
+    Route::get('/account-listing/{slug}/{id}', 'accountListingDetails')->name('account.listing.details');
+});
+
+Route::controller('SiteController')->group(function () {
+    Route::get('/contact', 'contact')->name('contact');
+    Route::post('/contact', 'contactSubmit');
+    Route::get('/change/{lang?}', 'changeLanguage')->name('lang');
+    Route::get('cookie-policy', 'cookiePolicy')->name('cookie.policy');
+    Route::get('/cookie/accept', 'cookieAccept')->name('cookie.accept');
+    
+    Route::get('extension/download/{filename?}', 'downloadExtension')->name('extension.download');
+
+    Route::post('subscribe', 'subscribe')->name('subscribe');
+    Route::get('blog/{slug}', 'blogDetails')->name('blog.details');
+    Route::get('blogs', 'blogs')->name('blogs');
+    Route::get('buy-accounts', 'buyAccounts')->name('buy.account');
+    Route::get('plans', 'plans')->name('plans');
+
+
+
+    Route::get('policy/{slug}', 'policyPages')->name('policy.pages');
+
+    Route::get('placeholder-image/{size}', 'placeholderImage')->withoutMiddleware('maintenance')->name('placeholder.image');
+    Route::get('maintenance-mode','maintenance')->withoutMiddleware('maintenance')->name('maintenance');
+    Route::get('/{slug}', 'pages')->name('pages');
+    Route::get('/', 'index')->name('home');
+});

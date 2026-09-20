@@ -1,0 +1,777 @@
+<?php
+namespace App\Http\Controllers\Admin;
+
+use App\Constants\Status;
+use App\Http\Controllers\Controller;
+use App\Models\Deposit;
+use App\Models\NotificationLog;
+use App\Models\NotificationTemplate;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Withdrawal;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Rules\FileTypeValidate;
+
+class ManageUsersController extends Controller
+{
+
+    public function allUsers()
+    {
+        $pageTitle = 'All Users';
+        if (request()->account_id) {
+            $account = \App\Models\AccountListing::find(request()->account_id);
+            if ($account) {
+                $pageTitle = 'Users Assigned to: ' . $account->title;
+            }
+        }
+        $users = $this->userData();
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function activeUsers()
+    {
+        $pageTitle = 'Active Users';
+        if (request()->account_id) {
+            $account = \App\Models\AccountListing::find(request()->account_id);
+            if ($account) {
+                $pageTitle = 'Active Users Assigned to: ' . $account->title;
+            }
+        }
+        $users = $this->userData('active');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function expiredUsers()
+    {
+        $pageTitle = 'Expired Users';
+        if (request()->account_id) {
+            $account = \App\Models\AccountListing::find(request()->account_id);
+            if ($account) {
+                $pageTitle = 'Expired Users Assigned to: ' . $account->title;
+            }
+        }
+        $users = $this->userData('expired');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function bannedUsers()
+    {
+        $pageTitle = 'Banned Users';
+        $users = $this->userData('banned');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function emailUnverifiedUsers()
+    {
+        $pageTitle = 'Email Unverified Users';
+        $users = $this->userData('emailUnverified');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function kycUnverifiedUsers()
+    {
+        $pageTitle = 'KYC Unverified Users';
+        $users = $this->userData('kycUnverified');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function kycPendingUsers()
+    {
+        $pageTitle = 'KYC Unverified Users';
+        $users = $this->userData('kycPending');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+    public function emailVerifiedUsers()
+    {
+        $pageTitle = 'Email Verified Users';
+        $users = $this->userData('emailVerified');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+
+    public function mobileUnverifiedUsers()
+    {
+        $pageTitle = 'Mobile Unverified Users';
+        $users = $this->userData('mobileUnverified');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+
+    public function mobileVerifiedUsers()
+    {
+        $pageTitle = 'Mobile Verified Users';
+        $users = $this->userData('mobileVerified');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+
+    public function usersWithBalance()
+    {
+        $pageTitle = 'Users with Balance';
+        $users = $this->userData('withBalance');
+        return view('admin.users.list', compact('pageTitle', 'users'));
+    }
+
+
+    protected function userData($scope = null){
+        if ($scope) {
+            $users = User::$scope();
+        }else{
+            $users = User::query();
+        }
+
+        if (request()->account_id) {
+            $accId = (int) request()->account_id;
+            $users = $users->where(function($q) use ($accId) {
+                $q->whereJsonContains('account_ids', $accId)
+                  ->orWhereJsonContains('account_ids', (string) $accId);
+            });
+        }
+        
+        $users = $users->searchable(['username','email']);
+        
+        if (request()->has('sort')) {
+            $sortVal = request()->sort === 'last_seen' ? 'last_seen' : 'id';
+            session(['admin_users_sort' => $sortVal]);
+        }
+
+        $currentSort = session('admin_users_sort', 'id');
+
+        if ($currentSort === 'last_seen') {
+            $users = $users->orderBy('last_seen', 'desc');
+        } else {
+            $users = $users->orderBy('id', 'desc');
+        }
+        
+        return $users->paginate(getPaginate());
+    }
+
+    public function create()
+    {
+        $pageTitle = 'Add New User';
+        $countries = json_decode(file_get_contents(resource_path('views/partials/country.json')));
+        $plans = \App\Models\Plan::active()->get();
+        $accounts = \App\Models\AccountListing::with('socialMedia')
+            ->active()
+            ->where('cookie_status', '!=', 0)
+            ->get();
+        $socialMedias = \App\Models\SocialMedia::active()->get();
+        return view('admin.users.create', compact('pageTitle', 'countries', 'plans', 'accounts', 'socialMedias'));
+    }
+
+    public function store(Request $request)
+    {
+        $countryData = json_decode(file_get_contents(resource_path('views/partials/country.json')));
+        $countryArray   = (array)$countryData;
+        $countries      = implode(',', array_keys($countryArray));
+
+        $request->validate([
+            'firstname' => 'required|string|max:40',
+            'lastname' => 'required|string|max:40',
+            'email' => 'required|email|string|max:40|unique:users,email',
+            'username' => 'required|string|max:40|unique:users,username',
+            'password' => 'required|string|min:6',
+            'mobile' => 'nullable|string|max:40',
+            'country' => 'required|in:'.$countries,
+            'plan_id' => 'nullable|integer|exists:plans,id',
+            'platform_ids' => 'nullable|array',
+            'platform_ids.*' => 'integer|exists:social_media,id',
+            'account_ids' => 'nullable|array',
+            'account_ids.*' => 'integer|exists:account_listings,id',
+            'account_prices' => 'nullable|array',
+            'account_prices.*' => 'numeric|min:0',
+            'expires_at' => 'nullable|date',
+            'is_trial' => 'nullable|in:on,1',
+            'trial_start_type' => 'nullable|required_if:is_trial,on|in:immediate,next_login',
+            'trial_duration' => 'nullable|required_if:is_trial,on|integer|min:1',
+            'trial_unit' => 'nullable|required_if:is_trial,on|in:minutes,hours,days',
+        ]);
+
+        $countryCode    = $request->country;
+        $country        = $countryData->$countryCode->country;
+        $dialCode       = $countryData->$countryCode->dial_code;
+
+        if ($request->mobile) {
+            $exists = User::where('mobile',$request->mobile)->where('dial_code',$dialCode)->exists();
+            if ($exists) {
+                $notify[] = ['error', 'The mobile number already exists.'];
+                return back()->withNotify($notify)->withInput();
+            }
+        }
+
+        $user = new User();
+        $user->firstname = $request->firstname;
+        $user->lastname = $request->lastname;
+        $user->email = $request->email;
+        $user->username = $request->username;
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $user->mobile = $request->mobile;
+        $user->address = $request->address;
+        $user->city = $request->city;
+        $user->state = $request->state;
+        $user->zip = $request->zip;
+        $user->country_name = @$country;
+        $user->dial_code = $dialCode;
+        $user->country_code = $countryCode;
+        $user->plan_id = $request->plan_id ?: 0;
+        $user->account_prices = $request->account_prices ?: [];
+
+        $assignedAccountIds = [];
+
+        $platformSectionSubmitted = $request->has('platform_ids_submitted');
+        $accountSectionSubmitted  = $request->has('account_ids_submitted');
+
+        if ($request->filled('platform_ids')) {
+            $user->syncPlatformsWithLoadBalancing((array) $request->platform_ids);
+            $assignedAccountIds = (array) ($user->account_ids ?? []);
+        }
+
+        if ($request->filled('account_ids')) {
+            $specificIds = array_map('intval', (array) $request->account_ids);
+            $assignedAccountIds = array_merge($assignedAccountIds, $specificIds);
+        }
+
+        $user->account_ids = array_values(array_unique($assignedAccountIds));
+
+
+        $user->is_trial = $request->has('is_trial') ? 1 : 0;
+        $user->is_exclusive = $request->has('is_exclusive') ? 1 : 0;
+        
+        if ($user->is_trial && $request->trial_start_type && $request->trial_duration && $request->trial_unit) {
+            $minutes = $request->trial_duration;
+            if ($request->trial_unit == 'hours') {
+                $minutes = $request->trial_duration * 60;
+            } elseif ($request->trial_unit == 'days') {
+                $minutes = $request->trial_duration * 1440;
+            }
+
+            if ($request->trial_start_type == 'next_login') {
+                $user->pending_trial_minutes = $minutes;
+                $user->expires_at = null;
+            } else {
+                $user->pending_trial_minutes = null;
+                $user->expires_at = now()->addMinutes($minutes);
+            }
+        } elseif ($request->expires_at) {
+            $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
+        } else {
+            $user->expires_at = now()->addDays(30);
+        }
+
+        // Force all verifications and profile completion so user can log in instantly
+        $user->ev = Status::VERIFIED;
+        $user->sv = Status::VERIFIED;
+        $user->kv = Status::KYC_VERIFIED;
+        $user->tv = Status::DISABLE;
+        $user->ts = Status::DISABLE;
+        $user->status = Status::USER_ACTIVE;
+        $user->profile_complete = 1;
+
+        $user->save();
+
+        $notify[] = ['success', 'User created successfully'];
+        return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
+    }
+
+    public function detail($id)
+    {
+        $user = User::findOrFail($id);
+        $pageTitle = 'User Detail - '.$user->username;
+
+        $totalDeposit = Deposit::where('user_id',$user->id)->successful()->sum('amount');
+        $totalWithdrawals = Withdrawal::where('user_id',$user->id)->approved()->sum('amount');
+        $totalTransaction = Transaction::where('user_id',$user->id)->count();
+        $countries = json_decode(file_get_contents(resource_path('views/partials/country.json')));
+        
+        $plans = \App\Models\Plan::active()->get();
+        $accounts = \App\Models\AccountListing::with('socialMedia')
+            ->active()
+            ->where('cookie_status', '!=', 0)
+            ->get();
+        $socialMedias = \App\Models\SocialMedia::active()->get();
+
+        return view('admin.users.detail', compact('pageTitle', 'user','totalDeposit','totalWithdrawals','totalTransaction','countries', 'plans', 'accounts', 'socialMedias'));
+    }
+
+    public function logout($id)
+    {
+        $user = User::findOrFail($id);
+        \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+        
+        // Clear remember token so the "Remember Me" cookie cannot automatically log them back in
+        $user->remember_token = null;
+        $user->save();
+        
+        $notify[] = ['success', 'User has been logged out remotely.'];
+        return back()->withNotify($notify);
+    }
+
+
+    public function kycDetails($id)
+    {
+        $pageTitle = 'KYC Details';
+        $user = User::findOrFail($id);
+        return view('admin.users.kyc_detail', compact('pageTitle','user'));
+    }
+
+    public function kycApprove($id)
+    {
+        $user = User::findOrFail($id);
+        $user->kv = Status::KYC_VERIFIED;
+        $user->save();
+
+        notify($user,'KYC_APPROVE',[]);
+
+        $notify[] = ['success','KYC approved successfully'];
+        return to_route('admin.users.kyc.pending')->withNotify($notify);
+    }
+
+    public function kycReject(Request $request,$id)
+    {
+        $request->validate([
+            'reason'=>'required'
+        ]);
+        $user = User::findOrFail($id);
+        $user->kv = Status::KYC_UNVERIFIED;
+        $user->kyc_rejection_reason = $request->reason;
+        $user->save();
+
+        notify($user,'KYC_REJECT',[
+            'reason'=>$request->reason
+        ]);
+
+        $notify[] = ['success','KYC rejected successfully'];
+        return to_route('admin.users.kyc.pending')->withNotify($notify);
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $countryData = json_decode(file_get_contents(resource_path('views/partials/country.json')));
+        $countryArray   = (array)$countryData;
+        $countries      = implode(',', array_keys($countryArray));
+
+        $countryCode    = $request->country;
+        $country        = $countryData->$countryCode->country;
+        $dialCode       = $countryData->$countryCode->dial_code;
+
+        $request->validate([
+            'firstname' => 'required|string|max:40',
+            'lastname' => 'required|string|max:40',
+            'email' => 'required|email|string|max:40|unique:users,email,' . $user->id,
+            'mobile' => 'nullable|string|max:40',
+            'country' => 'required|in:'.$countries,
+            'plan_id' => 'nullable|integer|exists:plans,id',
+            'platform_ids' => 'nullable|array',
+            'platform_ids.*' => 'integer|exists:social_media,id',
+            'account_ids' => 'nullable|array',
+            'account_ids.*' => 'integer|exists:account_listings,id',
+            'account_prices' => 'nullable|array',
+            'account_prices.*' => 'numeric|min:0',
+            'expires_at' => 'nullable|date',
+            'is_trial' => 'nullable|in:on,1',
+            'trial_start_type' => 'nullable|required_if:is_trial,on|in:immediate,next_login',
+            'trial_duration' => 'nullable|required_if:is_trial,on|integer|min:1',
+            'trial_unit' => 'nullable|required_if:is_trial,on|in:minutes,hours,days',
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        if ($request->mobile) {
+            $exists = User::where('mobile',$request->mobile)->where('dial_code',$dialCode)->where('id','!=',$user->id)->exists();
+            if ($exists) {
+                $notify[] = ['error', 'The mobile number already exists.'];
+                return back()->withNotify($notify);
+            }
+        }
+
+        $user->mobile = $request->mobile;
+        $user->firstname = $request->firstname;
+        $user->lastname = $request->lastname;
+        $user->email = $request->email;
+
+        $user->address = $request->address;
+        $user->city = $request->city;
+        $user->state = $request->state;
+        $user->zip = $request->zip;
+        $user->country_name = @$country;
+        $user->dial_code = $dialCode;
+        $user->country_code = $countryCode;
+        $user->plan_id = $request->plan_id ?: 0;
+        $user->account_prices = $request->account_prices ?: [];
+
+        $assignedAccountIds = [];
+
+        // Check if the platform section was submitted (sentinel field tells us even when multi-select is empty)
+        $platformSectionSubmitted = $request->has('platform_ids_submitted');
+        $accountSectionSubmitted  = $request->has('account_ids_submitted');
+
+        if ($accountSectionSubmitted && $request->filled('account_ids')) {
+            // SPECIFIC accounts selected → these are the ONLY accounts for this user.
+            // Specific manual override completely replaces any platform auto-balance.
+            $assignedAccountIds = array_map('intval', (array) $request->account_ids);
+
+        } elseif ($platformSectionSubmitted && $request->filled('platform_ids')) {
+            // No specific accounts — use platform auto load-balancing only
+            $user->syncPlatformsWithLoadBalancing((array) $request->platform_ids);
+            $assignedAccountIds = (array) ($user->account_ids ?? []);
+
+        }
+        // If both sections submitted but both empty → clear all (admin removed everything)
+        // If neither sentinel present → preserve existing (safety fallback)
+        elseif (!$platformSectionSubmitted && !$accountSectionSubmitted) {
+            $assignedAccountIds = (array) ($user->account_ids ?? []);
+        }
+
+        $user->account_ids = array_values(array_unique($assignedAccountIds));
+
+
+
+        $user->is_trial = $request->has('is_trial') ? 1 : 0;
+        $user->is_tester = $request->has('is_tester') ? 1 : 0;
+        $user->is_exclusive = $request->has('is_exclusive') ? 1 : 0;
+        
+        if ($user->is_trial && $request->trial_start_type && $request->trial_duration && $request->trial_unit) {
+            $minutes = $request->trial_duration;
+            if ($request->trial_unit == 'hours') {
+                $minutes = $request->trial_duration * 60;
+            } elseif ($request->trial_unit == 'days') {
+                $minutes = $request->trial_duration * 1440;
+            }
+
+            if ($request->trial_start_type == 'next_login') {
+                $user->pending_trial_minutes = $minutes;
+                // Don't modify expires_at yet, let the middleware do it
+            } else {
+                $user->pending_trial_minutes = null;
+                $user->expires_at = now()->addMinutes($minutes);
+            }
+        } elseif ($request->expires_at) {
+            $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
+        }
+
+        $user->ev = $request->ev ? Status::VERIFIED : Status::UNVERIFIED;
+        $user->sv = $request->sv ? Status::VERIFIED : Status::UNVERIFIED;
+        $user->ts = $request->ts ? Status::ENABLE : Status::DISABLE;
+        if (!$request->kv) {
+            $user->kv = Status::KYC_UNVERIFIED;
+            if ($user->kyc_data) {
+                foreach ($user->kyc_data as $kycData) {
+                    if ($kycData->type == 'file') {
+                        fileManager()->removeFile(getFilePath('verify').'/'.$kycData->value);
+                    }
+                }
+            }
+            $user->kyc_data = null;
+        }else{
+            $user->kv = Status::KYC_VERIFIED;
+        }
+
+        if ($request->password) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+
+        $user->save();
+
+        $notify[] = ['success', 'User details updated successfully'];
+        return back()->withNotify($notify);
+    }
+
+    public function delete($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+        $notify[] = ['success', 'User has been soft deleted.'];
+        return back()->withNotify($notify);
+    }
+
+    public function addSubBalance(Request $request, $id)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|gt:0',
+            'act' => 'required|in:add,sub',
+            'remark' => 'required|string|max:255',
+        ]);
+
+        $user = User::findOrFail($id);
+        $amount = $request->amount;
+        $trx = getTrx();
+
+        $transaction = new Transaction();
+
+        if ($request->act == 'add') {
+            $user->balance += $amount;
+
+            $transaction->trx_type = '+';
+            $transaction->remark = 'balance_add';
+
+            $notifyTemplate = 'BAL_ADD';
+
+            $notify[] = ['success', 'Balance added successfully'];
+
+        } else {
+            if ($amount > $user->balance) {
+                $notify[] = ['error', $user->username . ' doesn\'t have sufficient balance.'];
+                return back()->withNotify($notify);
+            }
+
+            $user->balance -= $amount;
+
+            $transaction->trx_type = '-';
+            $transaction->remark = 'balance_subtract';
+
+            $notifyTemplate = 'BAL_SUB';
+            $notify[] = ['success', 'Balance subtracted successfully'];
+        }
+
+        $user->save();
+
+        $transaction->user_id = $user->id;
+        $transaction->amount = $amount;
+        $transaction->post_balance = $user->balance;
+        $transaction->charge = 0;
+        $transaction->trx =  $trx;
+        $transaction->details = $request->remark;
+        $transaction->save();
+
+        notify($user, $notifyTemplate, [
+            'trx' => $trx,
+            'amount' => showAmount($amount,currencyFormat:false),
+            'remark' => $request->remark,
+            'post_balance' => showAmount($user->balance,currencyFormat:false)
+        ]);
+
+        return back()->withNotify($notify);
+    }
+
+    public function login($id){
+        $adminId = auth()->guard('admin')->id();
+        Auth::loginUsingId($id);
+        if ($adminId) {
+            session(['is_admin_testing' => true, 'admin_id' => $adminId]);
+        }
+        return to_route('user.home');
+    }
+
+    public function status(Request $request,$id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->status == Status::USER_ACTIVE) {
+            $request->validate([
+                'reason'=>'required|string|max:255'
+            ]);
+            $user->status = Status::USER_BAN;
+            $user->ban_reason = $request->reason;
+            $notify[] = ['success','User banned successfully'];
+        }else{
+            $user->status = Status::USER_ACTIVE;
+            $user->ban_reason = null;
+            $notify[] = ['success','User unbanned successfully'];
+        }
+        $user->save();
+        return back()->withNotify($notify);
+
+    }
+
+
+    public function showNotificationSingleForm($id)
+    {
+        $user = User::findOrFail($id);
+        if (!gs('en') && !gs('sn') && !gs('pn')) {
+            $notify[] = ['warning','Notification options are disabled currently'];
+            return to_route('admin.users.detail',$user->id)->withNotify($notify);
+        }
+        $pageTitle = 'Send Notification to ' . $user->username;
+        return view('admin.users.notification_single', compact('pageTitle', 'user'));
+    }
+
+    public function sendNotificationSingle(Request $request, $id)
+    {
+        $request->validate([
+            'message' => 'required',
+            'via'     => 'required|in:email,sms,push',
+            'subject' => 'required_if:via,email,push',
+            'image'   => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
+        ]);
+
+        if (!gs('en') && !gs('sn') && !gs('pn')) {
+            $notify[] = ['warning', 'Notification options are disabled currently'];
+            return to_route('admin.dashboard')->withNotify($notify);
+        }
+
+        $imageUrl = null;
+        if($request->via == 'push' && $request->hasFile('image')){
+            $imageUrl = fileUploader($request->image, getFilePath('push'));
+        }
+
+        $template = NotificationTemplate::where('act', 'DEFAULT')->where($request->via.'_status', Status::ENABLE)->exists();
+        if(!$template){
+            $notify[] = ['warning', 'Default notification template is not enabled'];
+            return back()->withNotify($notify);
+        }
+
+        $user = User::findOrFail($id);
+        notify($user,'DEFAULT',[
+            'subject'=>$request->subject,
+            'message'=>$request->message,
+        ],[$request->via],pushImage:$imageUrl);
+        $notify[] = ['success', 'Notification sent successfully'];
+        return back()->withNotify($notify);
+    }
+
+    public function showNotificationAllForm()
+    {
+        if (!gs('en') && !gs('sn') && !gs('pn')) {
+            $notify[] = ['warning', 'Notification options are disabled currently'];
+            return to_route('admin.dashboard')->withNotify($notify);
+        }
+
+        $notifyToUser = User::notifyToUser();
+        $users        = User::active()->count();
+        $pageTitle    = 'Notification to Verified Users';
+
+        if (session()->has('SEND_NOTIFICATION') && !request()->email_sent) {
+            session()->forget('SEND_NOTIFICATION');
+        }
+
+        return view('admin.users.notification_all', compact('pageTitle', 'users', 'notifyToUser'));
+    }
+
+    public function sendNotificationAll(Request $request)
+    {
+        $request->validate([
+            'via'                          => 'required|in:email,sms,push',
+            'message'                      => 'required',
+            'subject'                      => 'required_if:via,email,push',
+            'start'                        => 'required|integer|gte:1',
+            'batch'                        => 'required|integer|gte:1',
+            'being_sent_to'                => 'required',
+            'cooling_time'                 => 'required|integer|gte:1',
+            'number_of_top_deposited_user' => 'required_if:being_sent_to,topDepositedUsers|integer|gte:0',
+            'number_of_days'               => 'required_if:being_sent_to,notLoginUsers|integer|gte:0',
+            'image'                        => ["nullable", 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
+        ], [
+            'number_of_days.required_if'               => "Number of days field is required",
+            'number_of_top_deposited_user.required_if' => "Number of top deposited user field is required",
+        ]);
+
+        if (!gs('en') && !gs('sn') && !gs('pn')) {
+            $notify[] = ['warning', 'Notification options are disabled currently'];
+            return to_route('admin.dashboard')->withNotify($notify);
+        }
+
+
+        $template = NotificationTemplate::where('act', 'DEFAULT')->where($request->via.'_status', Status::ENABLE)->exists();
+        if(!$template){
+            $notify[] = ['warning', 'Default notification template is not enabled'];
+            return back()->withNotify($notify);
+        }
+
+        if ($request->being_sent_to == 'selectedUsers') {
+            if (session()->has("SEND_NOTIFICATION")) {
+                $request->merge(['user' => session()->get('SEND_NOTIFICATION')['user']]);
+            } else {
+                if (!$request->user || !is_array($request->user) || empty($request->user)) {
+                    $notify[] = ['error', "Ensure that the user field is populated when sending an email to the designated user group"];
+                    return back()->withNotify($notify);
+                }
+            }
+        }
+
+        $scope          = $request->being_sent_to;
+        $userQuery      = User::oldest()->active()->$scope();
+
+        if (session()->has("SEND_NOTIFICATION")) {
+            $totalUserCount = session('SEND_NOTIFICATION')['total_user'];
+        } else {
+            $totalUserCount = (clone $userQuery)->count() - ($request->start-1);
+        }
+
+
+        if ($totalUserCount <= 0) {
+            $notify[] = ['error', "Notification recipients were not found among the selected user base."];
+            return back()->withNotify($notify);
+        }
+
+
+        $imageUrl = null;
+
+        if ($request->via == 'push' && $request->hasFile('image')) {
+            if (session()->has("SEND_NOTIFICATION")) {
+                $request->merge(['image' => session()->get('SEND_NOTIFICATION')['image']]);
+            }
+            if ($request->hasFile("image")) {
+                $imageUrl = fileUploader($request->image, getFilePath('push'));
+            }
+        }
+
+        $users = (clone $userQuery)->skip($request->start - 1)->limit($request->batch)->get();
+
+        foreach ($users as $user) {
+            notify($user, 'DEFAULT', [
+                'subject' => $request->subject,
+                'message' => $request->message,
+            ], [$request->via], pushImage: $imageUrl);
+        }
+
+        return $this->sessionForNotification($totalUserCount, $request);
+    }
+
+
+    private function sessionForNotification($totalUserCount, $request)
+    {
+        if (session()->has('SEND_NOTIFICATION')) {
+            $sessionData                = session("SEND_NOTIFICATION");
+            $sessionData['total_sent'] += $sessionData['batch'];
+        } else {
+            $sessionData               = $request->except('_token');
+            $sessionData['total_sent'] = $request->batch;
+            $sessionData['total_user'] = $totalUserCount;
+        }
+
+        $sessionData['start'] = $sessionData['total_sent'] + 1;
+
+        if ($sessionData['total_sent'] >= $totalUserCount) {
+            session()->forget("SEND_NOTIFICATION");
+            $message = ucfirst($request->via) . " notifications were sent successfully";
+            $url     = route("admin.users.notification.all");
+        } else {
+            session()->put('SEND_NOTIFICATION', $sessionData);
+            $message = $sessionData['total_sent'] . " " . $sessionData['via'] . "  notifications were sent successfully";
+            $url     = route("admin.users.notification.all") . "?email_sent=yes";
+        }
+        $notify[] = ['success', $message];
+        return redirect($url)->withNotify($notify);
+    }
+
+    public function countBySegment($methodName){
+        return User::active()->$methodName()->count();
+    }
+
+    public function list()
+    {
+        $query = User::active();
+
+        if (request()->search) {
+            $query->where(function ($q) {
+                $q->where('email', 'like', '%' . request()->search . '%')->orWhere('username', 'like', '%' . request()->search . '%');
+            });
+        }
+        $users = $query->orderBy('id', 'desc')->paginate(getPaginate());
+        return response()->json([
+            'success' => true,
+            'users'   => $users,
+            'more'    => $users->hasMorePages()
+        ]);
+    }
+
+    public function notificationLog($id){
+        $user = User::findOrFail($id);
+        $pageTitle = 'Notifications Sent to '.$user->username;
+        $logs = NotificationLog::where('user_id',$id)->with('user')->orderBy('id','desc')->paginate(getPaginate());
+        return view('admin.reports.notification_history', compact('pageTitle','logs','user'));
+    }
+
+}

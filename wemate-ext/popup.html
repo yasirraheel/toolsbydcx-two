@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WeMate</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #f0f6fc;
+      width: 320px;
+      min-height: 250px;
+    }
+    .header {
+      padding: 14px 16px;
+      background: #161b22;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 10px; }
+    .brand-logo {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #0d6efd; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; overflow: hidden; flex-shrink: 0;
+      box-shadow: 0 0 10px rgba(13, 110, 253, 0.4);
+    }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .brand-text-wrap { display: flex; flex-direction: column; }
+    .brand-name { font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: -0.2px; }
+    .brand-sub { font-size: 10px; color: #00e676; font-weight: 600; margin-top: 1px; }
+    .version-badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(13, 110, 253, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      line-height: 1.2;
+    }
+    .nav-dash-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 9px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .nav-dash-btn:hover {
+      background: #0d6efd;
+      border-color: #0d6efd;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+    }
+    .content { padding: 14px 16px; }
+    
+    .btn {
+      width: 100%; padding: 11px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+      display: flex; justify-content: center; align-items: center; gap: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+      color: #fff; border: 1px solid rgba(13, 110, 253, 0.4); text-decoration: none;
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #157347 0%, #00e676 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 230, 118, 0.35);
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 6px 10px; font-size: 11px; width: auto;
+    }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .error {
+      background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px; padding: 9px 11px; font-size: 12px;
+      color: #f87171; margin-bottom: 12px; text-align: center;
+    }
+    
+    .user-info-card {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #161b22; border: 1px solid rgba(13, 110, 253, 0.25);
+      border-radius: 10px; padding: 12px; margin-bottom: 16px;
+    }
+    .user-info-text { display: flex; flex-direction: column; gap: 2px; }
+    .user-name { font-size: 13px; font-weight: 700; color: #ffffff; }
+    .user-plan { font-size: 11px; color: #60a5fa; font-weight: 600; }
+    
+    .platform-list { display: flex; flex-direction: column; gap: 8px; }
+    .platform-card {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #161b22; border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: 0.2s;
+    }
+    .platform-card:hover { border-color: #0d6efd; background: #1c2128; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15); }
+    .platform-info { display: flex; flex-direction: column; gap: 2px; }
+    .platform-name { font-size: 13px; font-weight: 600; color: #ffffff; }
+    .platform-domain { font-size: 10px; color: #8b949e; }
+    
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.2); border-top-color: #0d6efd;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    
+    .not-connected-header { text-align: center; padding: 20px 0 10px; }
+    .lock-emoji { font-size: 36px; margin-bottom: 10px; }
+    .not-connected-header h3 { font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px; }
+    .not-connected-header p { font-size: 12px; color: #8b949e; line-height: 1.5; padding: 0 10px; margin-bottom: 15px;}
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand-wrap">
+      <div class="brand-logo"><img src="icon48.png" alt="Logo" onerror="this.style.display='none'"/></div>
+      <div class="brand-text-wrap">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="brand-name">WeMate</span>
+          <span class="version-badge" id="version-tag">v2.0.0</span>
+        </div>
+        <span class="brand-sub">Premium Access</span>
+      </div>
+    </div>
+    <a href="https://panel.shahabtech.com/user/dashboard" target="_blank" class="nav-dash-btn" id="nav-dash-link" title="Open WeMate Dashboard">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+      <span>Dashboard</span>
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loading-screen" class="content" style="display:flex; justify-content:center; align-items:center; height: 150px;">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Not Logged In Screen -->
+  <div id="login-screen" class="content" style="display:none;">
+    <div class="not-connected-header">
+      <div class="lock-emoji">🔐</div>
+      <h3>Not Connected</h3>
+      <p>Please log into your WeMate Panel to access your platforms.</p>
+      <a href="https://panel.shahabtech.com/user/dashboard" target="_blank" class="btn btn-primary">Open WeMate Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Dashboard / Platforms List -->
+  <div id="dashboard-screen" class="content" style="display:none;">
+    <div id="action-error" class="error" style="display:none"></div>
+    
+    <div class="user-info-card">
+      <div class="user-info-text">
+        <span class="user-name" id="display-name">Loading...</span>
+        <span class="user-plan" id="display-plan">Plan: Loading...</span>
+      </div>
+    </div>
+    
+    <div style="font-size: 11px; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Available Platforms</div>
+    
+    <div id="platforms-container" class="platform-list">
+      <!-- Platforms injected here via JS -->
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
