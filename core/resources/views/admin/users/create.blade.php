@@ -15,19 +15,19 @@
                         @csrf
 
                         <div class="form-group mb-4">
-                            <label class="fw-bold text--dark mb-2">
-                                <i class="las la-user text--primary"></i> @lang('Full Name') <span class="text--danger">*</span>
+                            <label class="fw-bold text--dark mb-2 required">
+                                <i class="las la-user text--primary"></i> @lang('Full Name')
                             </label>
                             <input class="form-control form-control-lg" type="text" name="name" id="userNameInput" placeholder="@lang('e.g. Roar Berg')" required value="{{ old('name') }}" autofocus>
                         </div>
 
                         <div class="form-group mb-4">
-                            <label class="fw-bold text--dark mb-2">
-                                <i class="las la-envelope text--primary"></i> @lang('Email Address') <span class="text--danger">*</span>
+                            <label class="fw-bold text--dark mb-2 required">
+                                <i class="las la-envelope text--primary"></i> @lang('Email Address')
                             </label>
                             <div class="input-group input-group-lg">
                                 <input class="form-control" type="text" name="email_prefix" id="emailPrefixInput" placeholder="@lang('username_or_email')" value="{{ old('email_prefix') }}" required>
-                                <span class="input-group-text bg--light text--primary fw-bold">@ {{ $domain }}</span>
+                                <span class="input-group-text bg--primary text-white fw-bold">@ {{ $domain }}</span>
                             </div>
                             <small class="text-muted mt-1 d-block">
                                 <i class="las la-info-circle"></i> @lang('Type the username prefix; domain suffix is automatically attached.')
@@ -36,8 +36,8 @@
 
                         <div class="form-group mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="fw-bold text--dark mb-0">
-                                    <i class="las la-key text--primary"></i> @lang('Password') <span class="text--danger">*</span>
+                                <label class="fw-bold text--dark mb-0 required">
+                                    <i class="las la-key text--primary"></i> @lang('Password')
                                 </label>
                                 <a href="javascript:void(0)" class="text--primary fw-bold text-decoration-none" id="generatePasswordBtn" style="font-size: 13px;">
                                     <i class="las la-random"></i> @lang('Generate Random')
@@ -45,8 +45,12 @@
                             </div>
                             <div class="input-group input-group-lg">
                                 <input class="form-control" type="text" name="password" id="passwordField" placeholder="@lang('Enter or generate password')" required>
-                                <button type="button" class="input-group-text bg--light" id="togglePassword" title="@lang('Toggle Visibility')"><i class="las la-eye"></i></button>
-                                <button type="button" class="input-group-text bg--light copy-btn" title="@lang('Copy Password')"><i class="las la-copy"></i></button>
+                                <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer; min-width: 50px;">
+                                    <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                </button>
+                                <button type="button" class="btn btn--dark px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="cursor:pointer; min-width: 50px;">
+                                    <i class="las la-copy" style="font-size: 20px; color: #fff;"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -63,7 +67,7 @@
                             </select>
                             <small class="text-muted mt-1 d-block">
                                 @if($accounts->count() > 0)
-                                    <span class="text--success"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('active platform accounts currently available with valid cookies.')</span>
+                                    <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('active platform accounts currently available with valid cookies.')</span>
                                 @else
                                     <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No active accounts with valid cookies available right now.')</span>
                                 @endif
@@ -111,10 +115,10 @@
             let pwd = $('#passwordField');
             if (pwd.attr('type') === 'password') {
                 pwd.attr('type', 'text');
-                $(this).html('<i class="las la-eye-slash"></i>');
+                $(this).html('<i class="las la-eye-slash" style="font-size: 20px; color: #fff;"></i>');
             } else {
                 pwd.attr('type', 'password');
-                $(this).html('<i class="las la-eye"></i>');
+                $(this).html('<i class="las la-eye" style="font-size: 20px; color: #fff;"></i>');
             }
         });
 
