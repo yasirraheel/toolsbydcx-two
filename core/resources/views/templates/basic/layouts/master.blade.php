@@ -237,23 +237,16 @@
 
 <body>
 
-    {{-- Global Notification Banner --}}
-    @if(gs('banner_status') && gs('banner_message'))
-    @php
-        $bannerTheme = gs('banner_color') ?: 'primary';
-        $textColor = in_array($bannerTheme, ['warning', 'info']) ? 'text-dark' : 'text-white';
-        $btnTheme = in_array($bannerTheme, ['warning', 'info']) ? 'btn-dark' : 'btn-light';
-    @endphp
-    <div id="globalNotificationBanner" class="notification-banner shadow-lg bg-{{ $bannerTheme }}" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 99999; padding: 10px 0;">
-        <div class="container position-relative px-4">
-            <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 pe-4">
-                <div class="flex-grow-1">
-                    <h6 class="{{ $textColor }} mb-1" style="font-size: 15px;"><i class="las la-bell me-2"></i> @lang('Notice')</h6>
-                    <div class="{{ $textColor }}" style="font-size: 13px; line-height: 1.4;">
-                        {!! gs('banner_message') !!}
-                    </div>
-                </div>
-                @if(gs('banner_cta_text') && gs('banner_cta_link'))
+    {{-- Main Page Wrapper with Dark Admin Style --}}
+    <div class="page-wrapper default-version">
+        @include($activeTemplate . 'partials.user_sidenav')
+        @include($activeTemplate . 'partials.user_topnav')
+
+        <div class="container-fluid px-3 px-sm-0">
+            <div class="body-wrapper">
+                <div class="bodywrapper__inner">
+                    {{-- Global Notification Banner (Gracefully placed at top of content) --}}
+                    @if(gs('banner_status') && gs('banner_message'))
                     @php
                         $ctaLink = gs('banner_cta_link');
                         if (auth()->check()) {
@@ -263,99 +256,50 @@
                             $ctaLink = str_replace(urlencode('[email]'), urlencode(auth()->user()->email), $ctaLink);
                         }
                     @endphp
-                    <div class="flex-shrink-0 mt-2 mt-md-0">
-                        <a href="{{ $ctaLink }}" target="_blank" class="btn {{ $btnTheme }} btn-sm fw-bold d-inline-flex align-items-center justify-content-center gap-1" style="border-radius: 20px; padding: 8px 15px; font-size: 13px; white-space: nowrap;">
-                            {{ gs('banner_cta_text') }} <i class="las la-arrow-right"></i>
-                        </a>
-                    </div>
-                @endif
-            </div>
-            <button type="button" class="{{ $textColor }} position-absolute" style="top: -2px; right: 10px; background: none; border: none; opacity: 0.8; font-size: 24px; line-height: 1; padding: 0;" onclick="closeNotificationBanner()" aria-label="Close">&times;</button>
-        </div>
-    </div>
-
-    @push('script')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var banner = document.getElementById('globalNotificationBanner');
-            var bannerClosedAt = localStorage.getItem('bannerClosedAt');
-            var now = new Date().getTime();
-            if (!bannerClosedAt || (now - parseInt(bannerClosedAt) > 300000)) {
-                if(banner) banner.style.display = 'block';
-            }
-        });
-
-        function closeNotificationBanner() {
-            var banner = document.getElementById('globalNotificationBanner');
-            if(banner) banner.style.display = 'none';
-            localStorage.setItem('bannerClosedAt', new Date().getTime());
-        }
-    </script>
-    @endpush
-    @endif
-
-    {{-- Extension Update Modal --}}
-    @auth
-        @php
-            $minExtVersion = gs('min_extension_version') ?: '1.9.6';
-            $forceExtUpdate = (bool) gs('force_extension_update');
-            $extDownloadUrl = getExtensionDownloadUrl();
-        @endphp
-        <div class="modal fade" id="panelExtensionUpdateModal" tabindex="-1" role="dialog" aria-labelledby="panelExtensionUpdateTitle" aria-hidden="true" @if($forceExtUpdate) data-bs-backdrop="static" data-bs-keyboard="false" @endif>
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title d-flex align-items-center text-warning" id="panelExtensionUpdateTitle">
-                            <i class="las la-exclamation-triangle me-2 fs-4"></i>
-                            @if($forceExtUpdate)
-                                @lang('Action Required: Extension Update')
-                            @else
-                                @lang('Extension Update Available')
+                    <div id="globalNotificationBanner" class="alert custom--card mb-4 p-3 position-relative" style="display: none; background: #162032 !important; border: 1px solid rgba(99, 102, 241, 0.35) !important; border-left: 4px solid var(--base-color, #4634ff) !important; border-radius: 8px;">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap flex-md-nowrap gap-3 pe-4">
+                            <div class="d-flex align-items-start gap-3">
+                                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: var(--base-color, #4634ff); flex-shrink: 0;">
+                                    <i class="las la-bullhorn" style="font-size: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-white mb-1" style="font-size: 14px; font-weight: 600;">@lang('Notice')</h6>
+                                    <div style="color: #cbd5e1 !important; font-size: 13px; line-height: 1.5;">
+                                        {!! gs('banner_message') !!}
+                                    </div>
+                                </div>
+                            </div>
+                            @if(gs('banner_cta_text') && gs('banner_cta_link'))
+                                <div class="flex-shrink-0 mt-2 mt-md-0 align-self-center">
+                                    <a href="{{ $ctaLink }}" target="_blank" class="btn btn--base btn-sm text-nowrap">
+                                        {{ gs('banner_cta_text') }} <i class="las la-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
                             @endif
-                        </h5>
-                        @if(!$forceExtUpdate)
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        @endif
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <div class="mb-3">
-                            <span class="badge bg-warning text-dark px-3 py-2 fs-6">
-                                @lang('Required Version'): <strong>v{{ $minExtVersion }}</strong>
-                            </span>
                         </div>
-                        @if($forceExtUpdate)
-                            <p class="text-muted fs-15 mb-0">
-                                @lang('Your browser extension is outdated. The administrator has required an update to continue accessing your assigned accounts seamlessly.')
-                            </p>
-                        @else
-                            <p class="text-muted fs-15 mb-0">
-                                @lang('A new version of the ToolsByDcx Chrome Extension (v')<strong>{{ $minExtVersion }}</strong>@lang(') is available. Please update to enjoy the latest features.')
-                            </p>
-                        @endif
+                        <button type="button" class="btn-close position-absolute" style="top: 12px; right: 12px; filter: invert(1); opacity: 0.7; font-size: 11px;" onclick="closeNotificationBanner()" aria-label="Close"></button>
                     </div>
-                    <div class="modal-footer border-0 pt-0 d-flex gap-2">
-                        <a href="{{ $extDownloadUrl }}" target="_blank" id="panelUpdateDownloadBtn" class="btn btn--primary flex-grow-1">
-                            <i class="las la-download me-1"></i> @lang('Download Extension Update')
-                        </a>
-                        @if(!$forceExtUpdate)
-                            <button type="button" class="btn btn--dark flex-grow-1" id="panelUpdateSnoozeBtn" data-bs-dismiss="modal">
-                                @lang('Snooze (6 Hours)')
-                            </button>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endauth
 
-    {{-- Main Page Wrapper with Dark Admin Style --}}
-    <div class="page-wrapper default-version">
-        @include($activeTemplate . 'partials.user_sidenav')
-        @include($activeTemplate . 'partials.user_topnav')
+                    @push('script')
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var banner = document.getElementById('globalNotificationBanner');
+                            var bannerClosedAt = localStorage.getItem('bannerClosedAt');
+                            var now = new Date().getTime();
+                            if (!bannerClosedAt || (now - parseInt(bannerClosedAt) > 300000)) {
+                                if(banner) banner.style.display = 'block';
+                            }
+                        });
 
-        <div class="container-fluid px-3 px-sm-0">
-            <div class="body-wrapper">
-                <div class="bodywrapper__inner">
+                        function closeNotificationBanner() {
+                            var banner = document.getElementById('globalNotificationBanner');
+                            if(banner) banner.style.display = 'none';
+                            localStorage.setItem('bannerClosedAt', new Date().getTime());
+                        }
+                    </script>
+                    @endpush
+                    @endif
+
                     @include($activeTemplate . 'partials.user_breadcrumb')
                     @yield('content')
                 </div>

@@ -40,37 +40,35 @@
 
     @if(gs('banner_status') && gs('banner_message'))
     @php
-        $bannerTheme = gs('banner_color') ?: 'primary';
-        $textColor = in_array($bannerTheme, ['warning', 'info']) ? 'text-dark' : 'text-white';
-        $btnTheme = in_array($bannerTheme, ['warning', 'info']) ? 'btn-dark' : 'btn-light';
+        $ctaLink = gs('banner_cta_link');
+        if (auth()->check()) {
+            $ctaLink = str_replace('[username]', auth()->user()->username, $ctaLink);
+            $ctaLink = str_replace('[email]', auth()->user()->email, $ctaLink);
+            $ctaLink = str_replace(urlencode('[username]'), urlencode(auth()->user()->username), $ctaLink);
+            $ctaLink = str_replace(urlencode('[email]'), urlencode(auth()->user()->email), $ctaLink);
+        }
     @endphp
-    <div id="globalNotificationBanner" class="notification-banner shadow-lg bg-{{ $bannerTheme }}" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 99999; padding: 10px 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); animation: slideInUp 0.5s ease-out;">
-        <div class="container position-relative">
-            <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 pe-4">
+    <div id="globalNotificationBanner" class="position-fixed" style="display: none; bottom: 25px; right: 25px; max-width: 440px; z-index: 99999; animation: slideInUp 0.4s ease-out;">
+        <div class="card border-0 shadow-lg p-3 position-relative" style="background: #111827 !important; border: 1px solid rgba(99, 102, 241, 0.35) !important; border-left: 4px solid var(--base-color, #4634ff) !important; border-radius: 10px; color: #fff;">
+            <div class="d-flex align-items-start gap-3 pe-3">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: var(--base-color, #4634ff); flex-shrink: 0;">
+                    <i class="las la-bullhorn" style="font-size: 20px;"></i>
+                </div>
                 <div class="flex-grow-1">
-                    <h6 class="{{ $textColor }} mb-1" style="font-size: 15px;"><i class="las la-bell me-2"></i> @lang('Notice')</h6>
-                    <div class="{{ $textColor }}" style="font-size: 13px; line-height: 1.4;">
+                    <h6 class="text-white mb-1" style="font-size: 14px; font-weight: 600;">@lang('Notice')</h6>
+                    <div style="color: #cbd5e1 !important; font-size: 12.5px; line-height: 1.45; max-height: 160px; overflow-y: auto;">
                         {!! gs('banner_message') !!}
                     </div>
+                    @if(gs('banner_cta_text') && gs('banner_cta_link'))
+                        <div class="mt-2 pt-1">
+                            <a href="{{ $ctaLink }}" target="_blank" class="btn btn--base btn-sm py-1 px-3" style="font-size: 12px; border-radius: 6px;">
+                                {{ gs('banner_cta_text') }} <i class="las la-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    @endif
                 </div>
-                @if(gs('banner_cta_text') && gs('banner_cta_link'))
-                    @php
-                        $ctaLink = gs('banner_cta_link');
-                        if (auth()->check()) {
-                            $ctaLink = str_replace('[username]', auth()->user()->username, $ctaLink);
-                            $ctaLink = str_replace('[email]', auth()->user()->email, $ctaLink);
-                            $ctaLink = str_replace(urlencode('[username]'), urlencode(auth()->user()->username), $ctaLink);
-                            $ctaLink = str_replace(urlencode('[email]'), urlencode(auth()->user()->email), $ctaLink);
-                        }
-                    @endphp
-                    <div class="flex-shrink-0 mt-2 mt-md-0">
-                        <a href="{{ $ctaLink }}" target="_blank" class="btn {{ $btnTheme }} btn-sm fw-bold d-inline-flex align-items-center justify-content-center gap-1" style="border-radius: 20px; padding: 8px 15px; font-size: 13px; white-space: nowrap;">
-                            {{ gs('banner_cta_text') }} <i class="las la-arrow-right"></i>
-                        </a>
-                    </div>
-                @endif
             </div>
-            <button type="button" class="{{ $textColor }} position-absolute" style="top: -2px; right: 10px; background: none; border: none; opacity: 0.8; font-size: 24px; line-height: 1; padding: 0;" onclick="closeNotificationBanner()" aria-label="Close">&times;</button>
+            <button type="button" class="btn-close position-absolute" style="top: 10px; right: 10px; filter: invert(1); opacity: 0.7; font-size: 10px;" onclick="closeNotificationBanner()" aria-label="Close"></button>
         </div>
     </div>
 
@@ -83,12 +81,13 @@
             
             // If never closed, or closed more than 5 minutes (300000 ms) ago
             if (!bannerClosedAt || (now - parseInt(bannerClosedAt) > 300000)) {
-                banner.style.display = 'block';
+                if(banner) banner.style.display = 'block';
             }
         });
 
         function closeNotificationBanner() {
-            document.getElementById('globalNotificationBanner').style.display = 'none';
+            var banner = document.getElementById('globalNotificationBanner');
+            if(banner) banner.style.display = 'none';
             localStorage.setItem('bannerClosedAt', new Date().getTime());
         }
     </script>
