@@ -1,7 +1,7 @@
 // WeMate Admin Cookie Sync — Background Service Worker
-// Automatically captures Google Flow rolling session tokens and syncs to ShahabTech Panel.
+// Automatically captures Google Flow rolling session tokens and syncs to ToolsByDcx Panel.
 
-const DEFAULT_PANEL_URL = 'https://panel.shahabtech.com';
+const DEFAULT_PANEL_URL = 'https://toolsbydcx.com';
 const SYNC_ALARM_NAME = 'periodicAdminSync';
 const SYNC_INTERVAL_MINUTES = 30;
 const DEBOUNCE_MS = 15000; // 15 seconds debounce for cookie change triggers

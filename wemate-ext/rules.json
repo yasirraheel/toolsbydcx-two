@@ -5,8 +5,8 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*logout*",
-      "excludedInitiatorDomains": ["panel.shahabtech.com", "shahabtech.com"],
-      "excludedRequestDomains": ["panel.shahabtech.com", "shahabtech.com"],
+      "excludedInitiatorDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
+      "excludedRequestDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
       "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest", "ping", "script"]
     }
   },
@@ -16,8 +16,8 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*signout*",
-      "excludedInitiatorDomains": ["panel.shahabtech.com", "shahabtech.com"],
-      "excludedRequestDomains": ["panel.shahabtech.com", "shahabtech.com"],
+      "excludedInitiatorDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
+      "excludedRequestDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
       "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest", "ping", "script"]
     }
   },
@@ -27,8 +27,8 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*SignOut*",
-      "excludedInitiatorDomains": ["panel.shahabtech.com", "shahabtech.com"],
-      "excludedRequestDomains": ["panel.shahabtech.com", "shahabtech.com"],
+      "excludedInitiatorDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
+      "excludedRequestDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
       "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest", "ping", "script"]
     }
   },
@@ -38,8 +38,8 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*LogOut*",
-      "excludedInitiatorDomains": ["panel.shahabtech.com", "shahabtech.com"],
-      "excludedRequestDomains": ["panel.shahabtech.com", "shahabtech.com"],
+      "excludedInitiatorDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
+      "excludedRequestDomains": ["toolsbydcx.com", "www.toolsbydcx.com", "panel.shahabtech.com", "shahabtech.com"],
       "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest", "ping", "script"]
     }
   }

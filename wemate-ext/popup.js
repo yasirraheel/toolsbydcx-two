@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         platformsContainer: document.getElementById('platforms-container'),
     };
 
-    const API_URL = 'https://panel.shahabtech.com/api/extension';
+    const API_URL = 'https://toolsbydcx.com/api/extension';
 
     // Set version tag dynamically from manifest
     try {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dashLink) {
         dashLink.addEventListener('click', (e) => {
             e.preventDefault();
-            chrome.tabs.create({ url: 'https://panel.shahabtech.com/user/dashboard' });
+            chrome.tabs.create({ url: 'https://toolsbydcx.com/user/dashboard' });
         });
     }
 

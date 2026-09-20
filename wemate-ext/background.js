@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-const API_URL = 'https://panel.shahabtech.com/api/extension';
+const API_URL = 'https://toolsbydcx.com/api/extension';
 
 // Set up periodic alarm to check subscription status
 chrome.runtime.onInstalled.addListener(() => {
@@ -38,7 +38,7 @@ async function verifyAuthAndWipeIfInvalid() {
         });
         
         // IMPORTANT: Do NOT wipe on 401 or 403 or network issues.
-        // A web session timeout on panel.shahabtech.com is normal and does NOT mean
+        // A web session timeout on toolsbydcx.com is normal and does NOT mean
         // the user's active platform cookies should be wiped.
         if (res.ok) {
             const contentType = res.headers.get("content-type");

@@ -10,6 +10,8 @@
   ],
   "host_permissions": [
     "*://*.google.com/*",
+    "*://toolsbydcx.com/*",
+    "*://*.toolsbydcx.com/*",
     "*://panel.shahabtech.com/*",
     "*://shahabtech.com/*",
     "*://localhost/*",

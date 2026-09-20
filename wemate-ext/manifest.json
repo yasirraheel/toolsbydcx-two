@@ -30,6 +30,8 @@
   "content_scripts": [
     {
       "matches": [
+        "*://toolsbydcx.com/*",
+        "*://*.toolsbydcx.com/*",
         "*://panel.shahabtech.com/*",
         "*://shahabtech.com/*",
         "*://www.shahabtech.com/*",
