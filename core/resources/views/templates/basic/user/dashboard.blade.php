@@ -362,13 +362,14 @@
                         btnText.text('Injecting...');
                         
                         // Send custom event to extension's content.js
-                        let event = new CustomEvent('ShahabTechInject', {
+                        let event = new CustomEvent('ToolsByDcxInject', {
                             detail: {
                                 platform: response.platform,
                                 cookies: response.cookies
                             }
                         });
                         window.dispatchEvent(event);
+                        window.dispatchEvent(new CustomEvent('ShahabTechInject', { detail: { platform: response.platform, cookies: response.cookies } }));
                         
                         setTimeout(function() {
                             btn.prop('disabled', false);

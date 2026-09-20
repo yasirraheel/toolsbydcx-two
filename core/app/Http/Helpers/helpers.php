@@ -558,7 +558,7 @@ function userNotifyPermission($user, $act)
 function getExtensionDownloadUrl()
 {
     $directory = storage_path('app/public/extension');
-    $filename = 'wemate-ext.zip';
+    $filename = 'toolsbydcx-ext.zip';
     if (is_dir($directory)) {
         $files = scandir($directory);
         $latestMtime = 0;

@@ -1,7 +1,7 @@
 // content.js
 // Injected into toolsbydcx.com / panel to listen for injection requests from the web page
 
-function handleInjectEvent(event, eventPrefix = 'ShahabTech') {
+function handleInjectEvent(event, eventPrefix = 'ToolsByDcx') {
     const data = event.detail;
     
     if (data && data.platform && data.cookies) {

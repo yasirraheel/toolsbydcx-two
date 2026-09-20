@@ -65,7 +65,7 @@ class ExtensionUploadController extends Controller
                 }
             }
             
-            // Use the original filename provided by the admin (e.g. wemate-ext-v1.6.zip)
+            // Use the original filename provided by the admin (e.g. toolsbydcx-ext-v2.3.2.zip)
             $filename = $file->getClientOriginalName();
             $targetPath = $directory . '/' . $filename;
             $file->move($directory, $filename);

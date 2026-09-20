@@ -1,8 +1,8 @@
-# WeMate (ShahabTech Panel & Extension) — Architecture & Change Log
+# ToolsByDcx (ShahabTech Panel & Extension) — Architecture & Change Log
 
 ## 1. Project Overview & Environments
-* **Project Name**: WeMate / ShahabTech Panel
-* **Local Path**: `D:\Git Work\Web\wemate`
+* **Project Name**: ToolsByDcx / ShahabTech Panel
+* **Local Path**: `D:\Git Work\Web\toolsbydcx`
 * **Production URL**: `https://panel.shahabtech.com`
 * **Remote Server**:
   * **Host / IP**: `82.197.80.201` (Port: `65002`)
@@ -10,8 +10,8 @@
   * **Web Root**: `/home/u559276167/domains/shahabtech.com/public_html/panel`
   * **SSH Command**: `ssh -p 65002 u559276167@82.197.80.201`
 * **Git Repository**: `https://github.com/yasirraheel/shahabtech-pannel.git` (Branch: `main`)
-* **Extension Source Folder**: `D:\Git Work\Web\wemate\wemate-ext`
-* **Extension Download Location on Server**: `core/storage/app/public/extension/wemate-ext-v{version}.zip` (symlinked or served via `getExtensionDownloadUrl()`).
+* **Extension Source Folder**: `D:\Git Work\Web\toolsbydcx\toolsbydcx-ext`
+* **Extension Download Location on Server**: `core/storage/app/public/extension/toolsbydcx-ext-v{version}.zip` (symlinked or served via `getExtensionDownloadUrl()`).
 
 ---
 
@@ -20,7 +20,7 @@
 ### A. Extension Cookie Injection Engine Upgrade (Saqib-Grade Parity)
 * **Problem**: Cookie injection into Google Flow and other platforms was failing due to rigid SameSite attributes, strict domain locks, and premature session clearance.
 * **Solution**:
-  1. Implemented the **Saqib-grade 4-tier retry engine** in `wemate-ext/background.js`:
+  1. Implemented the **Saqib-grade 4-tier retry engine** in `toolsbydcx-ext/background.js`:
      * Attempt 0: Direct injection with original attributes.
      * Attempt 1: Injects with domain stripped (tied strictly to `targetUrl`).
      * Attempt 2: Falls back to `sameSite: 'lax'`.
@@ -32,10 +32,10 @@
 ---
 
 ### B. Auto-Flattening Extension Zip Uploads
-* **Problem**: When uploading extension zip files through the Admin Panel (`Extension Distribution & Versioning`), user extractions were creating a folder-inside-folder structure (e.g. `wemate-ext/wemate-ext/manifest.json`), preventing Chrome from loading it without manual reorganization.
+* **Problem**: When uploading extension zip files through the Admin Panel (`Extension Distribution & Versioning`), user extractions were creating a folder-inside-folder structure (e.g. `toolsbydcx-ext/toolsbydcx-ext/manifest.json`), preventing Chrome from loading it without manual reorganization.
 * **Solution in `core/app/Http/Controllers/Admin/ExtensionUploadController.php`**:
   * Added `flattenExtensionZip($zipPath)`: Automatically inspects any uploaded `.zip` file. If `manifest.json` is located in a nested directory, it extracts all files and repacks them into a single root directory where `manifest.json` is at the archive root.
-  * Preserved original versioned filenames (e.g., `wemate-ext-v2.2.0.zip`).
+  * Preserved original versioned filenames (e.g., `toolsbydcx-ext-v2.2.0.zip`).
   * Cleans up stale previous `.zip` files from `core/storage/app/public/extension/`.
 
 ---
@@ -53,7 +53,7 @@
 
 ### D. Google Flow Projects & Thumbnails Privacy Filter (FlowByDcx Parity)
 * **Problem**: When opening `https://flow.google.com/`, previous user projects and generated thumbnails were visible on the home page feed, compromising privacy on shared accounts.
-* **Solution in `wemate-ext/protector.js`**:
+* **Solution in `toolsbydcx-ext/protector.js`**:
   * Target both `flow.google.com` (root `/` and `/home`) and `labs.google/fx/tools/flow`.
   * Injected zero-flash CSS (`[data-wm-hide]` and `[data-wm-ban]` with `display: none !important; visibility: hidden !important; opacity: 0 !important;`).
   * Implemented `findCardParent(el)` to walk up the DOM and target the full card element (`<article>`, `<li>`, `role="gridcell"`, or grid item).
@@ -62,7 +62,7 @@
     2. Any card or listitem matching date patterns (`DATE_RE` like `Sep 14 - 08:49`, time stamps, etc.).
     3. Any card container holding an image/video thumbnail combined with a date stamp.
     4. Entire empty grid containers whose children have all been hidden to prevent blank spaces.
-  * **User Project Isolation**: When a user creates/navigates to their own project (`/project/{id}`), it is stored in `__wemate_my_projects` in Chrome storage, ensuring **their own** projects remain visible to them.
+  * **User Project Isolation**: When a user creates/navigates to their own project (`/project/{id}`), it is stored in `__toolsbydcx_my_projects` in Chrome storage, ensuring **their own** projects remain visible to them.
 
 ---
 
@@ -78,7 +78,7 @@
   3. **Comprehensive Google Cross-Domain Mirroring**: Replicated exact FlowByDcx mirroring logic where all `.google.com` auth cookies are mirrored directly to `https://flow.google.com/`, `https://labs.google/`, and `https://accounts.google.com/`.
   4. **Domain Normalization**: Cookies for `flow.google.com` are normalized to `.flow.google.com` so they are fully valid across all sub-paths.
   5. **Immediate Meta Tag Injection**: Updated `content.js` to run at `document_start` across all portal domains so `shahabtech-extension-installed` is always present before user clicks.
-  6. **Packaged & Deployed**: Packaged flat `wemate-ext-v2.3.0.zip` and updated `min_extension_version` in DB to `2.3.0`.
+  6. **Packaged & Deployed**: Packaged flat `toolsbydcx-ext-v2.3.0.zip` and updated `min_extension_version` in DB to `2.3.0`.
 
 ### G. Admin Panel Cookie Auto-Sanitizer (Commit `2329818`)
 * **Problem**: When admins export cookies from browser sessions, the JSON export frequently contains 100+ cookies from unrelated Google properties (`docs.google.com`, `drive.google.com`, `mail.google.com`, `adsense`, `youtube`, `play`, etc.) and tracking tokens (`_ga`, `_gid`, `NID`, `OGP`). Injecting this massive payload overwhelmed Chrome's cookie jar, degraded performance, and led to session conflicts.
@@ -97,19 +97,19 @@
   1. On Google Flow Pro accounts (e.g. `aasikhan`), users reported that the home page would render for a split second (showing the banner and "+ New project" card), and then immediately turn into a completely pitch-black screen with all controls disappearing.
   2. Meanwhile, Ultra accounts (with many existing projects) did not show the black screen.
   3. **Root Cause**:
-     * In `wemate-ext/protector.js`, the previous `hideOtherProjects()` implementation used an over-aggressive DOM crawler `findCardParent(el, depth=8)` which looked for `parentElement.children.length > 6`.
+     * In `toolsbydcx-ext/protector.js`, the previous `hideOtherProjects()` implementation used an over-aggressive DOM crawler `findCardParent(el, depth=8)` which looked for `parentElement.children.length > 6`.
      * On high-traffic Ultra accounts with >6 project cards, `children.length > 6` stopped the crawler at the card level.
      * On fresh Pro accounts with 0 or few projects, `children.length > 6` was **never met**.
      * `findCardParent` crawled up 8 levels of ancestors until reaching `document.body`'s direct child, marking the entire application root `<main>` / `div#__next` with `data-wm-hide="1"`.
      * Combined with `[data-wm-hide] { display: none !important; }`, the entire viewport was hidden into a black screen.
      * Additionally, arbitrary date matching (`DATE_RE`) on all `div` and `section` elements and container cascade rules (`kids.every(...)`) caused recursive hiding of the grid.
-* **Solution in `wemate-ext/protector.js`**:
+* **Solution in `toolsbydcx-ext/protector.js`**:
   1. **Removed all broad rules**: Eliminated `findCardParent(el, 8)`, `DATE_RE` regex, `BNNER_RE`, container hiding cascades, and global `[data-wm-hide]` CSS.
   2. **Targeted Card Selection**: Only inspects `a[href*="/project/"]` and `a[href^="/fx/tools/flow/"]` with valid project slugs (`m[1].length >= 4`). Creation links (`/project/create`, `/project/new`) are strictly excluded.
   3. **Comprehensive New Project Shield**: `NEWP_RE` checks `innerText`, `textContent`, `aria-label`, and `title` for "New project", "Create", "Start Creating", "+", etc. If an element or any ancestor contains the "+ New project" button, it is **strictly immune** and can never be hidden.
   4. **Strict Boundary Limiter**: The card parent finder walks a maximum of 4 levels and stops immediately if it encounters `MAIN`, `HEADER`, `NAV`, `SECTION`, `BODY`, or any element containing `NEWP_RE`.
   5. **Card-Level Inline Hiding**: Uses `card.style.setProperty('display', 'none', 'important')` strictly on the identified project card.
-  6. **Packaged & Deployed**: Packaged flat `wemate-ext-v2.3.1.zip`, uploaded to server, and updated `min_extension_version` to `2.3.1`.
+  6. **Packaged & Deployed**: Packaged flat `toolsbydcx-ext-v2.3.1.zip`, uploaded to server, and updated `min_extension_version` to `2.3.1`.
 
 ---
 
@@ -120,10 +120,10 @@
 | **Cron & Cookie Verification** | `core/app/Http/Controllers/CronController.php` | Live HTTP cookie validation (`verifyAccountCookieHealth`), WhatsApp expiry alerts, user load balancing. |
 | **Admin Account Management** | `core/app/Http/Controllers/Admin/AccountListingController.php` | Account CRUD, manual "Check Cookie", cookie auto-sanitizer (`sanitizeAccountCookies`), expiry extend/decrease (+30 / -30 days). |
 | **Extension Upload & Zip Flattening** | `core/app/Http/Controllers/Admin/ExtensionUploadController.php` | Handles zip upload, auto-flattening nested directories, updating `min_extension_version`. |
-| **Extension Manifest** | `wemate-ext/manifest.json` | Manifest V3 configuration (currently v2.3.1). |
-| **Extension Background Service Worker** | `wemate-ext/background.js` | Cookie injection engine, multi-tier fallback, subscription status watchdog. |
-| **Extension Content Protector** | `wemate-ext/protector.js` | Prevents logout, blocks cookie-editor extensions, isolates ChatGPT chat history, safe Flow project hiding. |
-| **Extension Main World Hijack** | `wemate-ext/hijack.js` | Runs in `MAIN` world to protect storage and environment. |
+| **Extension Manifest** | `toolsbydcx-ext/manifest.json` | Manifest V3 configuration (currently v2.3.1). |
+| **Extension Background Service Worker** | `toolsbydcx-ext/background.js` | Cookie injection engine, multi-tier fallback, subscription status watchdog. |
+| **Extension Content Protector** | `toolsbydcx-ext/protector.js` | Prevents logout, blocks cookie-editor extensions, isolates ChatGPT chat history, safe Flow project hiding. |
+| **Extension Main World Hijack** | `toolsbydcx-ext/hijack.js` | Runs in `MAIN` world to protect storage and environment. |
 
 ---
 
@@ -131,7 +131,7 @@
 
 ### Deploy Local Code to Remote Server:
 ```powershell
-# In D:\Git Work\Web\wemate
+# In D:\Git Work\Web\toolsbydcx
 git add .
 git commit -m "Your commit message"
 git push origin main
@@ -141,14 +141,14 @@ ssh -p 65002 u559276167@82.197.80.201 "cd ~/domains/shahabtech.com/public_html/p
 ```
 
 ### Pack and Upload New Extension Version:
-1. Bump version in `wemate-ext/manifest.json`.
+1. Bump version in `toolsbydcx-ext/manifest.json`.
 2. Run zip pack script:
    ```powershell
-   python "C:\Users\Team Hifsa\.gemini\antigravity\brain\6f636936-04bb-4827-95b4-5b4577ef5851\scratch\pack_wemate_ext.py"
+   python "C:\Users\Team Hifsa\.gemini\antigravity\brain\6f636936-04bb-4827-95b4-5b4577ef5851\scratch\pack_toolsbydcx_ext.py"
    ```
 3. Upload to server via `scp`:
    ```powershell
-   scp -P 65002 "D:\Git Work\Web\wemate\wemate-ext-v{version}.zip" u559276167@82.197.80.201:~/domains/shahabtech.com/public_html/panel/core/storage/app/public/extension/
+   scp -P 65002 "D:\Git Work\Web\toolsbydcx\toolsbydcx-ext-v{version}.zip" u559276167@82.197.80.201:~/domains/shahabtech.com/public_html/panel/core/storage/app/public/extension/
    ```
 4. Update `min_extension_version` in DB:
    ```bash
@@ -379,7 +379,7 @@ If Google Flow fails to log in, causes an infinite reload loop, or shows an erro
 | **Redirects to `ServiceLogin` (Not Logged In)** | `SID`, `HSID`, or `__Secure-1PSID` are missing or expired, or were cleared during tab launch. | Ensure `.google.com` root cookies are present. Verify extension doesn't have an `onCreated` listener clearing cookies during handshake. |
 | **HTTP 431 Request Header Fields Too Large** | Raw un-sanitized cookie payload containing 100+ cookies from Docs/Drive/YouTube was injected. | Run payload through `sanitizeAccountCookies` to reduce payload to ~12–25 essential cookies. |
 | **Page Flips from Account 2 back to Account 1 on Refresh** | Background extension's `onUpdated` listener calls `inject-cookies` without `accountId`, defaulting to the first account. | Ensure extension stores `active_account_flow` in `chrome.storage.local` and sends it on every background refresh. |
-| **Pitch Black Screen on Flow Home Page (Pro Accounts)** | Content script's card parent finder crawled to `<main>` or `body` because children count was `< 6`. | Ensure `wemate-ext/protector.js` v2.3.1+ is deployed with targeted `a[href*="/project/"]` hiding and strict `NEWP_RE` immunity. |
+| **Pitch Black Screen on Flow Home Page (Pro Accounts)** | Content script's card parent finder crawled to `<main>` or `body` because children count was `< 6`. | Ensure `toolsbydcx-ext/protector.js` v2.3.1+ is deployed with targeted `a[href*="/project/"]` hiding and strict `NEWP_RE` immunity. |
 | **Cookies Expiring in User Browser While Main Browser is Alive** | Extension auto-wipe on 401 panel web session timeout, `onUpdated` stomping rolling tokens (`PSIDTS`), or keeping admin browser open. | Fixed in v2.3.2: removed silent wipes on 401/403, protected live rolling tokens in `onUpdated`, added `/about` bounce recovery, and close admin browser profile after export. |
 
 ---
@@ -392,10 +392,10 @@ If Google Flow fails to log in, causes an infinite reload loop, or shows an erro
   3. **Stale Snapshot Overwrite (`chrome.tabs.onUpdated`)**: The 30-second debounce in `background.js` re-injected the original static cookie snapshot on every tab navigation/reload, overwriting Google's live rolling tokens (`__Secure-1PSIDTS`, `__Secure-3PSIDTS`, `OSID`, `SIDCC`). Google flagged this as session replay / desync and killed the session.
   4. **Google Rolling Sequence Invalidation**: Keeping the admin's original Chrome browser profile open allowed Google background tasks to roll `PSIDTS` from $T_0 \to T_1$, instantly blacklisting the exported $T_0$ snapshot used by clients.
 * **Solutions Implemented**:
-  1. **`wemate-ext/background.js`**:
+  1. **`toolsbydcx-ext/background.js`**:
      * `verifyAuthAndWipeIfInvalid()`: Removed cookie wipe on 401/403/network errors. Cookies are ONLY wiped if the server returns 200 OK and explicitly flags `data.user.is_expired === true`.
      * `chrome.tabs.onUpdated`: Added active auth checks (`__Secure-1PSID`, `SID`). If session cookies already exist, the live tokens are preserved and never overwritten by the stale initial snapshot.
-  2. **`wemate-ext/popup.js`**: Removed `WIPE_COOKIES` dispatch from unauthenticated states in `checkAuth()`; simply renders the login form.
-  3. **`wemate-ext/protector.js`**: Added automated `/about` bounce recovery with loop protection (`__wm_flow_about_recovery`) so users routed to `flow.google.com/about` are seamlessly redirected to `https://flow.google.com/`.
-  4. **Packaged & Deployed**: Packaged `wemate-ext-v2.3.2.zip`, uploaded to production server, and updated `min_extension_version` in DB to `2.3.2`.
+  2. **`toolsbydcx-ext/popup.js`**: Removed `WIPE_COOKIES` dispatch from unauthenticated states in `checkAuth()`; simply renders the login form.
+  3. **`toolsbydcx-ext/protector.js`**: Added automated `/about` bounce recovery with loop protection (`__wm_flow_about_recovery`) so users routed to `flow.google.com/about` are seamlessly redirected to `https://flow.google.com/`.
+  4. **Packaged & Deployed**: Packaged `toolsbydcx-ext-v2.3.2.zip`, uploaded to production server, and updated `min_extension_version` in DB to `2.3.2`.
 
