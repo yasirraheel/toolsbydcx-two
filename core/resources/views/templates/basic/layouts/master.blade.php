@@ -16,26 +16,163 @@
     <link rel="stylesheet" href="{{ asset('assets/global/css/magnific-popup.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/global/css/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/app.css') }}">
+    <link href="{{ asset($activeTemplateTrue . 'css/main.css') }}" rel="stylesheet">
+    <link href="{{ asset($activeTemplateTrue . 'css/custom.css') }}" rel="stylesheet">
+    <link href="{{ asset($activeTemplateTrue . 'css/color.php') }}?color={{ gs('base_color') }}" rel="stylesheet">
 
     @stack('style-lib')
 
     <style>
-        /* User Portal enhancements & overrides */
+        /* Complete Dark Theme for User Panel (Matching Frontend Dark Background) */
+        body {
+            background-color: #0b0f19 !important;
+            color: #cbd5e1 !important;
+            font-family: 'Poppins', sans-serif;
+        }
         .page-wrapper {
+            background-color: #0b0f19 !important;
             min-height: 100vh;
         }
+        .body-wrapper {
+            background-color: #0b0f19 !important;
+        }
+        .bodywrapper__inner {
+            background-color: #0b0f19 !important;
+            padding: 25px 20px;
+        }
+        .sidebar {
+            background-color: #070a12 !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 1000;
+        }
+        .sidebar__inner {
+            background-color: #070a12 !important;
+        }
         .navbar-wrapper {
+            background-color: #070a12 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             position: sticky;
             top: 0;
             z-index: 999;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
-        .sidebar {
-            z-index: 1000;
+
+        /* Headings & Texts */
+        .page-title, h1, h2, h3, h4, h5, h6 {
+            color: #ffffff !important;
         }
-        .bodywrapper__inner {
-            padding: 25px 20px;
+        .text-dark {
+            color: #f8fafc !important;
         }
+        .text-muted {
+            color: #94a3b8 !important;
+        }
+        .bg-light {
+            background-color: #0e1626 !important;
+        }
+        .bg-white {
+            background-color: #111827 !important;
+        }
+
+        /* Dark Cards */
+        .card {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #e2e8f0 !important;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+        .card-header {
+            background-color: #162032 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+        .card-header.bg--primary {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%) !important;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3) !important;
+        }
+        .card-footer {
+            background-color: #162032 !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+
+        /* Dark Form Inputs */
+        .form-control, .form-select, select.form-control, textarea.form-control {
+            background-color: #0b0f19 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #f8fafc !important;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #0f172a !important;
+            border-color: #6366f1 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
+        }
+        .form-control[readonly], .form-control:disabled {
+            background-color: #162032 !important;
+            color: #94a3b8 !important;
+        }
+        .input-group-text {
+            background-color: #1e293b !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #e2e8f0 !important;
+        }
+        label, .form-label, .required::after {
+            color: #e2e8f0 !important;
+        }
+
+        /* Dark Tables */
+        .table {
+            color: #e2e8f0 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .table th {
+            background-color: #162032 !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .table td {
+            background-color: #111827 !important;
+            color: #cbd5e1 !important;
+            border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+
+        /* Dark Modals */
+        .modal-content {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #e2e8f0 !important;
+        }
+        .modal-header, .modal-footer {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .modal-title {
+            color: #ffffff !important;
+        }
+        .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        /* Dropdowns */
+        .dropdown-menu {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        }
+        .dropdown-menu__item, .dropdown-item {
+            color: #e2e8f0 !important;
+        }
+        .dropdown-menu__item:hover, .dropdown-item:hover {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+        }
+        .dropdown-menu__header, .dropdown-menu__footer {
+            background-color: #162032 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+
+        /* Layout spacing fixes */
         .py-120 {
             padding-top: 10px !important;
             padding-bottom: 25px !important;
@@ -49,32 +186,24 @@
             padding-top: 5px !important;
             padding-bottom: 25px !important;
         }
-        .product-item {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 16px 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border: 1px solid #eef0f3;
-            transition: all 0.3s;
+
+        /* Select2 dark override */
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
+            background-color: #0b0f19 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
         }
-        .product-item:hover {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+        .select2-dropdown {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
         }
-        .product-item__wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #4634ff !important;
         }
-        .product-item__content h4 {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-            color: #333;
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #ffffff !important;
         }
     </style>
 
@@ -194,7 +323,7 @@
         </div>
     @endauth
 
-    {{-- Main Page Wrapper matching Admin panel layout --}}
+    {{-- Main Page Wrapper with Dark Admin Style --}}
     <div class="page-wrapper default-version">
         @include($activeTemplate . 'partials.user_sidenav')
         @include($activeTemplate . 'partials.user_topnav')
@@ -281,15 +410,6 @@
             }); 
             $('.res-sidebar-close-btn').on('click', function (){
                 $('.sidebar').removeClass('open');
-            });
-
-            // Input automatic attributes
-            var inputElements = $('input:not([type=checkbox]):not([type=hidden]), select, textarea');
-            $.each(inputElements, function (i, element) {
-                var elementType = $(element);
-                if (element.hasAttribute('required')) {
-                    elementType.closest('.form-group').find('label').first().addClass('required');
-                }
             });
 
             $('.select2').select2();
