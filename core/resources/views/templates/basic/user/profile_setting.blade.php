@@ -1,78 +1,78 @@
 @extends($activeTemplate . 'layouts.master')
 @section('content')
-    <div class="profile-setting-section py-120">
-        <div class="container">
-            <div class="row justify-content-center gy-4">
-                <div class="col-12">
-                    <div class="profile-filter d-md-none d-block text-end">
-                        <button class="profile-filter__button toggle-profile-sidebar" type="button">
-                            <i class="fa fa-bars"></i>
-                        </button>
-                    </div>
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg--primary text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title text-white mb-0">
+                        <i class="las la-user-circle me-1"></i> @lang('Edit Profile')
+                    </h5>
+                    <a href="{{ route('user.change.password') }}" class="btn btn-sm btn-outline-light">
+                        <i class="las la-key"></i> @lang('Change Password')
+                    </a>
                 </div>
-                <div class="col-xl-10">
-                    <div class="profile-setting">
-                        @include($activeTemplate . 'partials.user_profile_topbar', [
-                            'profileMessage' => 'Edit your profile information below',
-                        ])
-                        <div class="row">
-                            <div class="col-lg-3 col-md-4">
-                                @include($activeTemplate . 'partials.user_profile_sidenav')
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        @csrf
+                        <div class="row align-items-center mb-4 pb-3 border-bottom">
+                            <div class="col-auto">
+                                <div class="position-relative" style="width: 90px; height: 90px;">
+                                    @if ($user->image)
+                                        <img class="showProfilePhoto rounded-circle border" src="{{ getImage(getFilePath('userProfile') . '/' . old('image', $user->image), getFileSize('userProfile')) }}" style="width: 90px; height: 90px; object-fit: cover;">
+                                    @else
+                                        <img class="showProfilePhoto rounded-circle border" src="{{ getImage($activeTemplateTrue . 'images/avatar.png') }}" style="width: 90px; height: 90px; object-fit: cover;">
+                                    @endif
+                                </div>
                             </div>
-                            <div class="col-lg-8 col-md-8">
-                                <div class="profile-setting__body">
-                                    <form method="post" enctype="multipart/form-data">
-                                        @csrf
-                                        <div class="profile-setting__body-header profileParentImage">
-                                            <div class="profile-setting__thumb profile-setting__thumb__custom">
-                                                @if ($user->image)
-                                                    <img class="showProfilePhoto" src="{{ getImage(getFilePath('userProfile') . '/' . old('image', $user->image), getFileSize('userProfile')) }}">
-                                                @else
-                                                    <img class="showProfilePhoto" src="{{ getImage($activeTemplateTrue . '/images/avatar.png') }}">
-                                                @endif
-                                                <label class="profile-image-label" for="profile-image"><i
-                                                       class="las la-pencil-alt"></i></label>
-                                                <input class="form--control form-two profilePicUpload" id="profile-image" id="formFile" name="image" type="file">
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form--label">@lang('First Name')</label>
-                                                <input class="form--control" name="firstname" type="text" value="{{ $user->firstname }}" required>
-                                            </div>
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form--label">@lang('Last Name')</label>
-                                                <input class="form--control" name="lastname" type="text" value="{{ $user->lastname }}" required>
-                                            </div>
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form-label">@lang('Address')</label>
-                                                <input class="form--control" name="address" type="text" value="{{ @$user->address }}">
-                                            </div>
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form-label">@lang('State')</label>
-                                                <input class="form--control" name="state" type="text" value="{{ @$user->state }}">
-                                            </div>
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form-label">@lang('Zip Code')</label>
-                                                <input class="form--control" name="zip" type="text" value="{{ @$user->zip }}">
-                                            </div>
-                                            <div class="col-sm-6 form-group">
-                                                <label class="form-label">@lang('City')</label>
-                                                <input class="form--control" name="city" type="text" value="{{ @$user->city }}">
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label class="form--label"> @lang('Description') </label>
-                                                <textarea class="form--control" name="description">{{ @$user->description }}</textarea>
-                                            </div>
-                                        </div>
-                                        <div class="profile-setting__button d-flex justify-content-end">
-                                            <button class="btn btn--base" data-bs-toggle="modal" data-bs-target="#exampleModal2" type="submit"> @lang('Save Changes') </button>
-                                        </div>
-                                    </form>
+                            <div class="col">
+                                <h5 class="mb-1 text-dark">{{ $user->fullname ?: $user->username }}</h5>
+                                <p class="text-muted mb-2">{{ $user->email }}</p>
+                                <div>
+                                    <label class="btn btn-sm btn-outline--primary mb-0" for="profile-image">
+                                        <i class="las la-camera me-1"></i> @lang('Upload Photo')
+                                    </label>
+                                    <input class="d-none profilePicUpload" id="profile-image" name="image" type="file" accept="image/*">
                                 </div>
                             </div>
                         </div>
-                    </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1 required">@lang('First Name')</label>
+                                <input class="form-control" name="firstname" type="text" value="{{ $user->firstname }}" required>
+                            </div>
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1 required">@lang('Last Name')</label>
+                                <input class="form-control" name="lastname" type="text" value="{{ $user->lastname }}" required>
+                            </div>
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('Address')</label>
+                                <input class="form-control" name="address" type="text" value="{{ @$user->address }}">
+                            </div>
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('State')</label>
+                                <input class="form-control" name="state" type="text" value="{{ @$user->state }}">
+                            </div>
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('Zip Code')</label>
+                                <input class="form-control" name="zip" type="text" value="{{ @$user->zip }}">
+                            </div>
+                            <div class="col-sm-6 form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('City')</label>
+                                <input class="form-control" name="city" type="text" value="{{ @$user->city }}">
+                            </div>
+                            <div class="col-sm-12 form-group mb-4">
+                                <label class="fw-bold mb-1">@lang('Description')</label>
+                                <textarea class="form-control" name="description" rows="3">{{ @$user->description }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn--primary btn-lg px-4" type="submit">
+                                <i class="las la-save me-1"></i> @lang('Save Changes')
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -81,26 +81,15 @@
 
 @push('script')
     <script>
-        'use strict'
-
+        'use strict';
         $(".profilePicUpload").on('change', function() {
-            proPicURL(this);
-        });
-
-        function proPicURL(input) {
-            if (input.files && input.files[0]) {
+            if (this.files && this.files[0]) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
-                    $('.showProfilePhoto').prop('src', e.target.result);
+                    $('.showProfilePhoto').attr('src', e.target.result);
                 }
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(this.files[0]);
             }
-        }
-
-        $(".remove-image").on('click', function() {
-            $(this).parents(".profileParentImage").find('input[type=file]').val('');
-            $(this).parents(".profileParentImage").find('.showProfilePhoto').prop("src",
-                "{{ getImage($activeTemplateTrue . '/images/avatar.png') }}");
         });
     </script>
 @endpush

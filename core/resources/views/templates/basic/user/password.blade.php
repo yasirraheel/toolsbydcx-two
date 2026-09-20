@@ -1,66 +1,83 @@
 @extends($activeTemplate . 'layouts.master')
 
 @section('content')
-    <div class="profile-setting-section py-120">
-        <div class="container">
-            <div class="row justify-content-center gy-4">
-                <div class="col-12">
-                    <div class="profile-filter d-md-none d-block text-end">
-                        <button class="profile-filter__button toggle-profile-sidebar" type="button">
-                            <i class="fa fa-bars"></i>
-                        </button>
-                    </div>
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg--primary text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title text-white mb-0">
+                        <i class="las la-key me-1"></i> @lang('Change Password')
+                    </h5>
+                    <a href="{{ route('user.profile.setting') }}" class="btn btn-sm btn-outline-light">
+                        <i class="las la-user"></i> @lang('Back to Profile')
+                    </a>
                 </div>
-                <div class="col-xl-10">
-                    <div class="profile-setting">
-                        @include($activeTemplate . 'partials.user_profile_topbar',['profileMessage' => 'Update your password below'])
-                        <div class="row">
-                            <div class="col-lg-3 col-md-4">
-                                @include($activeTemplate . 'partials.user_profile_sidenav')
-                            </div>
-                            <div class="col-lg-8 col-md-8">
-                                <div class="profile-setting__body">
-                                    <form method="post">
-                                        @csrf
-                                        <div class="row">
-                                            <div class="col-sm-12 form-group">
-                                                <label class="form--label" for="your-password4"> @lang('Current Password') </label>
-                                                <div class="position-relative">
-                                                    <input type="password" id="Current" class="form--control exclude" name="current_password" required autocomplete="current-password">
-                                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#Current"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label class="form--label" for="your-password4"> @lang('Password') </label>
-                                                <div class="position-relative">
-                                                    <input type="password" id="password" class="exclude form-control form--control @if (gs('secure_password')) secure-password @endif" name="password" required autocomplete="current-password">
-                                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#password"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label class="form--label" for="your-password5">@lang('Confirm Password')</label>
-                                                <div class="position-relative">
-                                                    <input type="password" id="confirm" class="form-control form--control exclude" name="password_confirmation" required autocomplete="current-password">
-                                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#confirm"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="profile-setting__button d-flex justify-content-end">
-                                            <button class="btn btn--base "> @lang('Save Changes') </button>
-                                        </div>
-                                    </form>
-                                   
-                                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        @csrf
+                        <div class="form-group mb-4">
+                            <label class="fw-bold mb-2 required">@lang('Current Password')</label>
+                            <div class="input-group input-group-lg">
+                                <input type="password" id="current_password" class="form-control" name="current_password" required autocomplete="current-password">
+                                <button type="button" class="btn btn--primary px-3 toggle-pwd" data-target="#current_password" style="cursor: pointer;">
+                                    <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
+
+                        <div class="form-group mb-4">
+                            <label class="fw-bold mb-2 required">@lang('New Password')</label>
+                            <div class="input-group input-group-lg">
+                                <input type="password" id="password" class="form-control @if (gs('secure_password')) secure-password @endif" name="password" required autocomplete="new-password">
+                                <button type="button" class="btn btn--primary px-3 toggle-pwd" data-target="#password" style="cursor: pointer;">
+                                    <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="fw-bold mb-2 required">@lang('Confirm New Password')</label>
+                            <div class="input-group input-group-lg">
+                                <input type="password" id="password_confirmation" class="form-control" name="password_confirmation" required autocomplete="new-password">
+                                <button type="button" class="btn btn--primary px-3 toggle-pwd" data-target="#password_confirmation" style="cursor: pointer;">
+                                    <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button class="btn btn--primary btn-lg px-4" type="submit">
+                                <i class="las la-check me-1"></i> @lang('Update Password')
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 @endsection
+
 @if (gs('secure_password'))
     @push('script-lib')
         <script src="{{ asset('assets/global/js/secure_password.js') }}"></script>
     @endpush
 @endif
+
+@push('script')
+<script>
+    (function($){
+        "use strict";
+        $('.toggle-pwd').on('click', function(){
+            var targetInput = $($(this).data('target'));
+            var icon = $(this).find('i');
+            if(targetInput.attr('type') === 'password'){
+                targetInput.attr('type', 'text');
+                icon.removeClass('la-eye').addClass('la-eye-slash');
+            } else {
+                targetInput.attr('type', 'password');
+                icon.removeClass('la-eye-slash').addClass('la-eye');
+            }
+        });
+    })(jQuery);
+</script>
+@endpush

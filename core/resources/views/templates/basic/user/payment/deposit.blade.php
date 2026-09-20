@@ -1,9 +1,7 @@
 @extends($activeTemplate . 'layouts.master')
 @section('content')
-    <section class="section py-120">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-9">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
                     <form class="deposit-form" action="{{ route('user.deposit.insert') }}" method="post">
                         @csrf
                         <input name="currency" type="hidden">
@@ -137,7 +135,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 @endsection
 
 @push('script')

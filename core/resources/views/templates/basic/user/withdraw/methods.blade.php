@@ -1,9 +1,7 @@
 @extends($activeTemplate . 'layouts.master')
 @section('content')
-<section class="section py-120">
-    <div class="container ">
-        <div class="row justify-content-center">
-            <div class="col-lg-9">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
                 <form action="{{ route('user.withdraw.money') }}" method="post" class="withdraw-form">
                     @csrf
                     <div class="gateway-card card custom--card">
@@ -124,7 +122,6 @@
             </div>
         </div>
     </div>
-</section>
 @endsection
 
 
