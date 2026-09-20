@@ -34,29 +34,41 @@ return new class extends Migration
             }
         }
 
-        // 3. Update notification/email templates
+        // 3. Update notification/email templates safely across columns
         if (Schema::hasTable('notification_templates')) {
+            $columns = Schema::getColumnListing('notification_templates');
             $templates = DB::table('notification_templates')->get();
             foreach ($templates as $t) {
-                $subj = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $t->subj ?? '');
-                $emailBody = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $t->email_body ?? '');
-                $smsBody = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $t->sms_body ?? '');
-                DB::table('notification_templates')->where('id', $t->id)->update([
-                    'subj' => $subj,
-                    'email_body' => $emailBody,
-                    'sms_body' => $smsBody,
-                ]);
+                $updates = [];
+                foreach ($columns as $col) {
+                    if ($col === 'id') continue;
+                    $val = $t->$col;
+                    if (is_string($val) && (stripos($val, 'wemate') !== false || stripos($val, 'shahabtech') !== false)) {
+                        $updates[$col] = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $val);
+                    }
+                }
+                if (!empty($updates)) {
+                    DB::table('notification_templates')->where('id', $t->id)->update($updates);
+                }
             }
         }
 
         // 4. Update pages table
         if (Schema::hasTable('pages')) {
+            $columns = Schema::getColumnListing('pages');
             $pages = DB::table('pages')->get();
             foreach ($pages as $p) {
-                $name = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $p->name ?? '');
-                DB::table('pages')->where('id', $p->id)->update([
-                    'name' => $name,
-                ]);
+                $updates = [];
+                foreach ($columns as $col) {
+                    if ($col === 'id') continue;
+                    $val = $p->$col;
+                    if (is_string($val) && (stripos($val, 'wemate') !== false || stripos($val, 'shahabtech') !== false)) {
+                        $updates[$col] = str_ireplace(['wemate', 'shahabtech'], ['ToolsByDcx', 'ToolsByDcx'], $val);
+                    }
+                }
+                if (!empty($updates)) {
+                    DB::table('pages')->where('id', $p->id)->update($updates);
+                }
             }
         }
     }
