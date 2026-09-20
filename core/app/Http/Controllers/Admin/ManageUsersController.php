@@ -165,6 +165,7 @@ class ManageUsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:80',
             'email_prefix' => 'nullable|string|max:60',
+            'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
         ]);

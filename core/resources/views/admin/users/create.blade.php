@@ -35,6 +35,22 @@
                         </div>
 
                         <div class="form-group mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="fw-bold text--dark mb-0">
+                                    <i class="las la-key text--primary"></i> @lang('Password') <span class="text--danger">*</span>
+                                </label>
+                                <a href="javascript:void(0)" class="text--primary fw-bold text-decoration-none" id="generatePasswordBtn" style="font-size: 13px;">
+                                    <i class="las la-random"></i> @lang('Generate Random')
+                                </a>
+                            </div>
+                            <div class="input-group input-group-lg">
+                                <input class="form-control" type="text" name="password" id="passwordField" placeholder="@lang('Enter or generate password')" required>
+                                <button type="button" class="input-group-text bg--light" id="togglePassword" title="@lang('Toggle Visibility')"><i class="las la-eye"></i></button>
+                                <button type="button" class="input-group-text bg--light copy-btn" title="@lang('Copy Password')"><i class="las la-copy"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
                             <label class="fw-bold text--dark mb-2">
                                 <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
                             </label>
@@ -70,6 +86,48 @@
 <script>
     (function ($) {
         "use strict";
+
+        function generateRandomPassword(length = 10) {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let pwd = "";
+            for (let i = 0; i < length; i++) {
+                pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return pwd;
+        }
+
+        // Initial default random password
+        $('#passwordField').val(generateRandomPassword(10));
+
+        // Generate Password Button
+        $('#generatePasswordBtn').on('click', function(e) {
+            e.preventDefault();
+            $('#passwordField').val(generateRandomPassword(10));
+            notify('success', 'New random password generated!');
+        });
+
+        // Toggle password visibility
+        $('#togglePassword').on('click', function() {
+            let pwd = $('#passwordField');
+            if (pwd.attr('type') === 'password') {
+                pwd.attr('type', 'text');
+                $(this).html('<i class="las la-eye-slash"></i>');
+            } else {
+                pwd.attr('type', 'password');
+                $(this).html('<i class="las la-eye"></i>');
+            }
+        });
+
+        // Copy Password
+        $('.copy-btn').on('click', function () {
+            let copyText = document.getElementById("passwordField");
+            let originalType = copyText.type;
+            copyText.type = "text";
+            copyText.select();
+            document.execCommand("copy");
+            copyText.type = originalType;
+            notify('success', 'Password copied to clipboard!');
+        });
 
         // Auto-generate email prefix while typing Name
         let isPrefixManuallyEdited = false;
@@ -184,6 +242,7 @@
             $('#userNameInput').val(fullName);
             isPrefixManuallyEdited = false;
             $('#emailPrefixInput').val(basePrefix);
+            $('#passwordField').val(generateRandomPassword(10));
 
             notify('success', 'Generated: ' + fullName);
         });
