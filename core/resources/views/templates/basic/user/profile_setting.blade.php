@@ -23,19 +23,19 @@
                             {{-- Full Name --}}
                             <div class="col-12 form-group">
                                 <label class="form--label required">@lang('Full Name')</label>
-                                <input class="form--control" type="text" name="name" id="userNameInput" value="{{ old('name', $user->fullname ?: ($user->firstname . ' ' . $user->lastname)) }}" required>
+                                <input class="form-control form--control" type="text" name="name" id="userNameInput" value="{{ old('name', $user->fullname ?: ($user->firstname . ' ' . $user->lastname)) }}" required>
                             </div>
 
                             {{-- Email Address / Username --}}
                             <div class="col-12 form-group">
                                 <label class="form--label">@lang('Email Address / Username')</label>
-                                <input class="form--control" type="text" value="{{ $user->email }}" readonly>
+                                <input class="form-control form--control" type="text" value="{{ $user->email }}" readonly>
                                 <small class="text-muted mt-1 d-block" style="font-size: 13px;">
                                     @lang('Assigned login email for extension & portal access.')
                                 </small>
                             </div>
 
-                            {{-- Password Field with Random Generator, Eye toggle, Copy --}}
+                            {{-- Password Field with Random Generator, Eye toggle, Copy inside same input row --}}
                             <div class="col-12 form-group">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form--label mb-0">
@@ -45,14 +45,16 @@
                                         <i class="las la-random me-1"></i>@lang('Generate Random')
                                     </a>
                                 </div>
-                                <div class="input-group">
-                                    <input class="form--control" type="password" name="password" id="passwordField" placeholder="@lang('Type new password or generate')">
-                                    <button type="button" class="btn btn--base px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer; min-width: 48px;">
-                                        <i class="las la-eye" style="font-size: 18px;"></i>
-                                    </button>
-                                    <button type="button" class="btn btn--secondary px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="cursor:pointer; min-width: 48px;">
-                                        <i class="las la-copy" style="font-size: 18px;"></i>
-                                    </button>
+                                <div class="position-relative">
+                                    <input class="form-control form--control" type="password" name="password" id="passwordField" placeholder="@lang('Type new password or generate')" style="padding-right: 80px;">
+                                    <div class="position-absolute end-0 top-50 translate-middle-y pe-3 d-flex align-items-center gap-3" style="z-index: 5;">
+                                        <span class="text-muted cursor-pointer" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor: pointer;">
+                                            <i class="las la-eye-slash" style="font-size: 20px;"></i>
+                                        </span>
+                                        <span class="text-muted cursor-pointer copy-btn" title="@lang('Copy Password')" style="cursor: pointer;">
+                                            <i class="las la-copy" style="font-size: 20px;"></i>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -116,19 +118,20 @@
             e.preventDefault();
             let pwd = generateRandomPassword(10);
             $('#passwordField').val(pwd).attr('type', 'text');
-            $('#togglePassword').html('<i class="las la-eye-slash" style="font-size: 18px;"></i>');
+            $('#togglePassword i').removeClass('la-eye-slash').addClass('la-eye');
             notify('success', 'New random password generated!');
         });
 
         // Toggle password visibility
         $('#togglePassword').on('click', function() {
             let pwd = $('#passwordField');
+            let icon = $(this).find('i');
             if (pwd.attr('type') === 'password') {
                 pwd.attr('type', 'text');
-                $(this).html('<i class="las la-eye-slash" style="font-size: 18px;"></i>');
+                icon.removeClass('la-eye-slash').addClass('la-eye');
             } else {
                 pwd.attr('type', 'password');
-                $(this).html('<i class="las la-eye" style="font-size: 18px;"></i>');
+                icon.removeClass('la-eye').addClass('la-eye-slash');
             }
         });
 

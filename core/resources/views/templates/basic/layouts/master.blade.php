@@ -114,6 +114,38 @@
             color: #e2e8f0 !important;
         }
 
+        /* Input Group Row Fix */
+        .input-group {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: stretch !important;
+            width: 100% !important;
+        }
+        .input-group > .form--control,
+        .input-group > .form-control {
+            flex: 1 1 auto !important;
+            width: 1% !important;
+            min-width: 0 !important;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            height: 51px !important;
+        }
+        .input-group > .btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 51px !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+        .input-group > .btn:not(:last-child) {
+            border-radius: 0 !important;
+        }
+        .input-group > .btn:last-child {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+
         /* Dark Tables */
         .table {
             color: #e2e8f0 !important;

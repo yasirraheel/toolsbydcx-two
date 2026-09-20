@@ -16,31 +16,25 @@
                         <div class="row">
                             <div class="col-12 form-group">
                                 <label class="form--label required">@lang('Current Password')</label>
-                                <div class="input-group">
-                                    <input type="password" id="current_password" class="form--control" name="current_password" required autocomplete="current-password">
-                                    <button type="button" class="btn btn--base px-3 toggle-pwd" data-target="#current_password" style="cursor: pointer; min-width: 48px;">
-                                        <i class="las la-eye" style="font-size: 18px;"></i>
-                                    </button>
+                                <div class="position-relative">
+                                    <input type="password" id="current_password" class="form-control form--control" name="current_password" required autocomplete="current-password" style="padding-right: 45px;">
+                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#current_password"></span>
                                 </div>
                             </div>
 
                             <div class="col-12 form-group">
                                 <label class="form--label required">@lang('New Password')</label>
-                                <div class="input-group">
-                                    <input type="password" id="password" class="form--control @if (gs('secure_password')) secure-password @endif" name="password" required autocomplete="new-password">
-                                    <button type="button" class="btn btn--base px-3 toggle-pwd" data-target="#password" style="cursor: pointer; min-width: 48px;">
-                                        <i class="las la-eye" style="font-size: 18px;"></i>
-                                    </button>
+                                <div class="position-relative">
+                                    <input type="password" id="password" class="form-control form--control @if (gs('secure_password')) secure-password @endif" name="password" required autocomplete="new-password" style="padding-right: 45px;">
+                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#password"></span>
                                 </div>
                             </div>
 
                             <div class="col-12 form-group">
                                 <label class="form--label required">@lang('Confirm New Password')</label>
-                                <div class="input-group">
-                                    <input type="password" id="password_confirmation" class="form--control" name="password_confirmation" required autocomplete="new-password">
-                                    <button type="button" class="btn btn--base px-3 toggle-pwd" data-target="#password_confirmation" style="cursor: pointer; min-width: 48px;">
-                                        <i class="las la-eye" style="font-size: 18px;"></i>
-                                    </button>
+                                <div class="position-relative">
+                                    <input type="password" id="confirm_password" class="form-control form--control" name="password_confirmation" required autocomplete="new-password" style="padding-right: 45px;">
+                                    <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash" id="#confirm_password"></span>
                                 </div>
                             </div>
 
@@ -67,15 +61,13 @@
 <script>
     (function($){
         "use strict";
-        $('.toggle-pwd').on('click', function(){
-            var targetInput = $($(this).data('target'));
-            var icon = $(this).find('i');
-            if(targetInput.attr('type') === 'password'){
-                targetInput.attr('type', 'text');
-                icon.removeClass('la-eye').addClass('la-eye-slash');
+        $(".toggle-password").on('click', function () {
+            $(this).toggleClass("fa-eye fa-eye-slash");
+            var input = $($(this).attr("id"));
+            if (input.attr("type") === "password") {
+                input.attr("type", "text");
             } else {
-                targetInput.attr('type', 'password');
-                icon.removeClass('la-eye-slash').addClass('la-eye');
+                input.attr("type", "password");
             }
         });
     })(jQuery);
