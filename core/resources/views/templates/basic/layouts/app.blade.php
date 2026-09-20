@@ -23,38 +23,7 @@
 
     @stack('style')
 
-    <style>
-        #globalNotificationBanner,
-        #globalNotificationBanner * {
-            color: #f8fafc !important;
-        }
-        #globalNotificationBanner p,
-        #globalNotificationBanner span,
-        #globalNotificationBanner div,
-        #globalNotificationBanner li,
-        #globalNotificationBanner em,
-        #globalNotificationBanner font {
-            color: #f8fafc !important;
-        }
-        #globalNotificationBanner strong,
-        #globalNotificationBanner b,
-        #globalNotificationBanner h1,
-        #globalNotificationBanner h2,
-        #globalNotificationBanner h3,
-        #globalNotificationBanner h4,
-        #globalNotificationBanner h5,
-        #globalNotificationBanner h6 {
-            color: #ffffff !important;
-        }
-        #globalNotificationBanner a.btn {
-            color: #000000 !important;
-            background-color: var(--base-color, #4634ff) !important;
-            font-weight: 700 !important;
-        }
-        #globalNotificationBanner a.btn * {
-            color: #000000 !important;
-        }
-    </style>
+
 </head>
 
 @php echo loadExtension('google-analytics') @endphp
@@ -71,61 +40,7 @@
 
     <a class="scroll-top"><i class="fas fa-angle-double-up"></i></a>
 
-    @if(gs('banner_status') && gs('banner_message'))
-    @php
-        $ctaLink = gs('banner_cta_link');
-        if (auth()->check()) {
-            $ctaLink = str_replace('[username]', auth()->user()->username, $ctaLink);
-            $ctaLink = str_replace('[email]', auth()->user()->email, $ctaLink);
-            $ctaLink = str_replace(urlencode('[username]'), urlencode(auth()->user()->username), $ctaLink);
-            $ctaLink = str_replace(urlencode('[email]'), urlencode(auth()->user()->email), $ctaLink);
-        }
-    @endphp
-    <div id="globalNotificationBanner" class="position-fixed" style="display: none; bottom: 25px; right: 25px; max-width: 440px; z-index: 99999; animation: slideInUp 0.4s ease-out;">
-        <div class="card border-0 shadow-lg p-3 position-relative" style="background: #111827 !important; border: 1px solid rgba(99, 102, 241, 0.35) !important; border-left: 4px solid var(--base-color, #4634ff) !important; border-radius: 10px; color: #fff;">
-            <div class="d-flex align-items-start gap-3 pe-3">
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: var(--base-color, #4634ff); flex-shrink: 0;">
-                    <i class="las la-bullhorn" style="font-size: 20px;"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="text-white mb-1" style="font-size: 14px; font-weight: 600;">@lang('Notice')</h6>
-                    <div style="color: #cbd5e1 !important; font-size: 12.5px; line-height: 1.45; max-height: 160px; overflow-y: auto;">
-                        {!! gs('banner_message') !!}
-                    </div>
-                    @if(gs('banner_cta_text') && gs('banner_cta_link'))
-                        <div class="mt-2 pt-1">
-                            <a href="{{ $ctaLink }}" target="_blank" class="btn btn--base btn-sm py-1 px-3" style="font-size: 12px; border-radius: 6px;">
-                                {{ gs('banner_cta_text') }} <i class="las la-arrow-right ms-1"></i>
-                            </a>
-                        </div>
-                    @endif
-                </div>
-            </div>
-            <button type="button" class="btn-close position-absolute" style="top: 10px; right: 10px; filter: invert(1); opacity: 0.7; font-size: 10px;" onclick="closeNotificationBanner()" aria-label="Close"></button>
-        </div>
-    </div>
 
-    @push('script')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var banner = document.getElementById('globalNotificationBanner');
-            var bannerClosedAt = localStorage.getItem('bannerClosedAt');
-            var now = new Date().getTime();
-            
-            // If never closed, or closed more than 5 minutes (300000 ms) ago
-            if (!bannerClosedAt || (now - parseInt(bannerClosedAt) > 300000)) {
-                if(banner) banner.style.display = 'block';
-            }
-        });
-
-        function closeNotificationBanner() {
-            var banner = document.getElementById('globalNotificationBanner');
-            if(banner) banner.style.display = 'none';
-            localStorage.setItem('bannerClosedAt', new Date().getTime());
-        }
-    </script>
-    @endpush
-    @endif
 
     @auth
         @php
