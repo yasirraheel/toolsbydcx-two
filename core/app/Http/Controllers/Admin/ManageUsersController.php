@@ -151,116 +151,73 @@ class ManageUsersController extends Controller
     public function create()
     {
         $pageTitle = 'Add New User';
-        $countries = json_decode(file_get_contents(resource_path('views/partials/country.json')));
-        $plans = \App\Models\Plan::active()->get();
+        $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
         $accounts = \App\Models\AccountListing::with('socialMedia')
             ->active()
             ->where('cookie_status', '!=', 0)
+            ->orderBy('social_media_id', 'asc')
             ->get();
-        $socialMedias = \App\Models\SocialMedia::active()->get();
-        return view('admin.users.create', compact('pageTitle', 'countries', 'plans', 'accounts', 'socialMedias'));
+        return view('admin.users.create', compact('pageTitle', 'accounts', 'domain'));
     }
 
     public function store(Request $request)
     {
-        $countryData = json_decode(file_get_contents(resource_path('views/partials/country.json')));
-        $countryArray   = (array)$countryData;
-        $countries      = implode(',', array_keys($countryArray));
-
         $request->validate([
-            'firstname' => 'required|string|max:40',
-            'lastname' => 'required|string|max:40',
-            'email' => 'required|email|string|max:40|unique:users,email',
-            'username' => 'required|string|max:40|unique:users,username',
-            'password' => 'required|string|min:6',
-            'mobile' => 'nullable|string|max:40',
-            'country' => 'required|in:'.$countries,
-            'plan_id' => 'nullable|integer|exists:plans,id',
-            'platform_ids' => 'nullable|array',
-            'platform_ids.*' => 'integer|exists:social_media,id',
+            'name' => 'required|string|max:80',
+            'email_prefix' => 'nullable|string|max:60',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
-            'account_prices' => 'nullable|array',
-            'account_prices.*' => 'numeric|min:0',
-            'expires_at' => 'nullable|date',
-            'is_trial' => 'nullable|in:on,1',
-            'trial_start_type' => 'nullable|required_if:is_trial,on|in:immediate,next_login',
-            'trial_duration' => 'nullable|required_if:is_trial,on|integer|min:1',
-            'trial_unit' => 'nullable|required_if:is_trial,on|in:minutes,hours,days',
         ]);
 
-        $countryCode    = $request->country;
-        $country        = $countryData->$countryCode->country;
-        $dialCode       = $countryData->$countryCode->dial_code;
+        $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
+        $nameParts = array_values(array_filter(explode(' ', $name)));
+        $firstname = $nameParts[0] ?? 'User';
+        $lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : $firstname;
 
-        if ($request->mobile) {
-            $exists = User::where('mobile',$request->mobile)->where('dial_code',$dialCode)->exists();
-            if ($exists) {
-                $notify[] = ['error', 'The mobile number already exists.'];
-                return back()->withNotify($notify)->withInput();
+        $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
+        $rawPrefix = trim($request->email_prefix ?: $request->email ?: $request->username ?: strtolower(str_replace(' ', '_', $name)));
+
+        if (str_contains($rawPrefix, '@')) {
+            $emailParts = explode('@', $rawPrefix);
+            $emailPrefix = strtolower(preg_replace('/[^a-z0-9._-]/i', '', $emailParts[0]));
+            $email = $emailPrefix . '@' . ($emailParts[1] ?: $domain);
+            $username = $emailPrefix;
+        } else {
+            $emailPrefix = strtolower(preg_replace('/[^a-z0-9._-]/i', '', $rawPrefix));
+            if (empty($emailPrefix)) {
+                $emailPrefix = 'user_' . rand(1000, 9999);
             }
+            $email = $emailPrefix . '@' . $domain;
+            $username = $emailPrefix;
         }
+
+        // Ensure unique username & email
+        $baseUsername = $username;
+        while (User::where('username', $username)->orWhere('email', $email)->exists()) {
+            $username = $baseUsername . '_' . rand(100, 999);
+            $email = $username . '@' . $domain;
+        }
+
+        $password = $request->password ?: \Illuminate\Support\Str::random(10);
 
         $user = new User();
-        $user->firstname = $request->firstname;
-        $user->lastname = $request->lastname;
-        $user->email = $request->email;
-        $user->username = $request->username;
-        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
-        $user->mobile = $request->mobile;
-        $user->address = $request->address;
-        $user->city = $request->city;
-        $user->state = $request->state;
-        $user->zip = $request->zip;
-        $user->country_name = @$country;
-        $user->dial_code = $dialCode;
-        $user->country_code = $countryCode;
-        $user->plan_id = $request->plan_id ?: 0;
-        $user->account_prices = $request->account_prices ?: [];
+        $user->firstname = $firstname;
+        $user->lastname = $lastname;
+        $user->email = $email;
+        $user->username = $username;
+        $user->password = \Illuminate\Support\Facades\Hash::make($password);
+        $user->country_name = 'United States';
+        $user->country_code = 'US';
+        $user->dial_code = '1';
+        $user->mobile = null;
+        $user->plan_id = 0;
+        $user->account_prices = [];
+        $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+        $user->expires_at = now()->addDays(30);
+        $user->is_trial = 0;
+        $user->is_exclusive = 0;
 
-        $assignedAccountIds = [];
-
-        $platformSectionSubmitted = $request->has('platform_ids_submitted');
-        $accountSectionSubmitted  = $request->has('account_ids_submitted');
-
-        if ($request->filled('platform_ids')) {
-            $user->syncPlatformsWithLoadBalancing((array) $request->platform_ids);
-            $assignedAccountIds = (array) ($user->account_ids ?? []);
-        }
-
-        if ($request->filled('account_ids')) {
-            $specificIds = array_map('intval', (array) $request->account_ids);
-            $assignedAccountIds = array_merge($assignedAccountIds, $specificIds);
-        }
-
-        $user->account_ids = array_values(array_unique($assignedAccountIds));
-
-
-        $user->is_trial = $request->has('is_trial') ? 1 : 0;
-        $user->is_exclusive = $request->has('is_exclusive') ? 1 : 0;
-        
-        if ($user->is_trial && $request->trial_start_type && $request->trial_duration && $request->trial_unit) {
-            $minutes = $request->trial_duration;
-            if ($request->trial_unit == 'hours') {
-                $minutes = $request->trial_duration * 60;
-            } elseif ($request->trial_unit == 'days') {
-                $minutes = $request->trial_duration * 1440;
-            }
-
-            if ($request->trial_start_type == 'next_login') {
-                $user->pending_trial_minutes = $minutes;
-                $user->expires_at = null;
-            } else {
-                $user->pending_trial_minutes = null;
-                $user->expires_at = now()->addMinutes($minutes);
-            }
-        } elseif ($request->expires_at) {
-            $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
-        } else {
-            $user->expires_at = now()->addDays(30);
-        }
-
-        // Force all verifications and profile completion so user can log in instantly
+        // Force all verifications and active profile so user can log in immediately
         $user->ev = Status::VERIFIED;
         $user->sv = Status::VERIFIED;
         $user->kv = Status::KYC_VERIFIED;
@@ -271,7 +228,7 @@ class ManageUsersController extends Controller
 
         $user->save();
 
-        $notify[] = ['success', 'User created successfully'];
+        $notify[] = ['success', 'User ' . $user->username . ' created successfully'];
         return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
     }
 
