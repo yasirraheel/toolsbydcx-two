@@ -61,35 +61,31 @@
         .page-title, h1, h2, h3, h4, h5, h6 {
             color: #ffffff !important;
         }
-        .text-dark {
+        .text-dark, .text--dark {
             color: #f8fafc !important;
         }
         .text-muted {
             color: #94a3b8 !important;
         }
-        .bg-light {
-            background-color: #0e1626 !important;
+        label, .form-label, .required::after, .form-group label {
+            color: #f8fafc !important;
         }
-        .bg-white {
-            background-color: #111827 !important;
+        small, .small {
+            color: #94a3b8 !important;
         }
 
-        /* Dark Cards */
-        .card {
+        /* Dark Cards & Containers */
+        .card, .card.custom--card {
             background-color: #111827 !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             color: #e2e8f0 !important;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            width: 100%;
         }
-        .card-header {
+        .card-header, .card.custom--card .card-header {
             background-color: #162032 !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             color: #ffffff !important;
-        }
-        .card-header.bg--primary {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%) !important;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.3) !important;
         }
         .card-footer {
             background-color: #162032 !important;
@@ -99,14 +95,14 @@
         /* Dark Form Inputs */
         .form-control, .form-select, select.form-control, textarea.form-control {
             background-color: #0b0f19 !important;
-            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
             color: #f8fafc !important;
         }
         .form-control:focus, .form-select:focus {
             background-color: #0f172a !important;
-            border-color: #6366f1 !important;
+            border-color: #4634ff !important;
             color: #ffffff !important;
-            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
+            box-shadow: 0 0 0 0.25rem rgba(70, 52, 255, 0.25) !important;
         }
         .form-control[readonly], .form-control:disabled {
             background-color: #162032 !important;
@@ -114,10 +110,7 @@
         }
         .input-group-text {
             background-color: #1e293b !important;
-            border: 1px solid rgba(255, 255, 255, 0.12) !important;
-            color: #e2e8f0 !important;
-        }
-        label, .form-label, .required::after {
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
             color: #e2e8f0 !important;
         }
 
