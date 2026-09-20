@@ -319,6 +319,10 @@
     @stack('script-lib')
 
     @auth
+    @php
+        $minExtVersion = gs('min_extension_version') ?: '1.9.6';
+        $forceExtUpdate = (bool) gs('force_extension_update');
+    @endphp
     <script>
         (function($) {
             "use strict";

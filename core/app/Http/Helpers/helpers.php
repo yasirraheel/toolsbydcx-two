@@ -64,11 +64,15 @@ function activeTemplateName()
 function siteLogo($type = null)
 {
     $name = $type ? "/logo_$type.png" : '/logo.png';
-    return getImage(getFilePath('logo_icon') . $name);
+    $path = getFilePath('logo_icon') . $name;
+    $v = (file_exists($path) && is_file($path)) ? '?v=' . filemtime($path) : '';
+    return getImage($path) . $v;
 }
 function siteFavicon()
 {
-    return getImage(getFilePath('logo_icon') . '/favicon.png');
+    $path = getFilePath('logo_icon') . '/favicon.png';
+    $v = (file_exists($path) && is_file($path)) ? '?v=' . filemtime($path) : '';
+    return getImage($path) . $v;
 }
 
 function loadReCaptcha()

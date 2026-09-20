@@ -59,3 +59,31 @@
     border-top-left-radius: 0 !important;
     border-bottom-left-radius: 0 !important;
 }
+
+/* Notice Banner High-Contrast Dark Styling */
+#globalNotificationBanner,
+#globalNotificationBanner p,
+#globalNotificationBanner span,
+#globalNotificationBanner div,
+#globalNotificationBanner li,
+#globalNotificationBanner em,
+#globalNotificationBanner font {
+    color: #e2e8f0 !important;
+}
+
+#globalNotificationBanner strong,
+#globalNotificationBanner b,
+#globalNotificationBanner h1,
+#globalNotificationBanner h2,
+#globalNotificationBanner h3,
+#globalNotificationBanner h4,
+#globalNotificationBanner h5,
+#globalNotificationBanner h6 {
+    color: #ffffff !important;
+}
+
+#globalNotificationBanner a.btn {
+    color: #000000 !important;
+    background-color: var(--base-color, #4634ff) !important;
+    font-weight: 600 !important;
+}
