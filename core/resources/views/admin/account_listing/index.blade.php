@@ -228,7 +228,7 @@
                         <ol class="ps-3 text-muted" style="font-size: 13px;">
                             <li>@lang('Open Microsoft Edge and go to:') <code>edge://extensions</code></li>
                             <li>@lang('Turn on') <strong>@lang('Developer mode')</strong> @lang('(toggle switch on the left sidebar).')</li>
-                            <li>@lang('Click') <strong>@lang('Load unpacked')</strong> @lang('and select your local folder:') <code>wemate-admin-sync</code></li>
+                            <li>@lang('Click') <strong>@lang('Load unpacked')</strong> @lang('and select your local folder:') <code>toolsbydcx-admin-sync</code></li>
                             <li>@lang('Click the extension icon, paste your Admin Sync Key above, choose your Google Flow account, and click "Save Settings".')</li>
                             <li>@lang('Click "Sync Cookies to Panel Now". The extension will now automatically push fresh cookies on change and every 30 minutes!')</li>
                         </ol>

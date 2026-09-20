@@ -186,7 +186,7 @@
                             </p>
                         @else
                             <p class="text-white fs-15 mb-0">
-                                @lang('A new version of the WeMate Chrome Extension (v')<strong>{{ $minExtVersion }}</strong>@lang(') is available. Please update to enjoy the latest features.')
+                                @lang('A new version of the ToolsByDcx Chrome Extension (v')<strong>{{ $minExtVersion }}</strong>@lang(') is available. Please update to enjoy the latest features.')
                             </p>
                         @endif
                     </div>
@@ -227,12 +227,14 @@
                 }
 
                 function checkPanelExtensionUpdate() {
-                    var extInstalledMeta = $('meta[name="shahabtech-extension-installed"]').length > 0 || 
-                                           $('meta[name="extension-installed"]').length > 0 ||
-                                           $('meta[name="wemate-extension-installed"]').length > 0;
+                    var extInstalledMeta = $('meta[name="toolsbydcx-extension-installed"]').length > 0 ||
+                                           $('meta[name="wemate-extension-installed"]').length > 0 ||
+                                           $('meta[name="shahabtech-extension-installed"]').length > 0 || 
+                                           $('meta[name="extension-installed"]').length > 0;
                     
-                    var installedVer = $('meta[name="extension-version"]').attr('content') || 
+                    var installedVer = $('meta[name="toolsbydcx-extension-version"]').attr('content') ||
                                        $('meta[name="wemate-extension-version"]').attr('content') || 
+                                       $('meta[name="extension-version"]').attr('content') || 
                                        '1.0.0';
 
                     if (!extInstalledMeta || isOutdated(installedVer, requiredVer)) {
@@ -242,7 +244,7 @@
                         if (isStrictForce) {
                             modal.modal('show');
                         } else {
-                            var lastSnooze = localStorage.getItem('wemate_panel_update_snooze') || 0;
+                            var lastSnooze = localStorage.getItem('toolsbydcx_panel_update_snooze') || localStorage.getItem('wemate_panel_update_snooze') || 0;
                             var now = new Date().getTime();
                             if (now - parseInt(lastSnooze) > SNOOZE_MS) {
                                 modal.modal('show');
@@ -250,7 +252,7 @@
                         }
 
                         $('#panelUpdateSnoozeBtn').on('click', function() {
-                            localStorage.setItem('wemate_panel_update_snooze', new Date().getTime());
+                            localStorage.setItem('toolsbydcx_panel_update_snooze', new Date().getTime());
                         });
                     }
                 }

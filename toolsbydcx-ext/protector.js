@@ -118,8 +118,10 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 let ownedChats = [];
 
                 try {
-                    chrome.storage.local.get(['wemate_owned_chats'], (res) => {
-                        if (res && Array.isArray(res.wemate_owned_chats)) {
+                    chrome.storage.local.get(['toolsbydcx_owned_chats', 'wemate_owned_chats'], (res) => {
+                        if (res && Array.isArray(res.toolsbydcx_owned_chats)) {
+                            ownedChats = res.toolsbydcx_owned_chats;
+                        } else if (res && Array.isArray(res.wemate_owned_chats)) {
                             ownedChats = res.wemate_owned_chats;
                         }
                     });
@@ -132,7 +134,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                         if (!ownedChats.includes(chatId)) {
                             ownedChats.push(chatId);
                             try {
-                                chrome.storage.local.set({ wemate_owned_chats: ownedChats });
+                                chrome.storage.local.set({ toolsbydcx_owned_chats: ownedChats, wemate_owned_chats: ownedChats });
                             } catch(e) {}
                         }
                     }
@@ -208,13 +210,18 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         // --- Hide Other Users' Projects & Home Thumbnails (FlowByDcx Parity) ---
         let myProjects = [];
         try {
-            chrome.storage.local.get(['__wemate_my_projects'], (res) => {
-                myProjects = res.__wemate_my_projects || [];
+            chrome.storage.local.get(['__toolsbydcx_my_projects', '__wemate_my_projects'], (res) => {
+                myProjects = res.__toolsbydcx_my_projects || res.__wemate_my_projects || [];
             });
             chrome.storage.onChanged.addListener((changes, area) => {
-                if (area === 'local' && changes.__wemate_my_projects) {
-                    myProjects = changes.__wemate_my_projects.newValue || [];
-                    if (isFlowHomePage()) hideOtherProjects();
+                if (area === 'local') {
+                    if (changes.__toolsbydcx_my_projects) {
+                        myProjects = changes.__toolsbydcx_my_projects.newValue || [];
+                        if (isFlowHomePage()) hideOtherProjects();
+                    } else if (changes.__wemate_my_projects) {
+                        myProjects = changes.__wemate_my_projects.newValue || [];
+                        if (isFlowHomePage()) hideOtherProjects();
+                    }
                 }
             });
         } catch(e) {}
@@ -328,7 +335,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                         myProjects.push(cleanPath);
                         myProjects.push(m[1]);
                         try {
-                            chrome.storage.local.set({ '__wemate_my_projects': myProjects });
+                            chrome.storage.local.set({ '__toolsbydcx_my_projects': myProjects, '__wemate_my_projects': myProjects });
                         } catch(e) {}
                     }
                 }

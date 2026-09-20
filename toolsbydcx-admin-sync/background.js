@@ -1,4 +1,4 @@
-// WeMate Admin Cookie Sync — Background Service Worker
+// ToolsByDcx Admin Cookie Sync — Background Service Worker
 // Automatically captures Google Flow rolling session tokens and syncs to ToolsByDcx Panel.
 
 const DEFAULT_PANEL_URL = 'https://toolsbydcx.com';
@@ -11,14 +11,14 @@ let isSyncing = false;
 
 // ─── INITIALIZATION ──────────────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
-    console.log('[WeMate Admin Sync] Installed. Setting up 30-minute periodic heartbeat...');
+    console.log('[ToolsByDcx Admin Sync] Installed. Setting up 30-minute periodic heartbeat...');
     chrome.alarms.create(SYNC_ALARM_NAME, { periodInMinutes: SYNC_INTERVAL_MINUTES });
     updateBadge('INIT', '#6c757d');
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === SYNC_ALARM_NAME) {
-        console.log('[WeMate Admin Sync] 30-minute interval heartbeat fired. Initiating sync...');
+        console.log('[ToolsByDcx Admin Sync] 30-minute interval heartbeat fired. Initiating sync...');
         performSync('30m_heartbeat');
     }
 });
@@ -48,7 +48,7 @@ chrome.cookies.onChanged.addListener((changeInfo) => {
     if (!isGoogle) return;
 
     if (WATCHED_COOKIE_NAMES.has(cookie.name)) {
-        console.log(`[WeMate Admin Sync] Detected token change: ${cookie.name} on ${domain} (removed: ${changeInfo.removed})`);
+        console.log(`[ToolsByDcx Admin Sync] Detected token change: ${cookie.name} on ${domain} (removed: ${changeInfo.removed})`);
         if (!changeInfo.removed) {
             scheduleSync(DEBOUNCE_MS, `cookie_change:${cookie.name}`);
         }
@@ -59,7 +59,7 @@ function scheduleSync(delayMs, reason) {
     if (debounceTimer) {
         clearTimeout(debounceTimer);
     }
-    console.log(`[WeMate Admin Sync] Scheduling sync in ${delayMs / 1000}s (Reason: ${reason})`);
+    console.log(`[ToolsByDcx Admin Sync] Scheduling sync in ${delayMs / 1000}s (Reason: ${reason})`);
     debounceTimer = setTimeout(() => {
         debounceTimer = null;
         performSync(reason);
@@ -101,7 +101,7 @@ async function collectGoogleFlowCookies() {
                 }
             }
         } catch (err) {
-            console.warn(`[WeMate Admin Sync] Error reading cookies for ${domain}:`, err);
+            console.warn(`[ToolsByDcx Admin Sync] Error reading cookies for ${domain}:`, err);
         }
     }
 
@@ -111,7 +111,7 @@ async function collectGoogleFlowCookies() {
 // ─── MASTER SYNC ACTION ──────────────────────────────────────────────────────
 async function performSync(triggerSource = 'manual') {
     if (isSyncing) {
-        console.log('[WeMate Admin Sync] Sync already in progress. Skipping duplicate request.');
+        console.log('[ToolsByDcx Admin Sync] Sync already in progress. Skipping duplicate request.');
         return { success: false, message: 'Sync already in progress' };
     }
 
@@ -126,7 +126,7 @@ async function performSync(triggerSource = 'manual') {
         const autoSyncEnabled = config.autoSyncEnabled !== false; // default true
 
         if (triggerSource !== 'manual' && !autoSyncEnabled) {
-            console.log('[WeMate Admin Sync] Auto-sync is currently paused by admin.');
+            console.log('[ToolsByDcx Admin Sync] Auto-sync is currently paused by admin.');
             updateBadge('PAUSE', '#ffc107');
             isSyncing = false;
             return { success: false, message: 'Auto-sync is disabled' };
@@ -134,7 +134,7 @@ async function performSync(triggerSource = 'manual') {
 
         if (!adminKey) {
             const err = 'Admin Key is not set. Open extension popup to configure.';
-            console.warn('[WeMate Admin Sync]', err);
+            console.warn('[ToolsByDcx Admin Sync]', err);
             await logSyncResult({ success: false, error: err, trigger: triggerSource });
             updateBadge('KEY?', '#dc3545');
             isSyncing = false;
@@ -143,7 +143,7 @@ async function performSync(triggerSource = 'manual') {
 
         if (!accountId) {
             const err = 'No Account selected. Open extension popup to select Google Flow account.';
-            console.warn('[WeMate Admin Sync]', err);
+            console.warn('[ToolsByDcx Admin Sync]', err);
             await logSyncResult({ success: false, error: err, trigger: triggerSource });
             updateBadge('ACC?', '#dc3545');
             isSyncing = false;
@@ -160,7 +160,7 @@ async function performSync(triggerSource = 'manual') {
             return { success: false, message: err };
         }
 
-        console.log(`[WeMate Admin Sync] Extracted ${cookies.length} cookies. Pushing to ${panelUrl}...`);
+        console.log(`[ToolsByDcx Admin Sync] Extracted ${cookies.length} cookies. Pushing to ${panelUrl}...`);
 
         // 2. Transmit to Panel API
         const endpoint = `${panelUrl}/api/extension/admin-sync`;
@@ -200,12 +200,12 @@ async function performSync(triggerSource = 'manual') {
         });
 
         updateBadge('LIVE', '#198754');
-        console.log(`[WeMate Admin Sync] Sync SUCCESSFUL! Updated Account #${data.account_id} with ${data.cookie_count} cookies.`);
+        console.log(`[ToolsByDcx Admin Sync] Sync SUCCESSFUL! Updated Account #${data.account_id} with ${data.cookie_count} cookies.`);
         isSyncing = false;
         return { success: true, data: data };
 
     } catch (err) {
-        console.error('[WeMate Admin Sync] Unexpected network or execution error:', err);
+        console.error('[ToolsByDcx Admin Sync] Unexpected network or execution error:', err);
         await logSyncResult({ success: false, error: err.message, trigger: triggerSource });
         updateBadge('ERR', '#dc3545');
         isSyncing = false;

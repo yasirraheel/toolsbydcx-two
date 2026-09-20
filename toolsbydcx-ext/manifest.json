@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "WeMate",
+  "name": "ToolsByDcx",
   "version": "2.3.2",
-  "description": "Access your premium accounts through WeMate.",
+  "description": "Access your premium accounts through ToolsByDcx.",
   "permissions": [
     "cookies",
     "tabs",

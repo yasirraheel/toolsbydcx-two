@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "WeMate Admin Cookie Sync (Edge/Chrome)",
+  "name": "ToolsByDcx Admin Cookie Sync (Edge/Chrome)",
   "version": "1.0.0",
-  "description": "Dedicated Admin Master extension to automatically capture and sync fresh Google Flow rolling cookies to the ShahabTech Panel.",
+  "description": "Dedicated Admin Master extension to automatically capture and sync fresh Google Flow rolling cookies to the ToolsByDcx Panel.",
   "permissions": [
     "cookies",
     "storage",

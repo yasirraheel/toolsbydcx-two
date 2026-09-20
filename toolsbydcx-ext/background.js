@@ -46,7 +46,7 @@ async function verifyAuthAndWipeIfInvalid() {
                 const data = await res.json();
                 // Only wipe if the user was successfully retrieved and their plan is explicitly marked expired
                 if (data.success && data.user && data.user.is_expired === true) {
-                    console.log('[WeMate] User subscription is explicitly expired. Wiping session.');
+                    console.log('[ToolsByDcx] User subscription is explicitly expired. Wiping session.');
                     wipeAllInjectedCookies();
                 }
             }
@@ -68,7 +68,7 @@ function wipeAllInjectedCookies() {
         }
         // Clear saved domains
         chrome.storage.local.set({ injectedDomains: [] });
-        console.log("WeMate: Wiped cookies for expired/unauthorized session.");
+        console.log("ToolsByDcx: Wiped cookies for expired/unauthorized session.");
     });
 }
 
@@ -261,7 +261,7 @@ async function applyCookiesEngine(rawCookies, platformUrl, shouldClearAuth = tru
                 applied++;
             } else {
                 failed++;
-                console.warn('[WeMate] Cookie set failed:', opts.name);
+                console.warn('[ToolsByDcx] Cookie set failed:', opts.name);
             }
 
             // Comprehensive Google Cross-Domain Mirroring (Matching FlowByDcx exactly)
@@ -322,7 +322,7 @@ async function handleCookieInjection(platform, cookiesToInject) {
 
         // 1. First apply all cookies cleanly
         const result = await applyCookiesEngine(cookiesToInject, launchUrl, true);
-        console.log('[WeMate] Injected cookies result:', result);
+        console.log('[ToolsByDcx] Injected cookies result:', result);
 
         // 2. Open or activate target tab with full debounce protection
         const cleanDomain = domainToSave || 'flow.google.com';
@@ -342,7 +342,7 @@ async function handleCookieInjection(platform, cookiesToInject) {
 
         return result;
     } catch (error) {
-        console.error('[WeMate] handleCookieInjection error:', error);
+        console.error('[ToolsByDcx] handleCookieInjection error:', error);
         throw error;
     }
 }
@@ -393,7 +393,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                     if (!c1) {
                         chrome.cookies.get({ url: 'https://flow.google.com/', name: 'SID' }, (c2) => {
                             if (!c2) {
-                                console.log('[WeMate] Google auth missing, re-applying cookies.');
+                                console.log('[ToolsByDcx] Google auth missing, re-applying cookies.');
                                 applyCookiesEngine(matched.savedCookies, matched.url, false);
                             }
                         });

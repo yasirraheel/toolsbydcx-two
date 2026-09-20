@@ -27,12 +27,12 @@ class SiteController extends Controller
         if ($filename) {
             $filePath = $directory . '/' . $filename;
         } else {
-            $filename = 'wemate-ext.zip';
+            $filename = 'toolsbydcx-ext.zip';
             $filePath = $directory . '/' . $filename;
             if (is_dir($directory)) {
                 $files = scandir($directory);
                 foreach ($files as $file) {
-                    if (pathinfo($file, PATHINFO_EXTENSION) === 'zip' && str_starts_with($file, 'wemate-ext')) {
+                    if (pathinfo($file, PATHINFO_EXTENSION) === 'zip' && (str_starts_with($file, 'toolsbydcx-ext') || str_starts_with($file, 'wemate-ext'))) {
                         $filename = $file;
                         $filePath = $directory . '/' . $file;
                         break;
