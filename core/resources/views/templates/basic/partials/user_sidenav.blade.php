@@ -29,62 +29,6 @@
                     </a>
                 </li>
 
-                {{-- Deposit --}}
-                <li class="sidebar-menu-item sidebar-dropdown">
-                    <a href="javascript:void(0)" class="{{ menuActive(['user.deposit*'], 3) }}">
-                        <i class="menu-icon las la-wallet"></i>
-                        <span class="menu-title">@lang('Deposit')</span>
-                    </a>
-                    <div class="sidebar-submenu {{ menuActive(['user.deposit*'], 2) }}">
-                        <ul>
-                            <li class="sidebar-menu-item {{ menuActive('user.deposit.index') }}">
-                                <a href="{{ route('user.deposit.index') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Deposit Now')</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-menu-item {{ menuActive('user.deposit.history') }}">
-                                <a href="{{ route('user.deposit.history') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Deposit History')</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Withdraw --}}
-                <li class="sidebar-menu-item sidebar-dropdown">
-                    <a href="javascript:void(0)" class="{{ menuActive(['user.withdraw*'], 3) }}">
-                        <i class="menu-icon la la-bank"></i>
-                        <span class="menu-title">@lang('Withdraw')</span>
-                    </a>
-                    <div class="sidebar-submenu {{ menuActive(['user.withdraw*'], 2) }}">
-                        <ul>
-                            <li class="sidebar-menu-item {{ menuActive('user.withdraw') }}">
-                                <a href="{{ route('user.withdraw') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Withdraw Money')</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-menu-item {{ menuActive('user.withdraw.history') }}">
-                                <a href="{{ route('user.withdraw.history') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Withdraw History')</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Transactions --}}
-                <li class="sidebar-menu-item {{ menuActive('user.transactions') }}">
-                    <a href="{{ route('user.transactions') }}" class="nav-link">
-                        <i class="menu-icon las la-exchange-alt"></i>
-                        <span class="menu-title">@lang('Transaction History')</span>
-                    </a>
-                </li>
-
                 {{-- Support Tickets --}}
                 <li class="sidebar-menu-item sidebar-dropdown">
                     <a href="javascript:void(0)" class="{{ menuActive(['ticket*'], 3) }}">
@@ -115,13 +59,13 @@
                     </div>
                 </li>
 
-                {{-- Account Details & Security --}}
+                {{-- Account Details & Settings --}}
                 <li class="sidebar-menu-item sidebar-dropdown">
-                    <a href="javascript:void(0)" class="{{ menuActive(['user.profile.setting', 'user.change.password', 'user.twofactor', 'user.general.profile'], 3) }}">
+                    <a href="javascript:void(0)" class="{{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 3) }}">
                         <i class="menu-icon las la-user-cog"></i>
                         <span class="menu-title">@lang('Account Settings')</span>
                     </a>
-                    <div class="sidebar-submenu {{ menuActive(['user.profile.setting', 'user.change.password', 'user.twofactor', 'user.general.profile'], 2) }}">
+                    <div class="sidebar-submenu {{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 2) }}">
                         <ul>
                             <li class="sidebar-menu-item {{ menuActive(['user.profile.setting', 'user.general.profile']) }}">
                                 <a href="{{ route('user.profile.setting') }}" class="nav-link">
@@ -133,12 +77,6 @@
                                 <a href="{{ route('user.change.password') }}" class="nav-link">
                                     <i class="menu-icon las la-dot-circle"></i>
                                     <span class="menu-title">@lang('Change Password')</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-menu-item {{ menuActive('user.twofactor') }}">
-                                <a href="{{ route('user.twofactor') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('2FA Security')</span>
                                 </a>
                             </li>
                         </ul>

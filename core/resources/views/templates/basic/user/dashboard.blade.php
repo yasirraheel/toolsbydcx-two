@@ -5,6 +5,7 @@
     {{-- Answered Ticket Alert Banner --}}
     @php
         $userAnsweredTickets = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->get();
+        $totalUserTickets = \App\Models\SupportTicket::where('user_id', auth()->id())->count();
     @endphp
     @if($userAnsweredTickets->isNotEmpty())
         <div class="mb-4">
@@ -44,7 +45,7 @@
         </div>
     @endif
 
-    {{-- Top Widgets --}}
+    {{-- Clean User Dashboard Widgets --}}
     <div class="row gy-4 mb-4">
         {{-- Plan Widget --}}
         <div class="col-xxl-3 col-sm-6">
@@ -58,45 +59,45 @@
             />
         </div>
 
-        {{-- Balance Widget --}}
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="6"
-                link="{{ route('user.transactions') }}"
-                icon="las la-wallet"
-                title="Current Balance"
-                value="{{ showAmount($user->balance) }}"
-                bg="success"
-            />
-        </div>
-
-        {{-- Total Deposits Widget --}}
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="6"
-                link="{{ route('user.deposit.history') }}"
-                icon="las la-file-invoice-dollar"
-                title="Total Deposit"
-                value="{{ showAmount($totalDeposit) }}"
-                bg="info"
-            />
-        </div>
-
         {{-- Accessible Platforms Widget --}}
         <div class="col-xxl-3 col-sm-6">
             <x-widget
                 style="6"
-                link="javascript:void(0)"
+                link="#accessible-platforms-section"
                 icon="las la-cubes"
                 title="Assigned Tools"
                 value="{{ count((array)($user->account_ids ?? [])) }}"
-                bg="17"
+                bg="success"
+            />
+        </div>
+
+        {{-- Support Tickets Widget --}}
+        <div class="col-xxl-3 col-sm-6">
+            <x-widget
+                style="6"
+                link="{{ route('ticket.index') }}"
+                icon="las la-headset"
+                title="Support Tickets"
+                value="{{ $totalUserTickets }}"
+                bg="info"
+            />
+        </div>
+
+        {{-- Account Status Widget --}}
+        <div class="col-xxl-3 col-sm-6">
+            <x-widget
+                style="6"
+                link="{{ route('user.profile.setting') }}"
+                icon="las la-shield-alt"
+                title="Account Status"
+                value="{{ $isExpired ? 'Expired' : 'Active' }}"
+                bg="{{ $isExpired ? 'danger' : 'dark' }}"
             />
         </div>
     </div>
 
     {{-- My Accessible Platforms Section --}}
-    <div class="row">
+    <div class="row" id="accessible-platforms-section">
         <div class="col-12">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg--primary text-white d-flex justify-content-between align-items-center py-3">
@@ -311,7 +312,7 @@
             let platformId = btn.data('platform-id');
             let accountId = btn.data('account-id');
             
-            // Check if extension is installed by looking for the meta tag injected by content.js
+            // Check if extension is installed
             if ($('meta[name="toolsbydcx-extension-installed"]').length === 0 &&
                 $('meta[name="wemate-extension-installed"]').length === 0 &&
                 $('meta[name="shahabtech-extension-installed"]').length === 0 && 
@@ -335,7 +336,6 @@
                     if (response.success) {
                         btnText.text('Injecting...');
                         
-                        // Send custom event to extension's content.js
                         let event = new CustomEvent('ShahabTechInject', {
                             detail: {
                                 platform: response.platform,

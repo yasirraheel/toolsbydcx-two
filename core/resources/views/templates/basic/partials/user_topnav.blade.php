@@ -97,11 +97,6 @@
                         <span class="dropdown-menu__caption">@lang('Change Password')</span>
                     </a>
 
-                    <a href="{{ route('user.twofactor') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2">
-                        <i class="dropdown-menu__icon las la-shield-alt"></i>
-                        <span class="dropdown-menu__caption">@lang('2FA Security')</span>
-                    </a>
-
                     <a href="{{ route('user.logout') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2 text-danger">
                         <i class="dropdown-menu__icon las la-sign-out-alt text-danger"></i>
                         <span class="dropdown-menu__caption text-danger">@lang('Logout')</span>

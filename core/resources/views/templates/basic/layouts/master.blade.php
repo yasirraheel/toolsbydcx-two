@@ -24,6 +24,15 @@
         .page-wrapper {
             min-height: 100vh;
         }
+        .navbar-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+        }
+        .sidebar {
+            z-index: 1000;
+        }
         .bodywrapper__inner {
             padding: 25px 20px;
         }

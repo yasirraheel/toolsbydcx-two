@@ -28,24 +28,27 @@ class ProfileController extends Controller
     public function submitProfile(Request $request)
     {
         $request->validate([
-            'firstname' => 'required|string',
-            'lastname' => 'required|string',
+            'name' => 'nullable|string|max:80',
+            'firstname' => 'nullable|string|max:40',
+            'lastname' => 'nullable|string|max:40',
+            'password' => 'nullable|string|min:4',
             'image' => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])]
-        ],[
-            'firstname.required'=>'The first name field is required',
-            'lastname.required'=>'The last name field is required'
         ]);
 
         $user = auth()->user();
 
-        $user->firstname = $request->firstname;
-        $user->lastname = $request->lastname;
+        if ($request->filled('name')) {
+            $nameParts = array_values(array_filter(explode(' ', trim($request->name))));
+            $user->firstname = $nameParts[0] ?? $user->firstname;
+            $user->lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : ($nameParts[0] ?? $user->lastname);
+        } elseif ($request->filled('firstname')) {
+            $user->firstname = $request->firstname;
+            $user->lastname = $request->lastname ?: $user->lastname;
+        }
 
-        $user->address = $request->address;
-        $user->city = $request->city;
-        $user->state = $request->state;
-        $user->zip = $request->zip;
-        $user->description = $request->description;
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
 
         if ($request->hasFile('image')) {
             try {
@@ -58,6 +61,7 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
         $notify[] = ['success', 'Profile updated successfully'];
         return back()->withNotify($notify);
     }
