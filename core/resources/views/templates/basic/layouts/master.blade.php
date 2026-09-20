@@ -146,6 +146,38 @@
             border-bottom-left-radius: 0 !important;
         }
 
+        /* High Contrast Notice Banner (Forcing all nested tags & inline styles to white) */
+        #globalNotificationBanner,
+        #globalNotificationBanner * {
+            color: #f8fafc !important;
+        }
+        #globalNotificationBanner p,
+        #globalNotificationBanner span,
+        #globalNotificationBanner div,
+        #globalNotificationBanner li,
+        #globalNotificationBanner em,
+        #globalNotificationBanner font {
+            color: #f8fafc !important;
+        }
+        #globalNotificationBanner strong,
+        #globalNotificationBanner b,
+        #globalNotificationBanner h1,
+        #globalNotificationBanner h2,
+        #globalNotificationBanner h3,
+        #globalNotificationBanner h4,
+        #globalNotificationBanner h5,
+        #globalNotificationBanner h6 {
+            color: #ffffff !important;
+        }
+        #globalNotificationBanner a.btn {
+            color: #000000 !important;
+            background-color: var(--base-color, #4634ff) !important;
+            font-weight: 700 !important;
+        }
+        #globalNotificationBanner a.btn * {
+            color: #000000 !important;
+        }
+
         /* Dark Tables */
         .table {
             color: #e2e8f0 !important;

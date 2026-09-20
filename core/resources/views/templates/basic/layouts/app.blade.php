@@ -22,6 +22,39 @@
     @stack('style-lib')
 
     @stack('style')
+
+    <style>
+        #globalNotificationBanner,
+        #globalNotificationBanner * {
+            color: #f8fafc !important;
+        }
+        #globalNotificationBanner p,
+        #globalNotificationBanner span,
+        #globalNotificationBanner div,
+        #globalNotificationBanner li,
+        #globalNotificationBanner em,
+        #globalNotificationBanner font {
+            color: #f8fafc !important;
+        }
+        #globalNotificationBanner strong,
+        #globalNotificationBanner b,
+        #globalNotificationBanner h1,
+        #globalNotificationBanner h2,
+        #globalNotificationBanner h3,
+        #globalNotificationBanner h4,
+        #globalNotificationBanner h5,
+        #globalNotificationBanner h6 {
+            color: #ffffff !important;
+        }
+        #globalNotificationBanner a.btn {
+            color: #000000 !important;
+            background-color: var(--base-color, #4634ff) !important;
+            font-weight: 700 !important;
+        }
+        #globalNotificationBanner a.btn * {
+            color: #000000 !important;
+        }
+    </style>
 </head>
 
 @php echo loadExtension('google-analytics') @endphp
