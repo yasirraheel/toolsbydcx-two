@@ -294,6 +294,67 @@
             color: #e2e8f0 !important;
         }
 
+        /* Payment Items & Deposit Dark Theme */
+        .payment-system-list {
+            background-color: transparent !important;
+        }
+        .payment-item {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 10px !important;
+            padding: 14px 18px !important;
+            margin-bottom: 12px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+        }
+        .payment-item:hover {
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            background-color: #162032 !important;
+        }
+        .payment-item:has(.payment-item__radio:checked),
+        .payment-item.check {
+            border: 2px solid #4634ff !important;
+            background-color: rgba(70, 52, 255, 0.12) !important;
+        }
+        .payment-item__name {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+        .payment-item__check {
+            border-color: #6366f1 !important;
+            background-color: #1e293b !important;
+        }
+        .payment-item:has(.payment-item__radio:checked) .payment-item__check,
+        .payment-item.check .payment-item__check {
+            background-color: #4634ff !important;
+            box-shadow: 0 0 0 3px rgba(70, 52, 255, 0.3) !important;
+        }
+        .deposit-info .text {
+            color: #e2e8f0 !important;
+        }
+        .deposit-info__title p {
+            color: #94a3b8 !important;
+        }
+        .deposit-info__input p span {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        .deposit-info__input-group .form-control {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        .deposit-info__input-group-text {
+            background-color: #0f172a !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #94a3b8 !important;
+        }
+        .info-text p {
+            color: #94a3b8 !important;
+        }
+
         /* High Contrast Notice Banner */
         #globalNotificationBanner,
         #globalNotificationBanner * {

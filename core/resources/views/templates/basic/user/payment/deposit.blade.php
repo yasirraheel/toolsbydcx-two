@@ -14,6 +14,15 @@
                                 @endif
                             </div>
                             <div class="card-body">
+                                @if($gatewayCurrency->isEmpty())
+                                    <div class="text-center py-5">
+                                        <div class="mb-3">
+                                            <i class="las la-wallet text-muted" style="font-size: 56px;"></i>
+                                        </div>
+                                        <h5 class="text-white mb-2">@lang('No Payment Gateway Configured')</h5>
+                                        <p class="text-muted small mb-0">@lang('Currently no payment gateway is available. Please configure a gateway in Admin -> Payment Gateways or contact support.')</p>
+                                    </div>
+                                @else
                                 <div class="row justify-content-center gy-sm-4 gy-3">
                                     <div class="col-lg-6">
                                         <div class="payment-system-list is-scrollable gateway-option-list">
@@ -129,6 +138,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                             </div>
                         </div>
                     </form>

@@ -224,6 +224,12 @@
                 }]
             },
             {
+                "keyword": ["Payment Gateways", "Gateways", "Automatic Gateways", "Manual Gateways"],
+                "title": "Payment Gateways",
+                "route_name": "admin.gateway.automatic.index",
+                "menu_active": "admin.gateway*"
+            },
+            {
                 "keyword": ["All Deposits", "Deposits", "Deposit management", "Deposit control", "Deposit activity"],
                 "title": "All Deposits",
                 "route_name": "admin.deposit.list",
