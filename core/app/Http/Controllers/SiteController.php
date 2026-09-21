@@ -271,4 +271,11 @@ class SiteController extends Controller
         return view('Template::maintenance',compact('pageTitle','maintenance'));
     }
 
+    public function edgeOnly()
+    {
+        $pageTitle = 'Microsoft Edge Required';
+        return view('Template::edge_only', compact('pageTitle'));
+    }
+
 }
+
