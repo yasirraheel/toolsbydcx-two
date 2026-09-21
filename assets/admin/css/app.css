@@ -7930,10 +7930,9 @@ label.required:after {
 .breadcrumb-nav {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 1px solid #5b6e8824;
-  margin: -30px -30px 35px -30px;
-  background-color: #fff;
-  border-bottom: 1px solid #5352ed75;
+  margin: 0 0 25px 0;
+  background-color: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .breadcrumb-nav li {
@@ -8027,7 +8026,7 @@ label.required:after {
     top: 30px;
     right: -390px;
     width: 300px;
-    background-color: #fff;
+    background-color: #111827;
     display: block;
     min-height: 100vh;
     z-index: 99;
