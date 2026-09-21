@@ -415,6 +415,84 @@ class CronController extends Controller
         }
 
         $targetUrl = $account->socialMedia->url ?? 'https://flow.google.com/';
+        $isChatGPT = str_contains($platformName, 'chatgpt') || str_contains($platformName, 'openai') || str_contains($accountTitle, 'chatgpt') || str_contains(strtolower($targetUrl), 'chatgpt.com') || str_contains(strtolower($targetUrl), 'openai.com');
+
+        if ($isChatGPT) {
+            $hasSessionToken = false;
+            $extractedEmail = null;
+            $isExpired = false;
+
+            if (is_array($rawInfo)) {
+                foreach ($rawInfo as $c) {
+                    $c = (array) $c;
+                    $cName = strtolower($c['name'] ?? $c['key'] ?? '');
+                    $cVal = $c['value'] ?? $c['val'] ?? '';
+                    $cExp = $c['expirationDate'] ?? $c['expires'] ?? null;
+
+                    if ($cExp && is_numeric($cExp) && $cExp < time()) {
+                        $isExpired = true;
+                    }
+
+                    if (str_contains($cName, 'session-token') || str_contains($cName, 'next-auth.session-token') || $cName === '__secure-next-auth.session-token') {
+                        if (!empty($cVal)) {
+                            $hasSessionToken = true;
+                            // Attempt to parse JWT payload if readable
+                            $parts = explode('.', $cVal);
+                            if (count($parts) >= 2) {
+                                $decodedPayload = @json_decode(@base64_decode($parts[1]), true);
+                                if (is_array($decodedPayload)) {
+                                    $extractedEmail = $decodedPayload['email'] ?? $decodedPayload['user']['email'] ?? $decodedPayload['name'] ?? null;
+                                    if (!empty($decodedPayload['exp']) && $decodedPayload['exp'] < time()) {
+                                        $isExpired = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!$hasSessionToken && !str_contains($cookieHeaderString, 'session-token') && !str_contains($cookieHeaderString, 'next-auth')) {
+                return ['valid' => false, 'error' => 'No ChatGPT session token (__Secure-next-auth.session-token) found in cookies'];
+            }
+
+            if ($isExpired) {
+                return ['valid' => false, 'error' => 'ChatGPT session token has expired'];
+            }
+
+            // Attempt session API call with modern Chrome headers
+            $ch = curl_init('https://chatgpt.com/api/auth/session');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Cookie: ' . $cookieHeaderString,
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Accept: application/json',
+                'sec-ch-ua: "Chromium";v="124", "Google Chrome";v="124"',
+                'sec-ch-ua-mobile: ?0',
+                'sec-ch-ua-platform: "Windows"',
+            ]);
+            $resp = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($code === 200 && !empty($resp)) {
+                $sessionData = @json_decode($resp, true);
+                if (is_array($sessionData) && (!empty($sessionData['user']) || !empty($sessionData['accessToken']))) {
+                    $email = $sessionData['user']['email'] ?? $sessionData['user']['name'] ?? $extractedEmail;
+                    return ['valid' => true, 'error' => null, 'account_name' => $email ?: $account->title];
+                }
+            }
+
+            // Cloudflare datacenter IP block returns 403 on server, but valid session token exists in cookie payload
+            if ($hasSessionToken) {
+                return ['valid' => true, 'error' => null, 'account_name' => $extractedEmail ?: $account->title];
+            }
+
+            return ['valid' => false, 'error' => 'Invalid ChatGPT session cookies'];
+        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $targetUrl);
@@ -445,7 +523,6 @@ class CronController extends Controller
             ];
         }
 
-
         // For other platforms, check HTTP status & redirect URL
         if (str_contains($effectiveUrl, 'accounts.google.com') || str_contains($effectiveUrl, 'ServiceLogin') || str_contains($effectiveUrl, 'signin') || str_contains($effectiveUrl, 'login')) {
             return ['valid' => false, 'error' => 'Session expired (Redirected to login page)'];
@@ -453,6 +530,28 @@ class CronController extends Controller
 
         if (str_contains($response, 'Sign in') || str_contains($response, 'ServiceLogin') || str_contains($response, 'identifierInterface')) {
             return ['valid' => false, 'error' => 'Session expired (Login form detected)'];
+        }
+
+        if ($httpCode === 403 || $httpCode === 429) {
+            // Check if Cloudflare / WAF blocked datacenter IP
+            $hasAuthToken = false;
+            $sessionKeys = ['session', 'token', 'auth', 'user', 'sid', 'login', 'phpsessid', 'jsessionid', 'c_user'];
+            if (is_array($rawInfo)) {
+                foreach ($rawInfo as $item) {
+                    $item = (array) $item;
+                    $name = strtolower($item['name'] ?? $item['key'] ?? '');
+                    $val = $item['value'] ?? $item['val'] ?? '';
+                    foreach ($sessionKeys as $sk) {
+                        if (str_contains($name, $sk) && !empty($val)) {
+                            $hasAuthToken = true;
+                            break 2;
+                        }
+                    }
+                }
+            }
+            if ($hasAuthToken) {
+                return ['valid' => true, 'error' => null, 'account_name' => $account->title];
+            }
         }
 
         if ($httpCode >= 400) {
