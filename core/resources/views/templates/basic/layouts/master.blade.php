@@ -57,34 +57,91 @@
             padding: 0 !important;
         }
 
+        /* Floating Sidebar Container (Invisible Scrollbar) */
+        .sidebar-card-floating {
+            top: 80px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        .sidebar-card-floating::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
         /* Navigation Pills inside Floating Card */
         .nav-pills .nav-link {
-            color: #94a3b8;
-            border-radius: 8px;
-            padding: 0.6rem 0.95rem;
-            font-weight: 500;
-            font-size: 0.92rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            white-space: nowrap;
-            background: transparent;
-            text-decoration: none;
+            color: #94a3b8 !important;
+            border-radius: 8px !important;
+            padding: 0.6rem 0.95rem !important;
+            font-weight: 500 !important;
+            font-size: 0.92rem !important;
+            transition: all 0.2s !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.65rem !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            text-decoration: none !important;
+        }
+        .nav-pills .nav-link i,
+        .nav-pills .nav-link span {
+            color: #94a3b8 !important;
+            transition: color 0.2s !important;
         }
         .nav-pills .nav-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+        .nav-pills .nav-link:hover i,
+        .nav-pills .nav-link:hover span {
+            color: #ffffff !important;
         }
         .nav-pills .nav-link.active {
             background: var(--base-color, #6366f1) !important;
             color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
-            font-weight: 600;
+            font-weight: 600 !important;
         }
         .nav-pills .nav-link.active i,
         .nav-pills .nav-link.active span {
             color: #ffffff !important;
+        }
+        .sidebar-submenu-box .nav-link {
+            color: #94a3b8 !important;
+            border-radius: 6px !important;
+        }
+        .sidebar-submenu-box .nav-link i,
+        .sidebar-submenu-box .nav-link span {
+            color: #94a3b8 !important;
+        }
+        .sidebar-submenu-box .nav-link:hover {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+        .sidebar-submenu-box .nav-link:hover i,
+        .sidebar-submenu-box .nav-link:hover span {
+            color: #ffffff !important;
+        }
+        .sidebar-submenu-box .nav-link.active {
+            background: rgba(99, 102, 241, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .sidebar-submenu-box .nav-link.active i,
+        .sidebar-submenu-box .nav-link.active span {
+            color: #ffffff !important;
+        }
+        .nav-pills .nav-link.text-danger,
+        .nav-pills .nav-link.text-danger i,
+        .nav-pills .nav-link.text-danger span {
+            color: #ef4444 !important;
+        }
+        .nav-pills .nav-link.text-success,
+        .nav-pills .nav-link.text-success i,
+        .nav-pills .nav-link.text-success span {
+            color: #10b981 !important;
         }
 
         .transition-all {
@@ -337,7 +394,7 @@
             <div class="row g-4">
                 {{-- Floating Sidebar Card (Matching Reseller Portal) --}}
                 <div class="col-xl-2 col-lg-3">
-                    <div class="card p-2 sticky-top" style="top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #334155 transparent;">
+                    <div class="card p-2 sticky-top sidebar-card-floating">
                         @include($activeTemplate . 'partials.user_sidenav')
                     </div>
                 </div>
@@ -594,6 +651,16 @@
             }); 
             $('.res-sidebar-close-btn').on('click', function (){
                 $('.sidebar').removeClass('open');
+            });
+
+            // Floating Sidebar dropdown handler
+            $(document).on('click', '.sidebar-dropdown-toggle', function(e) {
+                e.preventDefault();
+                var parent = $(this).closest('.sidebar-dropdown-group');
+                var submenu = parent.find('.sidebar-submenu-box');
+                var arrow = $(this).find('.dropdown-arrow');
+                submenu.stop(true, true).slideToggle(200);
+                arrow.toggleClass('rotate-180');
             });
 
             $('.select2').select2();

@@ -77,30 +77,73 @@
         .card-footer {
             background: rgba(255, 255, 255, 0.02);
             border-top: 1px solid var(--card-border);
+        /* Floating Sidebar Container (Invisible Scrollbar) */
+        .sidebar-card-floating {
+            top: 80px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        .sidebar-card-floating::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
         }
 
         /* Navigation Pills */
         .nav-pills .nav-link {
-            color: #94a3b8;
-            border-radius: 8px;
-            padding: 0.6rem 1rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-size: 0.92rem;
+            color: #94a3b8 !important;
+            border-radius: 8px !important;
+            padding: 0.6rem 1rem !important;
+            font-weight: 500 !important;
+            transition: all 0.2s !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.6rem !important;
+            font-size: 0.92rem !important;
+            white-space: nowrap !important;
+            text-decoration: none !important;
+        }
+
+        .nav-pills .nav-link i,
+        .nav-pills .nav-link span {
+            color: #94a3b8 !important;
+            transition: color 0.2s !important;
         }
 
         .nav-pills .nav-link:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.05);
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .nav-pills .nav-link:hover i,
+        .nav-pills .nav-link:hover span {
+            color: #fff !important;
         }
 
         .nav-pills .nav-link.active {
-            background: var(--base-color);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+            background: var(--base-color, #6366f1) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+            font-weight: 600 !important;
+        }
+
+        .nav-pills .nav-link.active i,
+        .nav-pills .nav-link.active span {
+            color: #fff !important;
+        }
+
+        .nav-pills .nav-link.text-danger,
+        .nav-pills .nav-link.text-danger i,
+        .nav-pills .nav-link.text-danger span {
+            color: #ef4444 !important;
+        }
+
+        .nav-pills .nav-link.text-success,
+        .nav-pills .nav-link.text-success i,
+        .nav-pills .nav-link.text-success span {
+            color: #10b981 !important;
         }
 
         /* Tables */
@@ -272,7 +315,7 @@
         <div class="row g-4">
             {{-- Sidebar Navigation --}}
             <div class="col-xl-2 col-lg-3">
-                <div class="card p-2 sticky-top" style="top: 80px;">
+                <div class="card p-2 sticky-top sidebar-card-floating">
                     <nav class="nav nav-pills flex-column gap-1">
                         <a class="nav-link {{ request()->routeIs('reseller.dashboard') ? 'active' : '' }}" href="{{ route('reseller.dashboard') }}">
                             <i class="las la-home fs-5"></i> @lang('Dashboard')

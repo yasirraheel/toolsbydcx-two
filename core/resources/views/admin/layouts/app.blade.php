@@ -11,7 +11,7 @@
             <div class="row g-4">
                 {{-- Floating Sidebar Card (Matching Reseller Portal) --}}
                 <div class="col-xl-2 col-lg-3">
-                    <div class="card p-2 sticky-top" style="top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #334155 transparent;">
+                    <div class="card p-2 sticky-top sidebar-card-floating">
                         @include('admin.partials.sidenav')
                     </div>
                 </div>

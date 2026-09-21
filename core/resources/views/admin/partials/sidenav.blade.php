@@ -6,7 +6,7 @@
     @foreach($sideBarLinks as $key => $data)
         @if(@$data->submenu)
             <div class="sidebar-dropdown-group">
-                <a href="javascript:void(0)" class="nav-link d-flex align-items-center justify-content-between {{ menuActive(@$data->menu_active, 3) }}" onclick="$(this).next('.sidebar-submenu-box').slideToggle(200); $(this).find('.dropdown-arrow').toggleClass('rotate-180');">
+                <a href="javascript:void(0)" class="nav-link d-flex align-items-center justify-content-between sidebar-dropdown-toggle {{ menuActive(@$data->menu_active, 3) }}">
                     <div class="d-flex align-items-center gap-2">
                         <i class="{{ @$data->icon }} fs-5"></i>
                         <span>{{ __(@$data->title) }}</span>
@@ -23,7 +23,7 @@
                         <i class="las la-angle-down dropdown-arrow transition-all {{ menuActive(@$data->menu_active, 2) ? 'rotate-180' : '' }}" style="font-size: 12px;"></i>
                     </div>
                 </a>
-                <div class="sidebar-submenu-box ps-2 pt-1 {{ menuActive(@$data->menu_active, 2) ? '' : 'd-none' }}">
+                <div class="sidebar-submenu-box ps-2 pt-1" style="{{ menuActive(@$data->menu_active, 2) ? 'display: block;' : 'display: none;' }}">
                     <div class="nav flex-column gap-1 ps-2 border-start border-secondary border-opacity-25 my-1">
                         @foreach($data->submenu as $menu)
                             @php
