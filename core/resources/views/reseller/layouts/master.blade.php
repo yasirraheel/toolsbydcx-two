@@ -77,6 +77,8 @@
         .card-footer {
             background: rgba(255, 255, 255, 0.02);
             border-top: 1px solid var(--card-border);
+        }
+
         /* Floating Sidebar Container (Invisible Scrollbar) */
         .sidebar-card-floating {
             top: 80px;
@@ -104,6 +106,7 @@
             font-size: 0.92rem !important;
             white-space: nowrap !important;
             text-decoration: none !important;
+            background: transparent;
         }
 
         .nav-pills .nav-link i,
@@ -112,37 +115,40 @@
             transition: color 0.2s !important;
         }
 
-        .nav-pills .nav-link:hover {
-            color: #fff !important;
+        .nav-pills .nav-link:hover:not(.active) {
+            color: #ffffff !important;
             background: rgba(255, 255, 255, 0.05) !important;
         }
 
-        .nav-pills .nav-link:hover i,
-        .nav-pills .nav-link:hover span {
-            color: #fff !important;
+        .nav-pills .nav-link:hover:not(.active) i,
+        .nav-pills .nav-link:hover:not(.active) span {
+            color: #ffffff !important;
         }
 
-        .nav-pills .nav-link.active {
+        .nav-pills .nav-link.active,
+        .nav-pills .nav-link.active i,
+        .nav-pills .nav-link.active span,
+        .nav-pills .nav-link.active.text-success,
+        .nav-pills .nav-link.active.text-success i,
+        .nav-pills .nav-link.active.text-success span,
+        .nav-pills .nav-link.active.text-danger,
+        .nav-pills .nav-link.active.text-danger i,
+        .nav-pills .nav-link.active.text-danger span {
             background: var(--base-color, #6366f1) !important;
-            color: #fff !important;
+            color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
             font-weight: 600 !important;
         }
 
-        .nav-pills .nav-link.active i,
-        .nav-pills .nav-link.active span {
-            color: #fff !important;
-        }
-
-        .nav-pills .nav-link.text-danger,
-        .nav-pills .nav-link.text-danger i,
-        .nav-pills .nav-link.text-danger span {
+        .nav-pills .nav-link:not(.active).text-danger,
+        .nav-pills .nav-link:not(.active).text-danger i,
+        .nav-pills .nav-link:not(.active).text-danger span {
             color: #ef4444 !important;
         }
 
-        .nav-pills .nav-link.text-success,
-        .nav-pills .nav-link.text-success i,
-        .nav-pills .nav-link.text-success span {
+        .nav-pills .nav-link:not(.active).text-success,
+        .nav-pills .nav-link:not(.active).text-success i,
+        .nav-pills .nav-link:not(.active).text-success span {
             color: #10b981 !important;
         }
 
@@ -176,28 +182,28 @@
         }
 
         /* Form Controls */
-        .form-control, .form-select {
-            background-color: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #fff;
-            border-radius: 8px;
+        .form-control, .form-select, input.form-control, textarea.form-control, select.form-control {
+            background-color: #1e293b !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
         }
 
-        .form-control:focus, .form-select:focus {
-            background-color: #1e293b;
-            border-color: var(--base-color);
-            color: #fff;
-            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        .form-control:focus, .form-select:focus, input.form-control:focus, textarea.form-control:focus {
+            background-color: #1e293b !important;
+            border-color: var(--base-color, #6366f1) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25) !important;
         }
 
-        .form-control::placeholder {
-            color: #64748b;
+        .form-control::placeholder, input.form-control::placeholder {
+            color: #64748b !important;
         }
 
         .input-group-text {
-            background-color: #334155;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #cbd5e1;
+            background-color: #334155 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #cbd5e1 !important;
         }
 
         /* Buttons */

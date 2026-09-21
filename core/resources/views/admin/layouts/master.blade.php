@@ -71,23 +71,27 @@
             color: #94a3b8 !important;
             transition: color 0.2s !important;
         }
-        .nav-pills .nav-link:hover {
+        .nav-pills .nav-link:hover:not(.active) {
             color: #ffffff !important;
             background: rgba(255, 255, 255, 0.05) !important;
         }
-        .nav-pills .nav-link:hover i,
-        .nav-pills .nav-link:hover span {
+        .nav-pills .nav-link:hover:not(.active) i,
+        .nav-pills .nav-link:hover:not(.active) span {
             color: #ffffff !important;
         }
-        .nav-pills .nav-link.active {
+        .nav-pills .nav-link.active,
+        .nav-pills .nav-link.active i,
+        .nav-pills .nav-link.active span,
+        .nav-pills .nav-link.active.text-success,
+        .nav-pills .nav-link.active.text-success i,
+        .nav-pills .nav-link.active.text-success span,
+        .nav-pills .nav-link.active.text-danger,
+        .nav-pills .nav-link.active.text-danger i,
+        .nav-pills .nav-link.active.text-danger span {
             background: #4634ff !important;
             color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(70, 52, 255, 0.35) !important;
             font-weight: 600 !important;
-        }
-        .nav-pills .nav-link.active i,
-        .nav-pills .nav-link.active span {
-            color: #ffffff !important;
         }
         .sidebar-submenu-box .nav-link {
             color: #94a3b8 !important;
@@ -113,14 +117,14 @@
         .sidebar-submenu-box .nav-link.active span {
             color: #ffffff !important;
         }
-        .nav-pills .nav-link.text-danger,
-        .nav-pills .nav-link.text-danger i,
-        .nav-pills .nav-link.text-danger span {
+        .nav-pills .nav-link:not(.active).text-danger,
+        .nav-pills .nav-link:not(.active).text-danger i,
+        .nav-pills .nav-link:not(.active).text-danger span {
             color: #ef4444 !important;
         }
-        .nav-pills .nav-link.text-success,
-        .nav-pills .nav-link.text-success i,
-        .nav-pills .nav-link.text-success span {
+        .nav-pills .nav-link:not(.active).text-success,
+        .nav-pills .nav-link:not(.active).text-success i,
+        .nav-pills .nav-link:not(.active).text-success span {
             color: #10b981 !important;
         }
 
