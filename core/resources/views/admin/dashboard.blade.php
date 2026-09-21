@@ -109,7 +109,7 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('admin.users.resellers') }}" class="btn btn-outline-warning btn-lg fw-bold flex-grow-1">
+                    <a href="{{ route('admin.resellers.all') }}" class="btn btn-outline-warning btn-lg fw-bold flex-grow-1">
                         <i class="las la-users-cog me-1"></i> @lang('Manage Reseller Partners')
                     </a>
                     <a href="{{ route('admin.plan.index') }}" class="btn btn-warning btn-lg fw-bold text-dark">
