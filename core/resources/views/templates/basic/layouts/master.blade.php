@@ -245,6 +245,18 @@
         }
 
         /* Alerts in Dark Theme */
+        .alert-success, .alert--success {
+            background-color: rgba(16, 185, 129, 0.12) !important;
+            border: 1px solid rgba(16, 185, 129, 0.35) !important;
+            color: #34d399 !important;
+        }
+        .alert-success *, .alert--success * {
+            color: #e2e8f0 !important;
+        }
+        .alert-success strong, .alert--success strong,
+        .alert-success .alert-heading, .alert--success .alert-heading {
+            color: #ffffff !important;
+        }
         .alert-warning, .alert--warning {
             background-color: rgba(234, 179, 8, 0.12) !important;
             border: 1px solid rgba(234, 179, 8, 0.35) !important;
@@ -265,6 +277,21 @@
             background-color: rgba(59, 130, 246, 0.12) !important;
             border: 1px solid rgba(59, 130, 246, 0.35) !important;
             color: #93c5fd !important;
+        }
+
+        /* Dark List Groups */
+        .list-group {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px !important;
+        }
+        .list-group-item {
+            background-color: #111827 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #e2e8f0 !important;
+        }
+        .list-group-item span, .list-group-item p, .list-group-item div, .list-group-item strong {
+            color: #e2e8f0 !important;
         }
 
         /* High Contrast Notice Banner */

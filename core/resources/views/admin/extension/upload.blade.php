@@ -54,11 +54,11 @@
                     <h5 class="card-title mb-4">@lang('Distribution Link')</h5>
                     
                     @if($extensionExists)
-                        <div class="alert alert-success">
-                            <h4 class="alert-heading">@lang('Extension is currently available for download!')</h4>
-                            <p>@lang('Last uploaded on'): <strong>{{ $lastModified }}</strong></p>
-                            <hr>
-                            <p class="mb-0">@lang('Share the link below with your users. Clicking it will automatically download the extension.')</p>
+                        <div class="alert alert-success d-flex flex-column gap-2" style="background: rgba(16, 185, 129, 0.12) !important; border: 1px solid rgba(16, 185, 129, 0.35) !important; color: #cbd5e1 !important; border-radius: 8px; padding: 18px 20px;">
+                            <h5 class="alert-heading text-white mb-1"><i class="las la-check-circle text-success me-1"></i> @lang('Extension is currently available for download!')</h5>
+                            <div style="font-size: 13.5px; color: #94a3b8;">@lang('Last uploaded on'): <strong class="text-white">{{ $lastModified }}</strong></div>
+                            <div class="border-top border-secondary border-opacity-25 my-1"></div>
+                            <p class="mb-0 small" style="color: #cbd5e1;">@lang('Share the link below with your users. Clicking it will automatically download the extension.')</p>
                         </div>
 
                         <div class="form-group">

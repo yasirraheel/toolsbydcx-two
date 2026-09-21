@@ -302,6 +302,107 @@
         .select2-container--default .select2-results__option[aria-selected=true] {
             background-color: #334155 !important;
         }
+
+        /* Settings Widgets & Cards Dark Theme */
+        .widget-two, .widget-one, .widget-three, .widget-four, .widget-five, .widget-six, .widget-seven,
+        .bg--white, .box--shadow2, .widget-two.bg--white {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #e2e8f0 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+        }
+        .widget-two:hover {
+            border-color: rgba(99, 102, 241, 0.4) !important;
+            background-color: #162032 !important;
+        }
+        .widget-two__content h3, .widget-two__content h1, .widget-two__content h2,
+        .widget-two__content h4, .widget-two__content h5, .widget-two__content h6,
+        .widget-two h1, .widget-two h2, .widget-two h3, .widget-two h4, .widget-two h5, .widget-two h6 {
+            color: #ffffff !important;
+        }
+        .widget-two__content p, .widget-two__content span {
+            color: #94a3b8 !important;
+        }
+        .widget-two__icon {
+            background-color: #4634ff !important;
+            color: #ffffff !important;
+        }
+        .widget-two__icon i {
+            color: #ffffff !important;
+        }
+
+        /* Dark List Groups (System Info, Optimize, etc.) */
+        .list-group {
+            background-color: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px !important;
+        }
+        .list-group-item {
+            background-color: #111827 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #e2e8f0 !important;
+        }
+        .list-group-item span, .list-group-item p, .list-group-item div, .list-group-item strong {
+            color: #e2e8f0 !important;
+        }
+        .list-group-item:hover {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+        .list-group-flush > .list-group-item {
+            border-width: 0 0 1px !important;
+        }
+        .list-group-flush > .list-group-item:last-child {
+            border-bottom-width: 0 !important;
+        }
+
+        /* Dark Alerts */
+        .alert-success, .alert--success {
+            background-color: rgba(16, 185, 129, 0.12) !important;
+            border: 1px solid rgba(16, 185, 129, 0.35) !important;
+            color: #34d399 !important;
+        }
+        .alert-success *, .alert--success * {
+            color: #e2e8f0 !important;
+        }
+        .alert-success strong, .alert--success strong,
+        .alert-success .alert-heading, .alert--success .alert-heading,
+        .alert-success h1, .alert-success h2, .alert-success h3, .alert-success h4, .alert-success h5 {
+            color: #ffffff !important;
+        }
+        .alert-warning, .alert--warning {
+            background-color: rgba(234, 179, 8, 0.12) !important;
+            border: 1px solid rgba(234, 179, 8, 0.35) !important;
+            color: #fef08a !important;
+        }
+        .alert-warning *, .alert--warning * {
+            color: #fef08a !important;
+        }
+        .alert-warning strong, .alert--warning strong,
+        .alert-warning .alert-heading, .alert--warning .alert-heading {
+            color: #ffffff !important;
+        }
+        .alert-danger, .alert--danger {
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            border: 1px solid rgba(239, 68, 68, 0.35) !important;
+            color: #fca5a5 !important;
+        }
+        .alert-danger *, .alert--danger * {
+            color: #fca5a5 !important;
+        }
+        .alert-info, .alert--info {
+            background-color: rgba(59, 130, 246, 0.12) !important;
+            border: 1px solid rgba(59, 130, 246, 0.35) !important;
+            color: #93c5fd !important;
+        }
+        .alert-info *, .alert--info * {
+            color: #cbd5e1 !important;
+        }
+        .alert-primary, .alert--primary {
+            background-color: rgba(99, 102, 241, 0.12) !important;
+            border: 1px solid rgba(99, 102, 241, 0.35) !important;
+            color: #a5b4fc !important;
+        }
     </style>
 
     @stack('style')

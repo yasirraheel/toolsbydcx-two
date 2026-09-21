@@ -269,7 +269,7 @@
             </div>
 
             {{-- Recharge Wallet Button --}}
-            <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 fw-bold">
+            <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 fw-bold">
                 <i class="las la-plus-circle"></i> @lang('Recharge Wallet')
             </a>
 
@@ -296,7 +296,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{{ route('reseller.deposit.history') }}">
+                        <a class="dropdown-item" href="{{ route('user.deposit.history') }}">
                             <i class="las la-file-invoice-dollar me-1"></i> @lang('Deposit History')
                         </a>
                     </li>
@@ -336,13 +336,13 @@
                             <i class="las la-tags fs-5"></i> @lang('Account Pricing')
                         </a>
                         <div class="my-2 border-top border-secondary opacity-25"></div>
-                        <a class="nav-link text-success fw-bold {{ request()->routeIs('reseller.deposit') ? 'active' : '' }}" href="{{ route('reseller.deposit') }}">
+                        <a class="nav-link text-success fw-bold {{ request()->routeIs('user.deposit*') ? 'active' : '' }}" href="{{ route('user.deposit.index') }}">
                             <i class="las la-wallet fs-5"></i> @lang('Recharge Wallet')
                         </a>
                         <a class="nav-link {{ request()->routeIs('reseller.transactions') ? 'active' : '' }}" href="{{ route('reseller.transactions') }}">
                             <i class="las la-exchange-alt fs-5"></i> @lang('Transactions')
                         </a>
-                        <a class="nav-link {{ request()->routeIs('reseller.deposit.history') ? 'active' : '' }}" href="{{ route('reseller.deposit.history') }}">
+                        <a class="nav-link {{ request()->routeIs('user.deposit.history') ? 'active' : '' }}" href="{{ route('user.deposit.history') }}">
                             <i class="las la-receipt fs-5"></i> @lang('Deposit History')
                         </a>
                         <div class="my-2 border-top border-secondary opacity-25"></div>

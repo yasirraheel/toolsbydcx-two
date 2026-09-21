@@ -276,4 +276,9 @@ class User extends Authenticatable
         return AccountListing::whereIn('id', $accountIds)->with('socialMedia')->get();
     }
 
+    public function assignedAccountList()
+    {
+        return $this->assignedAccountListings();
+    }
+
 }
