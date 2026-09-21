@@ -13,7 +13,7 @@
             </div>
             <h2 class="text-white fw-bold mb-2">{{ showAmount($reseller->balance) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h2>
             <div class="mt-auto pt-2">
-                <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-success w-100 fw-bold">
+                <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn-success w-100 fw-bold">
                     <i class="las la-plus-circle me-1"></i> @lang('Recharge Funds')
                 </a>
             </div>

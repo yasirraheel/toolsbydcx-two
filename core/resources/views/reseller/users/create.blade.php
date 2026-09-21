@@ -158,7 +158,7 @@
                         <span class="text-muted small d-block">@lang('Your Wallet Balance')</span>
                         <h4 class="text-success fw-bold mb-0">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</h4>
                     </div>
-                    <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-outline-success">
+                    <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn-outline-success">
                         <i class="las la-plus-circle"></i>
                     </a>
                 </div>
@@ -198,7 +198,7 @@
                             <strong>@lang('Insufficient Funds'):</strong> @lang('Please recharge your wallet balance to create this client user.')
                         </div>
                     </div>
-                    <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-danger w-100 mt-2 fw-bold">
+                    <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn-danger w-100 mt-2 fw-bold">
                         <i class="las la-wallet me-1"></i> @lang('Recharge Wallet Now')
                     </a>
                 </div>

@@ -9,6 +9,13 @@ Route::namespace('Reseller')->name('reseller.')->middleware(['auth', 'reseller']
         Route::get('transactions', 'transactions')->name('transactions');
         Route::get('deposit-history', 'depositHistory')->name('deposit.history');
 
+        // Deposit & Wallet Recharge (Native Platform Flow)
+        Route::get('deposit', 'deposit')->name('deposit');
+        Route::post('deposit/insert', 'depositInsert')->name('deposit.insert');
+        Route::get('deposit/confirm', 'depositConfirm')->name('deposit.confirm');
+        Route::get('deposit/manual', 'manualDepositConfirm')->name('deposit.manual.confirm');
+        Route::post('deposit/manual', 'manualDepositUpdate')->name('deposit.manual.update');
+
         // Client User Management
         Route::prefix('users')->name('users.')->group(function () {
             Route::get('/', 'users')->name('index');
