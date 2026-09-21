@@ -2,100 +2,74 @@
     $answeredTicketsCount = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->count();
 @endphp
 
-<div class="sidebar bg--dark">
-    <button class="res-sidebar-close-btn"><i class="las la-times"></i></button>
-    <div class="sidebar__inner">
-        <div class="sidebar__logo">
-            <a href="{{ route('user.home') }}" class="sidebar__main-logo">
-                <img src="{{ siteLogo() }}" alt="@lang('Logo')">
-            </a>
-        </div>
-        <div class="sidebar__menu-wrapper" id="sidebar__menuWrapper">
-            <ul class="sidebar__menu">
+<nav class="nav nav-pills flex-column gap-1" id="sidebar__menuWrapper">
+    {{-- Dashboard --}}
+    <a href="{{ route('user.home') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.home') }}">
+        <i class="las la-tachometer-alt fs-5"></i>
+        <span>@lang('Dashboard')</span>
+    </a>
 
-                {{-- Dashboard --}}
-                <li class="sidebar-menu-item {{ menuActive('user.home') }}">
-                    <a href="{{ route('user.home') }}" class="nav-link">
-                        <i class="menu-icon las la-tachometer-alt"></i>
-                        <span class="menu-title">@lang('Dashboard')</span>
-                    </a>
-                </li>
+    {{-- Subscription Plans --}}
+    <a href="{{ route('plans') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('plans*') }}">
+        <i class="las la-crown fs-5"></i>
+        <span>@lang('Subscription Plans')</span>
+    </a>
 
-                {{-- Subscription Plans --}}
-                <li class="sidebar-menu-item {{ menuActive('plans*') }}">
-                    <a href="{{ route('plans') }}" class="nav-link">
-                        <i class="menu-icon las la-crown"></i>
-                        <span class="menu-title">@lang('Subscription Plans')</span>
-                    </a>
-                </li>
-
-                {{-- Support Tickets --}}
-                <li class="sidebar-menu-item sidebar-dropdown">
-                    <a href="javascript:void(0)" class="{{ menuActive(['ticket*'], 3) }}">
-                        <i class="menu-icon las la-headset"></i>
-                        <span class="menu-title">@lang('Support Tickets')</span>
-                        @if($answeredTicketsCount > 0)
-                            <span class="menu-badge menu-badge-level-one bg--info ms-auto">{{ $answeredTicketsCount }}</span>
-                        @endif
-                    </a>
-                    <div class="sidebar-submenu {{ menuActive(['ticket*'], 2) }}">
-                        <ul>
-                            <li class="sidebar-menu-item {{ menuActive('ticket.index') }}">
-                                <a href="{{ route('ticket.index') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('My Tickets')</span>
-                                    @if($answeredTicketsCount > 0)
-                                        <span class="menu-badge bg--info ms-auto">{{ $answeredTicketsCount }}</span>
-                                    @endif
-                                </a>
-                            </li>
-                            <li class="sidebar-menu-item {{ menuActive('ticket.open') }}">
-                                <a href="{{ route('ticket.open') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Open New Ticket')</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Account Details & Settings --}}
-                <li class="sidebar-menu-item sidebar-dropdown">
-                    <a href="javascript:void(0)" class="{{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 3) }}">
-                        <i class="menu-icon las la-user-cog"></i>
-                        <span class="menu-title">@lang('Account Settings')</span>
-                    </a>
-                    <div class="sidebar-submenu {{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 2) }}">
-                        <ul>
-                            <li class="sidebar-menu-item {{ menuActive(['user.profile.setting', 'user.general.profile']) }}">
-                                <a href="{{ route('user.profile.setting') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Profile Details')</span>
-                                </a>
-                            </li>
-                            <li class="sidebar-menu-item {{ menuActive('user.change.password') }}">
-                                <a href="{{ route('user.change.password') }}" class="nav-link">
-                                    <i class="menu-icon las la-dot-circle"></i>
-                                    <span class="menu-title">@lang('Change Password')</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Logout --}}
-                <li class="sidebar-menu-item">
-                    <a href="{{ route('user.logout') }}" class="nav-link text-danger">
-                        <i class="menu-icon las la-sign-out-alt text-danger"></i>
-                        <span class="menu-title text-danger">@lang('Logout')</span>
-                    </a>
-                </li>
-
-            </ul>
-        </div>
-        <div class="version-info text-center text-uppercase">
-            <span class="text--primary">{{ __(gs('site_name')) }}</span>
-            <span class="text--success">@lang('User Portal')</span>
+    {{-- Support Tickets --}}
+    <div class="sidebar-dropdown-group">
+        <a href="javascript:void(0)" class="nav-link d-flex align-items-center justify-content-between {{ menuActive(['ticket*'], 3) }}" onclick="$(this).next('.sidebar-submenu-box').slideToggle(200); $(this).find('.dropdown-arrow').toggleClass('rotate-180');">
+            <div class="d-flex align-items-center gap-2">
+                <i class="las la-headset fs-5"></i>
+                <span>@lang('Support Tickets')</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                @if($answeredTicketsCount > 0)
+                    <span class="badge bg-info px-1.5 py-0.5" style="font-size: 10px;">{{ $answeredTicketsCount }}</span>
+                @endif
+                <i class="las la-angle-down dropdown-arrow transition-all {{ menuActive(['ticket*'], 2) ? 'rotate-180' : '' }}" style="font-size: 12px;"></i>
+            </div>
+        </a>
+        <div class="sidebar-submenu-box ps-2 pt-1 {{ menuActive(['ticket*'], 2) ? '' : 'd-none' }}">
+            <div class="nav flex-column gap-1 ps-2 border-start border-secondary border-opacity-25 my-1">
+                <a href="{{ route('ticket.index') }}" class="nav-link py-1 px-2 d-flex align-items-center justify-content-between {{ menuActive('ticket.index') }}" style="font-size: 0.85rem;">
+                    <span><i class="las la-dot-circle me-1.5" style="font-size: 10px;"></i>@lang('My Tickets')</span>
+                    @if($answeredTicketsCount > 0)
+                        <span class="badge bg-info ms-auto" style="font-size: 10px;">{{ $answeredTicketsCount }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('ticket.open') }}" class="nav-link py-1 px-2 d-flex align-items-center {{ menuActive('ticket.open') }}" style="font-size: 0.85rem;">
+                    <span><i class="las la-dot-circle me-1.5" style="font-size: 10px;"></i>@lang('Open New Ticket')</span>
+                </a>
+            </div>
         </div>
     </div>
-</div>
+
+    {{-- Account Details & Settings --}}
+    <div class="sidebar-dropdown-group">
+        <a href="javascript:void(0)" class="nav-link d-flex align-items-center justify-content-between {{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 3) }}" onclick="$(this).next('.sidebar-submenu-box').slideToggle(200); $(this).find('.dropdown-arrow').toggleClass('rotate-180');">
+            <div class="d-flex align-items-center gap-2">
+                <i class="las la-user-cog fs-5"></i>
+                <span>@lang('Account Settings')</span>
+            </div>
+            <i class="las la-angle-down dropdown-arrow transition-all {{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 2) ? 'rotate-180' : '' }}" style="font-size: 12px;"></i>
+        </a>
+        <div class="sidebar-submenu-box ps-2 pt-1 {{ menuActive(['user.profile.setting', 'user.change.password', 'user.general.profile'], 2) ? '' : 'd-none' }}">
+            <div class="nav flex-column gap-1 ps-2 border-start border-secondary border-opacity-25 my-1">
+                <a href="{{ route('user.profile.setting') }}" class="nav-link py-1 px-2 d-flex align-items-center {{ menuActive(['user.profile.setting', 'user.general.profile']) }}" style="font-size: 0.85rem;">
+                    <span><i class="las la-dot-circle me-1.5" style="font-size: 10px;"></i>@lang('Profile Details')</span>
+                </a>
+                <a href="{{ route('user.change.password') }}" class="nav-link py-1 px-2 d-flex align-items-center {{ menuActive('user.change.password') }}" style="font-size: 0.85rem;">
+                    <span><i class="las la-dot-circle me-1.5" style="font-size: 10px;"></i>@lang('Change Password')</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="my-2 border-top border-secondary opacity-25"></div>
+
+    {{-- Logout --}}
+    <a href="{{ route('user.logout') }}" class="nav-link text-danger d-flex align-items-center gap-2">
+        <i class="las la-sign-out-alt fs-5"></i>
+        <span>@lang('Logout')</span>
+    </a>
+</nav>

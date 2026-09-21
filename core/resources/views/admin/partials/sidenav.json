@@ -30,34 +30,34 @@
     "account_listing": {
 
         "keyword": ["Manage accounts","Shared accounts","Account access"],
-        "title": "Manage Accounts",
+        "title": "Accounts",
         "icon": "las la-dungeon",
         "route_name": "admin.account.listing.index",
         "menu_active": "admin.account.listing*"
     },
     "plans": {
         "keyword": ["Subscription plans","Plans","Pricing plans","Access plans"],
-        "title": "Subscription Plans",
+        "title": "Plans",
         "icon": "las la-layer-group",
         "route_name": "admin.plan.index",
         "menu_active": "admin.plan*"
     },
     "social_media": {
         "keyword": ["Manage social media","Social networks","Social platforms","Online communities","Digital media","Social channels","Social web","Social sites"],
-        "title": "Manage Platforms",
+        "title": "Platforms",
         "icon": "las la-network-wired",
         "route_name": "admin.social.media.index",
         "menu_active": "admin.social.media.index"
     },
     "categories": {
         "keyword": ["Manage categories","Categories management","Group","Type","Class","Sections"],
-        "title": "Manage Categories",
+        "title": "Categories",
         "icon": "las la-layer-group",
         "route_name": "admin.category.index",
         "menu_active": "admin.category.index"
     },
     "manage_users": {
-        "title": "Manage Users",
+        "title": "Users",
         "icon": "las la-users",
         "counters": ["bannedUsersCount", "emailUnverifiedUsersCount", "mobileUnverifiedUsersCount", "kycUnverifiedUsersCount", "kycPendingUsersCount"],
         "menu_active": "admin.users*",
@@ -129,7 +129,7 @@
         ]
     },
     "manage_resellers": {
-        "title": "Manage Resellers",
+        "title": "Resellers",
         "icon": "las la-handshake",
         "menu_active": "admin.resellers*",
         "submenu": [
@@ -167,7 +167,7 @@
     },
     "extension_distribution": {
         "keyword": ["Extension distribution", "Upload extension", "Distribute extension", "Browser extension"],
-        "title": "Extension Distribution",
+        "title": "Extension",
         "icon": "las la-puzzle-piece",
         "route_name": "admin.extension.upload",
         "menu_active": "admin.extension.upload*"

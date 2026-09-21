@@ -20,144 +20,58 @@
     <link rel="stylesheet" href="{{asset('assets/global/css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/admin/css/app.css')}}">
     <style>
-        /* Reseller-Matched Sidebar Design for Admin Panel */
-        .sidebar {
-            background-color: #0b0f19 !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-            z-index: 1000;
-        }
-        .sidebar__inner {
-            background-color: #0b0f19 !important;
-        }
-        .sidebar__logo {
-            background-color: #0b0f19 !important;
+        /* Floating Sidebar Card & Navigation (Matching Reseller Portal) */
+        .navbar-wrapper {
+            background-color: #0f172a !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-            padding: 15px 20px !important;
+            padding: 0.75rem 1.5rem !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1020 !important;
+            margin-left: 0 !important;
+            width: 100% !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
-        .sidebar__menu-wrapper {
-            scrollbar-width: thin;
-            scrollbar-color: #334155 transparent;
+        .body-wrapper {
+            margin-left: 0 !important;
+            padding: 0 !important;
         }
-        .sidebar__menu-wrapper::-webkit-scrollbar {
-            width: 4px;
+
+        /* Navigation Pills inside Floating Card */
+        .nav-pills .nav-link {
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: 0.55rem 0.85rem;
+            font-weight: 500;
+            font-size: 0.90rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            white-space: nowrap;
+            background: transparent;
+            text-decoration: none;
         }
-        .sidebar__menu-wrapper::-webkit-scrollbar-thumb {
-            background-color: #334155;
-            border-radius: 4px;
+        .nav-pills .nav-link:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
         }
-        .sidebar__menu {
-            padding: 12px 14px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 5px !important;
-        }
-        .sidebar-menu-item {
-            margin-bottom: 0 !important;
-            position: relative;
-        }
-        .sidebar-menu-item > a.nav-link,
-        .sidebar-menu-item.sidebar-dropdown > a,
-        .sidebar-menu-item > a {
-            border-radius: 8px !important;
-            padding: 0.55rem 0.95rem !important;
-            color: #94a3b8 !important;
-            font-weight: 500 !important;
-            font-size: 0.90rem !important;
-            transition: all 0.2s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.6rem !important;
-            background: transparent !important;
-            border: none !important;
-            text-decoration: none !important;
-        }
-        .sidebar-menu-item > a.nav-link:hover,
-        .sidebar-menu-item.sidebar-dropdown > a:hover,
-        .sidebar-menu-item > a:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.05) !important;
-        }
-        .sidebar-menu-item > a.nav-link:hover .menu-icon,
-        .sidebar-menu-item > a:hover .menu-icon,
-        .sidebar-menu-item > a:hover .menu-title {
-            color: #ffffff !important;
-        }
-        .sidebar-menu-item.active > a.nav-link,
-        .sidebar-menu-item.active > a,
-        .sidebar-menu-item.sidebar-dropdown.active > a,
-        .sidebar-menu-item.open.active > a {
+        .nav-pills .nav-link.active {
             background: #4634ff !important;
             color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(70, 52, 255, 0.35) !important;
-            font-weight: 600 !important;
+            font-weight: 600;
         }
-        .sidebar-menu-item.active > a.nav-link .menu-icon,
-        .sidebar-menu-item.active > a .menu-icon,
-        .sidebar-menu-item.active > a.nav-link .menu-title,
-        .sidebar-menu-item.active > a .menu-title {
+        .nav-pills .nav-link.active i,
+        .nav-pills .nav-link.active span {
             color: #ffffff !important;
         }
-        .sidebar-menu-item .menu-icon {
-            font-size: 1.15rem !important;
-            width: 20px !important;
-            text-align: center !important;
-            color: inherit !important;
-            margin-right: 0 !important;
+
+        .transition-all {
+            transition: all 0.2s ease-in-out;
         }
-        .sidebar-menu-item .menu-title {
-            color: inherit !important;
-            font-size: 0.90rem !important;
-        }
-        .sidebar-menu-item.sidebar-dropdown > a::before {
-            right: 15px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            color: #94a3b8 !important;
-            font-size: 11px !important;
-        }
-        .sidebar-menu-item.sidebar-dropdown > a.side-menu--open::before {
-            transform: translateY(-50%) rotate(180deg) !important;
-            color: #ffffff !important;
-        }
-        .sidebar-submenu {
-            background-color: rgba(0, 0, 0, 0.25) !important;
-            border: 1px solid rgba(255, 255, 255, 0.05) !important;
-            border-radius: 8px !important;
-            margin-top: 4px !important;
-            padding: 6px !important;
-        }
-        .sidebar-submenu ul {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 3px !important;
-            padding-left: 0 !important;
-        }
-        .sidebar-submenu .nav-link,
-        .sidebar-submenu a {
-            border-radius: 6px !important;
-            padding: 0.45rem 0.8rem !important;
-            color: #94a3b8 !important;
-            font-size: 0.86rem !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.5rem !important;
-            transition: all 0.2s ease !important;
-        }
-        .sidebar-submenu .nav-link:hover,
-        .sidebar-submenu a:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.05) !important;
-        }
-        .sidebar-submenu .sidebar-menu-item.active .nav-link,
-        .sidebar-submenu .sidebar-menu-item.active a {
-            background-color: #4634ff !important;
-            color: #ffffff !important;
-        }
-        .version-info {
-            background-color: #0b0f19 !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-            padding: 12px 15px !important;
-            color: #64748b !important;
+        .rotate-180 {
+            transform: rotate(180deg);
         }
 
         /* Complete Dark Theme for Admin (Matching Reseller Portal) */

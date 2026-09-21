@@ -18,10 +18,15 @@
 @endphp
 
 <!-- navbar-wrapper start -->
-<nav class="navbar-wrapper bg--dark d-flex flex-wrap">
-    <div class="navbar__left">
-        <button type="button" class="res-sidebar-open-btn me-3"><i class="las la-bars"></i></button>
-        <form class="navbar-search">
+<nav class="navbar-wrapper d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+        <a class="navbar-brand me-1" href="{{ route('admin.dashboard') }}">
+            <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}" style="max-height: 38px;">
+        </a>
+        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2.5 py-1 d-none d-md-inline-block">
+            <i class="las la-shield-alt me-1"></i> @lang('Administrator')
+        </span>
+        <form class="navbar-search ms-2 d-none d-sm-block">
             <input type="search" name="#0" class="navbar-search-field" id="searchInput" autocomplete="off"
                 placeholder="@lang('Search here...')">
             <i class="las la-search"></i>

@@ -3,9 +3,11 @@
     $answeredTicketsCount = $answeredTickets->count();
 @endphp
 
-<nav class="navbar-wrapper bg--dark d-flex flex-wrap">
-    <div class="navbar__left">
-        <button type="button" class="res-sidebar-open-btn me-3"><i class="las la-bars"></i></button>
+<nav class="navbar-wrapper d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+        <a class="navbar-brand me-1" href="{{ route('user.home') }}">
+            <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}" style="max-height: 38px;">
+        </a>
         <div class="d-none d-md-flex align-items-center">
             <span class="text-white fw-bold">
                 <i class="las la-user-circle text--primary me-1" style="font-size: 18px;"></i>
