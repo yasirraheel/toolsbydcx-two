@@ -369,7 +369,6 @@
                             }
                         });
                         window.dispatchEvent(event);
-                        window.dispatchEvent(new CustomEvent('ShahabTechInject', { detail: { platform: response.platform, cookies: response.cookies } }));
                         
                         setTimeout(function() {
                             btn.prop('disabled', false);

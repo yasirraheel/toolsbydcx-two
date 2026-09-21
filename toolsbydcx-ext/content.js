@@ -1,8 +1,19 @@
 // content.js
 // Injected into toolsbydcx.com / panel to listen for injection requests from the web page
 
+let lastInjectTimestamp = 0;
+let lastInjectPlatform = null;
+
 function handleInjectEvent(event, eventPrefix = 'ToolsByDcx') {
     const data = event.detail;
+    const now = Date.now();
+    
+    // Prevent duplicate injections within 1.5 seconds for the same event/platform
+    if (now - lastInjectTimestamp < 1500) {
+        return;
+    }
+    lastInjectTimestamp = now;
+    lastInjectPlatform = data?.platform?.id || null;
     
     if (data && data.platform && data.cookies) {
         // Send to background script for secure injection
@@ -39,7 +50,7 @@ window.addEventListener('ToolsByDcxInject', (e) => handleInjectEvent(e, 'ToolsBy
 window.addEventListener('WeMateInject', (e) => handleInjectEvent(e, 'WeMate'));
 
 // Also let the web page know the extension is installed and its exact version
-const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.2';
+const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.3';
 
 function injectExtensionMetaTags() {
     const target = document.head || document.documentElement;

@@ -124,7 +124,7 @@
                         if (response.success) {
                             btnText.text('Injecting...');
                             
-                            let event = new CustomEvent('ShahabTechInject', {
+                            let event = new CustomEvent('ToolsByDcxInject', {
                                 detail: {
                                     platform: response.platform,
                                     cookies: response.cookies
