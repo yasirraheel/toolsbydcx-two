@@ -2,311 +2,353 @@
 
 @section('panel')
 
-    <div class="row gy-4">
+    {{-- Primary Metrics Row --}}
+    <div class="row g-4 mb-4">
+        {{-- Total Account Earnings Card --}}
+        <div class="col-sm-6 col-xxl-3">
+            <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.03)); border-color: rgba(16, 185, 129, 0.3);">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted small fw-semibold">@lang('ACCOUNT EARNINGS')</span>
+                    <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #34d399;">
+                        <i class="las la-wallet fs-4"></i>
+                    </div>
+                </div>
+                <h2 class="text-white fw-bold mb-2">{{ showAmount($widget['total_account_earnings'], 0) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h2>
+                <div class="mt-auto text-muted small">
+                    <i class="las la-coins text-success"></i> @lang('Active assigned accounts revenue')
+                </div>
+            </div>
+        </div>
 
-        <div class="col-xxl-3 col-sm-6">
-
-            <x-widget
-                style="6"
-                link="{{route('admin.users.all')}}"
-                icon="las la-users"
-                title="Total Users"
-                value="{{$widget['total_users']}}"
-                bg="primary"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="6"
-                link="{{route('admin.users.active')}}"
-                icon="las la-user-check"
-                title="Active Users"
-                value="{{$widget['verified_users']}}"
-                bg="success"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="6"
-                link="{{route('admin.users.email.unverified')}}"
-                icon="lar la-envelope"
-                title="Email Unverified Users"
-                value="{{$widget['email_unverified_users']}}"
-                bg="danger"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="6"
-                link="{{route('admin.users.mobile.unverified')}}"
-                icon="las la-comment-slash"
-                title="Mobile Unverified Users"
-                value="{{$widget['mobile_unverified_users']}}"
-                bg="warning"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-6 col-sm-12">
-            <x-widget
-                style="6"
-                link="javascript:void(0)"
-                icon="las la-hand-holding-usd"
-                title="Total Earnings from Assigned Accounts"
-                value="{{ showAmount($widget['total_account_earnings'], 0) }}"
-                bg="info"
-            />
-        </div><!-- dashboard-w1 end -->
-    </div><!-- row end-->
-
-
-    <div class="row mt-2 gy-4">
-        <div class="col-xxl-6">
-            <div class="card box-shadow3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">@lang('Deposits')</h5>
-                    <div class="widget-card-wrapper">
-
-                        <div class="widget-card bg--success">
-                            <a href="{{ route('admin.deposit.list') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="fas fa-hand-holding-usd"></i>
-                                </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ showAmount($deposit['total_deposit_amount']) }}</h6>
-                                    <p class="widget-card-title">@lang('Total Deposited')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+        {{-- Total Users Card --}}
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.users.all') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('TOTAL USERS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+                            <i class="las la-users fs-4"></i>
                         </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $widget['total_users'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        <i class="las la-arrow-right text-primary"></i> @lang('Manage all customer accounts')
+                    </div>
+                </div>
+            </a>
+        </div>
 
-                        <div class="widget-card bg--warning">
-                            <a href="{{ route('admin.deposit.pending') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="fas fa-spinner"></i>
-                                </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ $deposit['total_deposit_pending'] }}</h6>
-                                    <p class="widget-card-title">@lang('Pending Deposits')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+        {{-- Active Users Card --}}
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.users.active') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('ACTIVE USERS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                            <i class="las la-user-check fs-4"></i>
                         </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $widget['verified_users'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        <span class="text-success"><i class="las la-check-circle"></i> @lang('Verified & active users')</span>
+                    </div>
+                </div>
+            </a>
+        </div>
 
-                        <div class="widget-card bg--danger">
-                            <a href="{{ route('admin.deposit.rejected') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="fas fa-ban"></i>
-                                </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ $deposit['total_deposit_rejected'] }}</h6>
-                                    <p class="widget-card-title">@lang('Rejected Deposits')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+        {{-- Unverified Users Card --}}
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.users.email.unverified') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('UNVERIFIED USERS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15;">
+                            <i class="las la-user-clock fs-4"></i>
                         </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $widget['email_unverified_users'] + $widget['mobile_unverified_users'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        @if(($widget['email_unverified_users'] + $widget['mobile_unverified_users']) > 0)
+                            <span class="text-warning"><i class="las la-exclamation-triangle"></i> {{ $widget['email_unverified_users'] }} email, {{ $widget['mobile_unverified_users'] }} mobile</span>
+                        @else
+                            <span class="text-success"><i class="las la-check"></i> @lang('All users fully verified')</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
 
-                        <div class="widget-card bg--primary">
-                            <a href="{{ route('admin.deposit.list') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="fas fa-percentage"></i>
-                                </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ showAmount($deposit['total_deposit_charge']) }}</h6>
-                                    <p class="widget-card-title">@lang('Deposited Charge')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+    {{-- Quick Action Shortcut Cards (Matching Reseller Portal) --}}
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card p-4 h-100 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.02)); border-color: rgba(99, 102, 241, 0.3);">
+                <div>
+                    <h4 class="text-white mb-2"><i class="las la-layer-group text-primary me-2"></i> @lang('Platform Accounts & Inventory')</h4>
+                    <p class="text-muted mb-4">
+                        @lang('Manage session cookies, update access tokens, add new accounts, and monitor status across all social media and developer tools.')
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.account.listing.index') }}" class="btn btn-primary btn-lg fw-bold flex-grow-1">
+                        <i class="las la-list me-1"></i> @lang('Manage Platform Accounts')
+                    </a>
+                    <a href="{{ route('admin.social.media.index') }}" class="btn btn-outline-primary btn-lg fw-bold">
+                        <i class="las la-globe me-1"></i> @lang('Platforms')
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-4 h-100 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(234, 179, 8, 0.02)); border-color: rgba(234, 179, 8, 0.3);">
+                <div>
+                    <h4 class="text-white mb-2"><i class="las la-handshake text-warning me-2"></i> @lang('Reseller Partner Network')</h4>
+                    <p class="text-muted mb-4">
+                        @lang('Configure custom per-platform pricing rates for resellers, manage partner accounts, and monitor client user provisions.')
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.users.resellers') }}" class="btn btn-outline-warning btn-lg fw-bold flex-grow-1">
+                        <i class="las la-users-cog me-1"></i> @lang('Manage Reseller Partners')
+                    </a>
+                    <a href="{{ route('admin.plan.index') }}" class="btn btn-warning btn-lg fw-bold text-dark">
+                        <i class="las la-crown me-1"></i> @lang('Plans')
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Inventory & Catalog Stats --}}
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.account.listing.index') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('ACTIVE ACCOUNTS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #34d399;">
+                            <i class="las la-check-circle fs-4"></i>
                         </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $listings['active'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        <i class="las la-plug text-success"></i> @lang('Ready for user assignment')
+                    </div>
+                </div>
+            </a>
+        </div>
 
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.account.listing.index') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('INACTIVE ACCOUNTS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171;">
+                            <i class="las la-times-circle fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $listings['inactive'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        @if($listings['inactive'] > 0)
+                            <span class="text-danger"><i class="las la-exclamation-circle"></i> @lang('Requires cookie / token refresh')</span>
+                        @else
+                            <span class="text-success"><i class="las la-check"></i> @lang('No inactive accounts')</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.plan.index') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('SUBSCRIPTION PLANS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(168, 85, 247, 0.2); display: flex; align-items: center; justify-content: center; color: #c084fc;">
+                            <i class="las la-crown fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $listings['plans'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        <i class="las la-arrow-right text-info"></i> @lang('Active subscription tiers')
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-sm-6 col-xxl-3">
+            <a href="{{ route('admin.social.media.index') }}" class="text-decoration-none">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold">@lang('PLATFORMS')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                            <i class="las la-globe fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-white fw-bold mb-2">{{ $listings['platforms'] }}</h2>
+                    <div class="mt-auto text-muted small">
+                        <i class="las la-layer-group text-primary"></i> @lang('Supported tools & web services')
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {{-- Financial Summaries: Deposits & Withdrawals --}}
+    <div class="row g-4 mb-4">
+        {{-- Deposits Card --}}
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="text-white mb-0"><i class="las la-money-bill-wave me-1 text-success"></i> @lang('Deposits Overview')</h5>
+                    <a href="{{ route('admin.deposit.list') }}" class="btn btn-sm btn-outline-secondary text-white">@lang('View Details')</a>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.deposit.list') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Total Deposited')</span>
+                                    <h4 class="text-white fw-bold mb-0">{{ showAmount($deposit['total_deposit_amount']) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h4>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.deposit.pending') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Pending Deposits')</span>
+                                    <h4 class="text-warning fw-bold mb-0">{{ $deposit['total_deposit_pending'] }}</h4>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.deposit.rejected') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Rejected Deposits')</span>
+                                    <h4 class="text-danger fw-bold mb-0">{{ $deposit['total_deposit_rejected'] }}</h4>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <span class="text-muted small d-block mb-1">@lang('Deposit Charges')</span>
+                                <h4 class="text-white fw-bold mb-0">{{ showAmount($deposit['total_deposit_charge']) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xxl-6">
-            <div class="card box-shadow3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">@lang('Withdrawals')</h5>
-                    <div class="widget-card-wrapper">
-                        <div class="widget-card bg--success">
-                            <a href="{{ route('admin.withdraw.data.all') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="lar la-credit-card"></i>
-                                </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ showAmount($withdrawals['total_withdraw_amount']) }}</h6>
-                                    <p class="widget-card-title">@lang('Total Withdrawn')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
-                        </div>
 
-                        <div class="widget-card bg--warning">
-                            <a href="{{ route('admin.withdraw.data.pending') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="fas fa-spinner"></i>
+        {{-- Withdrawals Card --}}
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="text-white mb-0"><i class="las la-hand-holding-usd me-1 text-primary"></i> @lang('Withdrawals Overview')</h5>
+                    <a href="{{ route('admin.withdraw.data.all') }}" class="btn btn-sm btn-outline-secondary text-white">@lang('View Details')</a>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.withdraw.data.all') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Total Withdrawn')</span>
+                                    <h4 class="text-white fw-bold mb-0">{{ showAmount($withdrawals['total_withdraw_amount']) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h4>
                                 </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ $withdrawals['total_withdraw_pending'] }}</h6>
-                                    <p class="widget-card-title">@lang('Pending Withdrawals')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+                            </a>
                         </div>
-
-                        <div class="widget-card bg--danger">
-                            <a href="{{ route('admin.withdraw.data.rejected') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="las la-times-circle"></i>
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.withdraw.data.pending') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Pending Withdrawals')</span>
+                                    <h4 class="text-warning fw-bold mb-0">{{ $withdrawals['total_withdraw_pending'] }}</h4>
                                 </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ $withdrawals['total_withdraw_rejected'] }}</h6>
-                                    <p class="widget-card-title">@lang('Rejected Withdrawals')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+                            </a>
                         </div>
-
-                        <div class="widget-card bg--primary">
-                            <a href="{{ route('admin.withdraw.data.all') }}" class="widget-card-link"></a>
-                            <div class="widget-card-left">
-                                <div class="widget-card-icon">
-                                    <i class="las la-percent"></i>
+                        <div class="col-sm-6">
+                            <a href="{{ route('admin.withdraw.data.rejected') }}" class="text-decoration-none">
+                                <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);">
+                                    <span class="text-muted small d-block mb-1">@lang('Rejected Withdrawals')</span>
+                                    <h4 class="text-danger fw-bold mb-0">{{ $withdrawals['total_withdraw_rejected'] }}</h4>
                                 </div>
-                                <div class="widget-card-content">
-                                    <h6 class="widget-card-amount">{{ showAmount($withdrawals['total_withdraw_charge']) }}</h6>
-                                    <p class="widget-card-title">@lang('Withdrawal Charge')</p>
-                                </div>
-                            </div>
-                            <span class="widget-card-arrow">
-                                <i class="las la-angle-right"></i>
-                            </span>
+                            </a>
                         </div>
-
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded" style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2);">
+                                <span class="text-muted small d-block mb-1">@lang('Withdrawal Charges')</span>
+                                <h4 class="text-white fw-bold mb-0">{{ showAmount($withdrawals['total_withdraw_charge']) }} <small class="fs-6 text-muted">{{ gs('cur_text') }}</small></h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-
-    <div class="row gy-4 mt-2">
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="7"
-                link="{{route('admin.account.listing.index')}}"
-                icon="las la-list-alt"
-                title="Active Accounts"
-                value="{{$listings['active']}}"
-                bg="primary"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="7"
-                link="{{route('admin.account.listing.index')}}"
-                icon="las la-list"
-                title="Inactive Accounts"
-                value="{{$listings['inactive']}}"
-                bg="warning"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="7"
-                link="{{route('admin.plan.index')}}"
-                icon="las la-tasks"
-                title="Total Plans"
-                value="{{$listings['plans']}}"
-                bg="info"
-            />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget
-                style="7"
-                link="{{route('admin.social.media.index')}}"
-                icon="las la-globe"
-                title="Total Platforms"
-                value="{{$listings['platforms']}}"
-                bg="success"
-            />
-        </div><!-- dashboard-w1 end -->
-    </div><!-- row end-->
-
-    <div class="row mb-none-30 mt-30">
-        <div class="col-xl-6 mb-30">
-            <div class="card">
-              <div class="card-body">
-                <div class="d-flex flex-wrap justify-content-between">
-                    <h5 class="card-title">@lang('Deposit & Withdraw Report')</h5>
-
-                    <div id="dwDatePicker" class="border p-1 cursor-pointer rounded">
+    {{-- Charts: Deposit & Withdraw Report + Transactions Report --}}
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="card-title text-white mb-0"><i class="las la-chart-bar me-1 text-success"></i> @lang('Deposit & Withdraw Report')</h5>
+                    <div id="dwDatePicker" class="border p-1 cursor-pointer rounded text-muted small" style="background: #1e293b; border-color: rgba(255,255,255,0.1) !important;">
                         <i class="la la-calendar"></i>&nbsp;
-                        <span></span> <i class="la la-caret-down"></i>
+                        <span class="text-white"></span> <i class="la la-caret-down"></i>
                     </div>
                 </div>
-                <div id="dwChartArea"> </div>
-              </div>
+                <div class="card-body">
+                    <div id="dwChartArea"></div>
+                </div>
             </div>
-          </div>
-        <div class="col-xl-6 mb-30">
-            <div class="card">
-              <div class="card-body">
-                <div class="d-flex flex-wrap justify-content-between">
-                    <h5 class="card-title">@lang('Transactions Report')</h5>
+        </div>
 
-                    <div id="trxDatePicker" class="border p-1 cursor-pointer rounded">
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="card-title text-white mb-0"><i class="las la-chart-line me-1 text-primary"></i> @lang('Transactions Report')</h5>
+                    <div id="trxDatePicker" class="border p-1 cursor-pointer rounded text-muted small" style="background: #1e293b; border-color: rgba(255,255,255,0.1) !important;">
                         <i class="la la-calendar"></i>&nbsp;
-                        <span></span> <i class="la la-caret-down"></i>
+                        <span class="text-white"></span> <i class="la la-caret-down"></i>
                     </div>
                 </div>
-
-                <div id="transactionChartArea"></div>
-              </div>
+                <div class="card-body">
+                    <div id="transactionChartArea"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row mb-none-30 mt-5">
-        <div class="col-xl-4 col-lg-6 mb-30">
-            <div class="card overflow-hidden">
+    {{-- Device, OS & Location Analytics --}}
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title text-white mb-0"><i class="las la-laptop me-1 text-info"></i> @lang('Login By Browser') <small class="text-muted fs-6">(@lang('30 days'))</small></h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">@lang('Login By Browser') (@lang('Last 30 days'))</h5>
                     <canvas id="userBrowserChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-xl-4 col-lg-6 mb-30">
-            <div class="card">
+
+        <div class="col-xl-4 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title text-white mb-0"><i class="las la-desktop me-1 text-warning"></i> @lang('Login By OS') <small class="text-muted fs-6">(@lang('30 days'))</small></h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">@lang('Login By OS') (@lang('Last 30 days'))</h5>
                     <canvas id="userOsChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-xl-4 col-lg-6 mb-30">
-            <div class="card">
+
+        <div class="col-xl-4 col-lg-12">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title text-white mb-0"><i class="las la-globe-americas me-1 text-success"></i> @lang('Login By Country') <small class="text-muted fs-6">(@lang('30 days'))</small></h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">@lang('Login By Country') (@lang('Last 30 days'))</h5>
                     <canvas id="userCountryChart"></canvas>
                 </div>
             </div>
