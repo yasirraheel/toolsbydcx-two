@@ -1,9 +1,9 @@
 @extends('admin.layouts.app')
 
 @section('panel')
-    <div class="row justify-content-center">
-        <div class="col-lg-9 col-md-11">
-            <div class="card mt-30 shadow-sm border-0">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
                 <div class="card-header bg--primary text-white d-flex justify-content-between align-items-center py-3">
                     <h5 class="card-title text-white mb-0"><i class="las la-handshake me-1"></i> @lang('Create New Reseller Partner')</h5>
                     <button type="button" class="btn btn-sm btn-light text--primary fw-bold" id="generateUserBtn">
@@ -14,64 +14,69 @@
                     <form action="{{ route('admin.resellers.store') }}" method="POST">
                         @csrf
 
-                        {{-- Reseller Name --}}
-                        <div class="form-group mb-4">
-                            <label class="fw-bold text--dark mb-2 required">
-                                <i class="las la-user text--primary"></i> @lang('Reseller / Business Name')
-                            </label>
-                            <input class="form-control form-control-lg" type="text" name="name" id="userNameInput" placeholder="@lang('e.g. Acme Reseller Tools')" required value="{{ old('name') }}" autofocus>
-                        </div>
-
-                        {{-- Reseller Email / Username --}}
-                        <div class="form-group mb-4">
-                            <label class="fw-bold text--dark mb-2 required">
-                                <i class="las la-envelope text--primary"></i> @lang('Username / Email Prefix')
-                            </label>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control" type="text" name="email_prefix" id="emailPrefixInput" placeholder="@lang('reseller_username')" value="{{ old('email_prefix') }}" required>
-                                <span class="input-group-text bg--primary text-white fw-bold">@ {{ $domain }}</span>
+                        <div class="row g-4 mb-4">
+                            {{-- Reseller Name --}}
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text--dark mb-2 required">
+                                        <i class="las la-user text--primary"></i> @lang('Reseller / Business Name')
+                                    </label>
+                                    <input class="form-control form-control-lg" type="text" name="name" id="userNameInput" placeholder="@lang('e.g. Acme Reseller Tools')" required value="{{ old('name') }}" autofocus>
+                                </div>
                             </div>
-                            <small class="text-muted mt-1 d-block">
-                                <i class="las la-info-circle"></i> @lang('Reseller will log into the Reseller Portal using this email/username.')
-                            </small>
-                        </div>
 
-                        {{-- Password --}}
-                        <div class="form-group mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="fw-bold text--dark mb-0 required">
-                                    <i class="las la-key text--primary"></i> @lang('Password')
-                                </label>
-                                <a href="javascript:void(0)" class="text--primary fw-bold text-decoration-none" id="generatePasswordBtn" style="font-size: 13px;">
-                                    <i class="las la-random"></i> @lang('Generate Random')
-                                </a>
+                            {{-- Reseller Email / Username --}}
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text--dark mb-2 required">
+                                        <i class="las la-envelope text--primary"></i> @lang('Username / Email Prefix')
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <input class="form-control" type="text" name="email_prefix" id="emailPrefixInput" placeholder="@lang('reseller_username')" value="{{ old('email_prefix') }}" required>
+                                        <span class="input-group-text bg--primary text-white fw-bold">@ {{ $domain }}</span>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">
+                                        <i class="las la-info-circle"></i> @lang('Reseller will log into the Reseller Portal using this email/username.')
+                                    </small>
+                                </div>
                             </div>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control" type="text" name="password" id="passwordField" placeholder="@lang('Enter or generate password')" required>
-                                <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer; min-width: 50px;">
-                                    <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
-                                </button>
-                                <button type="button" class="btn btn--dark px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="cursor:pointer; min-width: 50px;">
-                                    <i class="las la-copy" style="font-size: 20px; color: #fff;"></i>
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="row g-3 mb-4">
+                            {{-- Password --}}
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="fw-bold text--dark mb-0 required">
+                                            <i class="las la-key text--primary"></i> @lang('Password')
+                                        </label>
+                                        <a href="javascript:void(0)" class="text--primary fw-bold text-decoration-none" id="generatePasswordBtn" style="font-size: 13px;">
+                                            <i class="las la-random"></i> @lang('Generate Random')
+                                        </a>
+                                    </div>
+                                    <div class="input-group input-group-lg">
+                                        <input class="form-control" type="text" name="password" id="passwordField" placeholder="@lang('Enter or generate password')" required>
+                                        <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer; min-width: 50px;">
+                                            <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn--dark px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="cursor:pointer; min-width: 50px;">
+                                            <i class="las la-copy" style="font-size: 20px; color: #fff;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Reseller Expiry --}}
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-0">
                                     <label class="fw-bold text--dark mb-2">
                                         <i class="las la-calendar-alt text--primary"></i> @lang('Reseller Expiry Date')
                                     </label>
                                     <input type="date" name="expires_at" class="form-control form-control-lg" value="{{ old('expires_at', now()->addYear()->format('Y-m-d')) }}">
-                                    <small class="text-muted mt-1 d-block">@lang('Validity duration of the reseller partner account (defaults to 1 year).')</small>
                                 </div>
                             </div>
 
                             {{-- Initial Wallet Balance --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
+                            <div class="col-12">
+                                <div class="form-group mb-0">
                                     <label class="fw-bold text--dark mb-2">
                                         <i class="las la-wallet text--primary"></i> @lang('Initial Wallet Balance') ({{ gs('cur_text') }})
                                     </label>
