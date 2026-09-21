@@ -145,13 +145,52 @@
             </div>
         </div>
 
-        {{-- Accessible Tools & Platforms Section (App's native product-item style) --}}
+        {{-- Quick Action Cards (Matching Reseller Dashboard Feature Cards) --}}
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card p-4 h-100" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+                            <i class="las la-crown fs-4"></i>
+                        </div>
+                        <h5 class="text-white mb-0 fw-bold">@lang('Subscription Plans')</h5>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        @lang('Unlock more premium AI tools, SEO utilities, and marketing platforms with instant activation.')
+                    </p>
+                    <a href="{{ route('plans') }}" class="btn btn--primary w-100 fw-bold py-2 mt-auto" style="border-radius: 8px;">
+                        <i class="las la-rocket me-1"></i> @lang('Browse Available Plans')
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card p-4 h-100" style="background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 12px;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15;">
+                            <i class="las la-headset fs-4"></i>
+                        </div>
+                        <h5 class="text-white mb-0 fw-bold">@lang('Help & Support')</h5>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        @lang('Need assistance with your assigned platform accounts? Our support team is available 24/7.')
+                    </p>
+                    <a href="{{ route('ticket.open') }}" class="btn btn-outline-warning w-100 fw-bold py-2 mt-auto" style="border-color: #eab308; color: #facc15; border-radius: 8px;">
+                        <i class="las la-plus-circle me-1"></i> @lang('Open Support Ticket')
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Accessible Tools & Platforms Section --}}
         <div class="row">
             <div class="col-12">
-                <div class="card custom--card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0">@lang('Accessible Tools & Platforms')</h4>
-                        <span class="badge bg--primary px-3 py-2">
+                <div class="card custom--card" style="border-radius: 12px;">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h5 class="card-title text-white mb-0">
+                            <i class="las la-cubes text--primary me-2"></i> @lang('Accessible Tools & Platforms')
+                        </h5>
+                        <span class="badge bg--primary px-3 py-2 fw-semibold">
                             <i class="las la-check-circle me-1"></i> {{ count((array)($user->account_ids ?? [])) }} @lang('Tools Unlocked')
                         </span>
                     </div>
