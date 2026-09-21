@@ -20,68 +20,6 @@
     <link rel="stylesheet" href="{{asset('assets/global/css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/admin/css/app.css')}}">
 
-    <style>
-        .sidebar {
-            background-color: #070a12 !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .sidebar__inner {
-            background-color: #070a12 !important;
-        }
-        .sidebar__menu {
-            padding: 12px 14px !important;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .sidebar-menu-item {
-            margin-bottom: 0 !important;
-        }
-        .sidebar-menu-item > a.nav-link,
-        .sidebar-menu-item.sidebar-dropdown > a {
-            border-radius: 8px !important;
-            padding: 9px 14px !important;
-            color: #94a3b8 !important;
-            font-weight: 500 !important;
-            font-size: 13.5px !important;
-            transition: all 0.2s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            background: transparent !important;
-        }
-        .sidebar-menu-item > a.nav-link:hover,
-        .sidebar-menu-item.sidebar-dropdown > a:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.06) !important;
-        }
-        .sidebar-menu-item.active > a.nav-link,
-        .sidebar-menu-item.active > a {
-            background: #4634ff !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(70, 52, 255, 0.35) !important;
-        }
-        .sidebar-menu-item.active > a.nav-link i,
-        .sidebar-menu-item.active > a i {
-            color: #ffffff !important;
-        }
-        .sidebar-submenu {
-            background-color: rgba(0, 0, 0, 0.25) !important;
-            border-radius: 8px !important;
-            margin-top: 4px !important;
-            padding: 6px !important;
-        }
-        .sidebar-submenu .nav-link {
-            border-radius: 6px !important;
-            padding: 7px 12px !important;
-            color: #94a3b8 !important;
-            font-size: 13px !important;
-        }
-        .sidebar-submenu .sidebar-menu-item.active .nav-link {
-            background-color: #4634ff !important;
-            color: #ffffff !important;
-        }
-    </style>
-
     @stack('style')
 </head>
 <body>

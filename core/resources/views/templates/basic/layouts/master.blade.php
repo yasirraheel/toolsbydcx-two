@@ -48,63 +48,6 @@
         .sidebar__inner {
             background-color: #070a12 !important;
         }
-        .sidebar__menu {
-            padding: 12px 14px !important;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .sidebar-menu-item {
-            margin-bottom: 0 !important;
-        }
-        .sidebar-menu-item > a.nav-link,
-        .sidebar-menu-item.sidebar-dropdown > a {
-            border-radius: 8px !important;
-            padding: 10px 14px !important;
-            color: #94a3b8 !important;
-            font-weight: 500 !important;
-            font-size: 14px !important;
-            transition: all 0.2s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            background: transparent !important;
-        }
-        .sidebar-menu-item > a.nav-link:hover,
-        .sidebar-menu-item.sidebar-dropdown > a:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.06) !important;
-        }
-        .sidebar-menu-item.active > a.nav-link,
-        .sidebar-menu-item.active > a {
-            background: var(--base-color, #6366f1) !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
-        }
-        .sidebar-menu-item.active > a.nav-link i,
-        .sidebar-menu-item.active > a i {
-            color: #ffffff !important;
-        }
-        .sidebar-menu-item .menu-icon {
-            font-size: 18px !important;
-            margin-right: 10px !important;
-            color: inherit !important;
-        }
-        .sidebar-submenu {
-            background-color: rgba(0, 0, 0, 0.2) !important;
-            border-radius: 8px !important;
-            margin-top: 4px !important;
-            padding: 6px !important;
-        }
-        .sidebar-submenu .nav-link {
-            border-radius: 6px !important;
-            padding: 8px 12px !important;
-            color: #94a3b8 !important;
-            font-size: 13.5px !important;
-        }
-        .sidebar-submenu .sidebar-menu-item.active .nav-link {
-            background-color: var(--base-color, #6366f1) !important;
-            color: #ffffff !important;
-        }
         .navbar-wrapper {
             background-color: #070a12 !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
