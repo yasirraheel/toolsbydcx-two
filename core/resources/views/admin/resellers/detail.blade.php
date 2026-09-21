@@ -1,91 +1,84 @@
 @extends('admin.layouts.app')
 
 @section('panel')
-    {{-- Top Summary & Action Bar --}}
-    <div class="row mb-4">
+    <div class="row gy-4">
+        {{-- Top Summary Card --}}
         <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    {{-- Reseller Identity --}}
-                    <div class="d-flex align-items-center gap-3">
-                        <div style="width: 56px; height: 56px; border-radius: 12px; background: rgba(108, 99, 255, 0.15); display: flex; align-items: center; justify-content: center; color: var(--base-color); font-size: 28px;">
-                            <i class="las la-handshake"></i>
-                        </div>
-                        <div>
-                            <h4 class="text--dark fw-bold mb-1 d-flex align-items-center gap-2">
-                                {{ $reseller->fullname ?: $reseller->username }}
-                                @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                                    <span class="badge badge--success fs-6">@lang('Active')</span>
-                                @else
-                                    <span class="badge badge--danger fs-6">@lang('Banned')</span>
-                                @endif
-                            </h4>
-                            <div class="d-flex flex-wrap gap-3 text-muted small">
-                                <span><i class="las la-at text--primary"></i> {{ $reseller->username }}</span>
-                                <span><i class="las la-envelope text--primary"></i> {{ $reseller->email }}</span>
-                                <span><i class="las la-calendar text--primary"></i> @lang('Joined'): {{ showDateTime($reseller->created_at, 'd M Y') }}</span>
-                                @if($reseller->expires_at)
-                                    <span><i class="las la-clock text--primary"></i> @lang('Expires'): {{ showDateTime($reseller->expires_at, 'd M Y') }}</span>
-                                @endif
+            <div class="card b-radius--10">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar avatar--md bg--primary text-white d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; border-radius: 10px; font-size: 24px;">
+                                <i class="las la-handshake"></i>
                             </div>
-                        </div>
-                    </div>
-
-                    {{-- Wallet Balance & Action Buttons --}}
-                    <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
-                        {{-- Wallet Balance Pill --}}
-                        <div class="px-3 py-2 rounded d-flex align-items-center gap-2" style="background: rgba(40, 167, 69, 0.12); border: 1px solid rgba(40, 167, 69, 0.3);">
-                            <i class="las la-wallet fs-4 text-success"></i>
                             <div>
-                                <small class="text-muted d-block" style="font-size: 11px; line-height: 1;">@lang('WALLET BALANCE')</small>
-                                <strong class="text-success fs-6">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</strong>
+                                <h4 class="text--dark fw-bold mb-1 d-flex align-items-center gap-2">
+                                    {{ $reseller->fullname ?: $reseller->username }}
+                                    @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
+                                        <span class="badge badge--success">@lang('Active')</span>
+                                    @else
+                                        <span class="badge badge--danger">@lang('Banned')</span>
+                                    @endif
+                                </h4>
+                                <div class="d-flex flex-wrap gap-3 text-muted small">
+                                    <span><i class="las la-at text--primary"></i> {{ $reseller->username }}</span>
+                                    <span><i class="las la-envelope text--primary"></i> {{ $reseller->email }}</span>
+                                    <span><i class="las la-calendar text--primary"></i> @lang('Joined'): {{ showDateTime($reseller->created_at, 'd M Y') }}</span>
+                                    @if($reseller->expires_at)
+                                        <span><i class="las la-clock text--primary"></i> @lang('Expires'): {{ showDateTime($reseller->expires_at, 'd M Y') }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
-                        <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#addSubModal">
-                            <i class="las la-coins me-1"></i> @lang('Adjust Balance')
-                        </button>
+                        {{-- Balance & Quick Actions --}}
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="border rounded px-3 py-2 text-center" style="background: rgba(40, 167, 69, 0.08); border-color: rgba(40, 167, 69, 0.2) !important;">
+                                <small class="text-muted d-block" style="font-size: 11px;">@lang('WALLET BALANCE')</small>
+                                <span class="fw-bold text--success fs-6">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</span>
+                            </div>
 
-                        <a href="{{ route('admin.resellers.login', $reseller->id) }}" target="_blank" class="btn btn-outline--info">
-                            <i class="las la-sign-in-alt me-1"></i> @lang('Login to Portal')
-                        </a>
-
-                        @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                            <button type="button" class="btn btn-outline--warning" data-bs-toggle="modal" data-bs-target="#userStatusModal">
-                                <i class="las la-ban me-1"></i> @lang('Ban')
+                            <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#addSubModal">
+                                <i class="las la-coins"></i> @lang('Manage Balance')
                             </button>
-                        @else
-                            <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#userStatusModal">
-                                <i class="las la-undo me-1"></i> @lang('Unban')
-                            </button>
-                        @endif
 
-                        <button type="button" class="btn btn-outline--danger confirmationBtn" data-action="{{ route('admin.resellers.delete', $reseller->id) }}" data-question="@lang('Are you sure you want to delete this reseller? Associated client records will remain preserved.')">
-                            <i class="las la-trash me-1"></i> @lang('Delete')
-                        </button>
+                            <a href="{{ route('admin.resellers.login', $reseller->id) }}" target="_blank" class="btn btn-outline--info">
+                                <i class="las la-sign-in-alt"></i> @lang('Login Portal')
+                            </a>
+
+                            @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
+                                <button type="button" class="btn btn-outline--warning" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                                    <i class="las la-ban"></i> @lang('Ban')
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                                    <i class="las la-undo"></i> @lang('Unban')
+                                </button>
+                            @endif
+
+                            <button type="button" class="btn btn-outline--danger confirmationBtn" data-action="{{ route('admin.resellers.delete', $reseller->id) }}" data-question="@lang('Are you sure you want to delete this reseller? Associated client records will remain preserved.')">
+                                <i class="las la-trash"></i> @lang('Delete')
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Reseller Form: Profile & Custom Account Pricing (Full Width) --}}
-    <form action="{{ route('admin.resellers.update', [$reseller->id]) }}" method="POST">
-        @csrf
-        <input type="hidden" name="prices_submitted" value="1">
+        {{-- Main Settings Form (Profile & Account Pricing) --}}
+        <div class="col-12">
+            <form action="{{ route('admin.resellers.update', [$reseller->id]) }}" method="POST">
+                @csrf
+                <input type="hidden" name="prices_submitted" value="1">
 
-        {{-- Profile Information Card --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0">
+                <div class="card b-radius--10 mb-4">
                     <div class="card-header bg--primary text-white py-3">
                         <h5 class="card-title text-white mb-0">
-                            <i class="las la-user-edit me-1"></i> @lang('Reseller Profile & Credentials')
+                            <i class="las la-user-cog me-1"></i> @lang('Reseller Profile & Credentials')
                         </h5>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-4">
-                            {{-- Full Name --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold text--dark mb-2 required">
@@ -95,7 +88,6 @@
                                 </div>
                             </div>
 
-                            {{-- Email / Username --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold text--dark mb-2 required">
@@ -105,7 +97,6 @@
                                 </div>
                             </div>
 
-                            {{-- Password --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -118,17 +109,16 @@
                                     </div>
                                     <div class="input-group input-group-lg">
                                         <input class="form-control" type="password" name="password" id="passwordField" placeholder="@lang('Type new password or generate')">
-                                        <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="min-width: 48px;">
-                                            <i class="las la-eye" style="font-size: 20px; color: #fff;"></i>
+                                        <button type="button" class="btn btn--primary px-3" id="togglePassword" title="@lang('Toggle Visibility')">
+                                            <i class="las la-eye fs-5"></i>
                                         </button>
-                                        <button type="button" class="btn btn--dark px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="min-width: 48px;">
-                                            <i class="las la-copy" style="font-size: 20px; color: #fff;"></i>
+                                        <button type="button" class="btn btn--dark px-3 copy-btn" title="@lang('Copy Password')">
+                                            <i class="las la-copy fs-5"></i>
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Expiry Date --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold text--dark mb-2">
@@ -140,45 +130,34 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        {{-- Custom Account Pricing Matrix Card (Full Width Table) --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg--dark text-white d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h5 class="card-title text-white mb-0">
-                                <i class="las la-tags text-warning me-1"></i> @lang('Reseller Account Pricing Matrix')
-                            </h5>
-                        </div>
-                        <span class="badge badge--info px-3 py-2 fs-6">@lang('Unit Rate Charged Per Client / Month')</span>
+                {{-- Account Pricing Table Card --}}
+                <div class="card b-radius--10 mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h5 class="card-title mb-0">
+                            <i class="las la-tags text--primary me-1"></i> @lang('Reseller Account Pricing Matrix')
+                        </h5>
+                        <span class="badge badge--primary">@lang('Unit Price Charged Per Client / Month')</span>
                     </div>
-                    <div class="card-body p-4">
-                        <p class="text-muted mb-3">
-                            @lang('Specify the exact monthly rate deducted from this reseller\'s wallet when they create or renew a client user with each platform account.')
-                        </p>
-
-                        @php
-                            $configuredPrices = (array) ($reseller->account_prices ?? []);
-                        @endphp
-
-                        <div class="table-responsive border rounded mb-4">
-                            <table class="table table--light table-bordered mb-0">
-                                <thead class="bg-light">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table--light style--two mb-0">
+                                <thead>
                                     <tr>
-                                        <th style="width: 25%;">@lang('Platform')</th>
-                                        <th style="width: 45%;">@lang('Account Title & Credentials')</th>
-                                        <th style="width: 15%;" class="text-center">@lang('Cookie Status')</th>
-                                        <th style="width: 15%;" class="text-end">@lang('Unit Price / Month') ({{ gs('cur_text') }})</th>
+                                        <th>@lang('Platform')</th>
+                                        <th>@lang('Account Title / Email')</th>
+                                        <th class="text-center">@lang('Cookie Status')</th>
+                                        <th class="text-end" style="width: 200px;">@lang('Unit Price / Month')</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $configuredPrices = (array) ($reseller->account_prices ?? []);
+                                    @endphp
                                     @forelse($accounts as $acc)
                                         <tr>
                                             <td>
-                                                <strong class="text--primary fs-6">{{ __(@$acc->socialMedia->name) }}</strong>
+                                                <span class="fw-bold text--primary">{{ __(@$acc->socialMedia->name) }}</span>
                                             </td>
                                             <td>
                                                 <span class="fw-semibold text--dark d-block">{{ __($acc->title) }}</span>
@@ -193,42 +172,37 @@
                                                     <span class="badge badge--warning"><i class="las la-exclamation-triangle"></i> @lang('Needs Refresh')</span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm ms-auto" style="max-width: 160px;">
                                                     <span class="input-group-text bg-light fw-bold">{{ gs('cur_sym') }}</span>
-                                                    <input type="number" step="0.01" min="0" name="prices[{{ $acc->id }}]" class="form-control text-end fw-bold fs-6" placeholder="0.00" value="{{ old('prices.' . $acc->id, @$configuredPrices[$acc->id] ?? '0.00') }}">
+                                                    <input type="number" step="0.01" min="0" name="prices[{{ $acc->id }}]" class="form-control text-end fw-bold" placeholder="0.00" value="{{ old('prices.' . $acc->id, @$configuredPrices[$acc->id] ?? '0.00') }}">
                                                 </div>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">@lang('No active accounts configured in system.')</td>
+                                            <td colspan="4" class="text-center text-muted py-4">{{ __($emptyMessage ?? 'No active accounts configured.') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
-
-                        {{-- Save Changes Button --}}
-                        <div class="text-end">
-                            <button type="submit" class="btn btn--primary btn-lg px-5 h-45 shadow-sm fw-bold">
-                                <i class="las la-save me-1"></i> @lang('Save Reseller Profile & Account Rates')
-                            </button>
-                        </div>
+                    </div>
+                    <div class="card-footer py-3 text-end">
+                        <button type="submit" class="btn btn--primary btn-lg px-5 h-45 shadow-sm fw-bold">
+                            <i class="las la-save me-1"></i> @lang('Save Reseller Profile & Account Rates')
+                        </button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
-    </form>
 
-    {{-- Created Clients & Financial Ledger Cards (Full Width / 2 Wide Columns) --}}
-    <div class="row g-4 mb-4">
-        {{-- Clients Directory --}}
+        {{-- Bottom Row: Clients List & Financial Ledger --}}
         <div class="col-xl-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg--secondary text-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title text-white mb-0">
-                        <i class="las la-users me-1"></i> @lang('Clients Created by Reseller')
+            <div class="card b-radius--10 h-100">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="las la-users text--primary me-1"></i> @lang('Clients Created by Reseller')
                     </h5>
                     <span class="badge badge--info">{{ $clientUsers->total() }} @lang('Clients')</span>
                 </div>
@@ -304,12 +278,11 @@
             </div>
         </div>
 
-        {{-- Financial Transactions Ledger --}}
         <div class="col-xl-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg--secondary text-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title text-white mb-0">
-                        <i class="las la-history me-1"></i> @lang('Wallet Financial Ledger')
+            <div class="card b-radius--10 h-100">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="las la-history text--primary me-1"></i> @lang('Wallet Financial Ledger')
                     </h5>
                     <span class="badge badge--success">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</span>
                 </div>
@@ -328,7 +301,7 @@
                                 @forelse($transactions as $trx)
                                     <tr>
                                         <td>
-                                            <span class="fw-bold d-block">{{ $trx->trx }}</span>
+                                            <span class="fw-bold d-block text--dark">{{ $trx->trx }}</span>
                                             <span class="small text-muted">{{ showDateTime($trx->created_at, 'd M Y, h:i A') }}</span>
                                         </td>
                                         <td>
@@ -490,10 +463,10 @@
             let pwd = $('#passwordField');
             if (pwd.attr('type') === 'password') {
                 pwd.attr('type', 'text');
-                $(this).html('<i class="las la-eye-slash" style="font-size: 20px; color: #fff;"></i>');
+                $(this).html('<i class="las la-eye-slash fs-5"></i>');
             } else {
                 pwd.attr('type', 'password');
-                $(this).html('<i class="las la-eye" style="font-size: 20px; color: #fff;"></i>');
+                $(this).html('<i class="las la-eye fs-5"></i>');
             }
         });
 
