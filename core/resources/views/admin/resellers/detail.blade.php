@@ -4,25 +4,25 @@
     <div class="row gy-4">
         {{-- Top Summary Card --}}
         <div class="col-12">
-            <div class="card b-radius--10">
+            <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="avatar avatar--md bg--primary text-white d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; border-radius: 10px; font-size: 24px;">
+                            <div class="avatar avatar--md bg--primary text-white d-flex align-items-center justify-content-center" style="width: 54px; height: 54px; border-radius: 12px; font-size: 26px;">
                                 <i class="las la-handshake"></i>
                             </div>
                             <div>
                                 <h4 class="text--dark fw-bold mb-1 d-flex align-items-center gap-2">
                                     {{ $reseller->fullname ?: $reseller->username }}
                                     @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                                        <span class="badge badge--success">@lang('Active')</span>
+                                        <span class="badge bg--success text-white px-2 py-1" style="font-size: 12px;">@lang('Active')</span>
                                     @else
-                                        <span class="badge badge--danger">@lang('Banned')</span>
+                                        <span class="badge bg--danger text-white px-2 py-1" style="font-size: 12px;">@lang('Banned')</span>
                                     @endif
                                 </h4>
-                                <div class="d-flex flex-wrap gap-3 text-muted small">
-                                    <span><i class="las la-at text--primary"></i> {{ $reseller->username }}</span>
-                                    <span><i class="las la-envelope text--primary"></i> {{ $reseller->email }}</span>
+                                <div class="d-flex flex-wrap gap-3 text-muted small mt-1">
+                                    <span class="text-dark"><i class="las la-at text--primary"></i> <strong>{{ $reseller->username }}</strong></span>
+                                    <span class="text-dark"><i class="las la-envelope text--primary"></i> {{ $reseller->email }}</span>
                                     <span><i class="las la-calendar text--primary"></i> @lang('Joined'): {{ showDateTime($reseller->created_at, 'd M Y') }}</span>
                                     @if($reseller->expires_at)
                                         <span><i class="las la-clock text--primary"></i> @lang('Expires'): {{ showDateTime($reseller->expires_at, 'd M Y') }}</span>
@@ -33,30 +33,30 @@
 
                         {{-- Balance & Quick Actions --}}
                         <div class="d-flex flex-wrap align-items-center gap-2">
-                            <div class="border rounded px-3 py-2 text-center" style="background: rgba(40, 167, 69, 0.08); border-color: rgba(40, 167, 69, 0.2) !important;">
-                                <small class="text-muted d-block" style="font-size: 11px;">@lang('WALLET BALANCE')</small>
-                                <span class="fw-bold text--success fs-6">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</span>
+                            <div class="px-3 py-2 text-center rounded border bg-light">
+                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">@lang('Wallet Balance')</span>
+                                <span class="fw-bold text--success fs-5">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</span>
                             </div>
 
-                            <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#addSubModal">
+                            <button type="button" class="btn btn-sm btn-outline--success px-3 py-2" data-bs-toggle="modal" data-bs-target="#addSubModal">
                                 <i class="las la-coins"></i> @lang('Manage Balance')
                             </button>
 
-                            <a href="{{ route('admin.resellers.login', $reseller->id) }}" target="_blank" class="btn btn-outline--info">
+                            <a href="{{ route('admin.resellers.login', $reseller->id) }}" target="_blank" class="btn btn-sm btn-outline--primary px-3 py-2">
                                 <i class="las la-sign-in-alt"></i> @lang('Login Portal')
                             </a>
 
                             @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                                <button type="button" class="btn btn-outline--warning" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                                <button type="button" class="btn btn-sm btn-outline--warning px-3 py-2" data-bs-toggle="modal" data-bs-target="#userStatusModal">
                                     <i class="las la-ban"></i> @lang('Ban')
                                 </button>
                             @else
-                                <button type="button" class="btn btn-outline--success" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                                <button type="button" class="btn btn-sm btn-outline--success px-3 py-2" data-bs-toggle="modal" data-bs-target="#userStatusModal">
                                     <i class="las la-undo"></i> @lang('Unban')
                                 </button>
                             @endif
 
-                            <button type="button" class="btn btn-outline--danger confirmationBtn" data-action="{{ route('admin.resellers.delete', $reseller->id) }}" data-question="@lang('Are you sure you want to delete this reseller? Associated client records will remain preserved.')">
+                            <button type="button" class="btn btn-sm btn-outline--danger px-3 py-2 confirmationBtn" data-action="{{ route('admin.resellers.delete', $reseller->id) }}" data-question="@lang('Are you sure you want to delete this reseller? Associated client records will remain preserved.')">
                                 <i class="las la-trash"></i> @lang('Delete')
                             </button>
                         </div>
@@ -71,11 +71,12 @@
                 @csrf
                 <input type="hidden" name="prices_submitted" value="1">
 
-                <div class="card b-radius--10 mb-4">
-                    <div class="card-header bg--primary text-white py-3">
-                        <h5 class="card-title text-white mb-0">
-                            <i class="las la-user-cog me-1"></i> @lang('Reseller Profile & Credentials')
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title text-dark mb-0">
+                            <i class="las la-user-cog text--primary me-1"></i> @lang('Reseller Profile & Credentials')
                         </h5>
+                        <span class="badge bg-light text-dark border px-3 py-1">@lang('Reseller ID: #'){{ $reseller->id }}</span>
                     </div>
                     <div class="card-body p-4">
                         <div class="row g-4">
@@ -132,12 +133,17 @@
                 </div>
 
                 {{-- Account Pricing Table Card --}}
-                <div class="card b-radius--10 mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center py-3">
-                        <h5 class="card-title mb-0">
-                            <i class="las la-tags text--primary me-1"></i> @lang('Reseller Account Pricing Matrix')
-                        </h5>
-                        <span class="badge badge--primary">@lang('Unit Price Charged Per Client / Month')</span>
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <h5 class="card-title text-dark mb-1">
+                                <i class="las la-tags text--primary me-1"></i> @lang('Account Pricing Matrix')
+                            </h5>
+                            <small class="text-muted">@lang('Configure the unit cost charged to this reseller per client user per month for each account.')</small>
+                        </div>
+                        <span class="badge bg--primary text-white px-3 py-2 fw-semibold">
+                            <i class="las la-coins me-1"></i> @lang('Cost Per Client / Month')
+                        </span>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -147,7 +153,7 @@
                                         <th>@lang('Platform')</th>
                                         <th>@lang('Account Title / Email')</th>
                                         <th class="text-center">@lang('Cookie Status')</th>
-                                        <th class="text-end" style="width: 200px;">@lang('Unit Price / Month')</th>
+                                        <th class="text-end" style="width: 220px;">@lang('Unit Price / Month')</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -167,14 +173,14 @@
                                             </td>
                                             <td class="text-center">
                                                 @if($acc->cookie_status == 1)
-                                                    <span class="badge badge--success"><i class="las la-check-circle"></i> @lang('Active & Ready')</span>
+                                                    <span class="badge bg--success text-white px-2 py-1"><i class="las la-check-circle"></i> @lang('Active & Ready')</span>
                                                 @else
-                                                    <span class="badge badge--warning"><i class="las la-exclamation-triangle"></i> @lang('Needs Refresh')</span>
+                                                    <span class="badge bg--warning text-dark px-2 py-1"><i class="las la-exclamation-triangle"></i> @lang('Needs Refresh')</span>
                                                 @endif
                                             </td>
                                             <td class="text-end">
-                                                <div class="input-group input-group-sm ms-auto" style="max-width: 160px;">
-                                                    <span class="input-group-text bg-light fw-bold">{{ gs('cur_sym') }}</span>
+                                                <div class="input-group input-group-sm ms-auto" style="max-width: 170px;">
+                                                    <span class="input-group-text bg-light text-dark fw-bold">{{ gs('cur_sym') }}</span>
                                                     <input type="number" step="0.01" min="0" name="prices[{{ $acc->id }}]" class="form-control text-end fw-bold" placeholder="0.00" value="{{ old('prices.' . $acc->id, @$configuredPrices[$acc->id] ?? '0.00') }}">
                                                 </div>
                                             </td>
@@ -188,7 +194,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer py-3 text-end">
+                    <div class="card-footer bg-white border-top py-3 text-end">
                         <button type="submit" class="btn btn--primary btn-lg px-5 h-45 shadow-sm fw-bold">
                             <i class="las la-save me-1"></i> @lang('Save Reseller Profile & Account Rates')
                         </button>
@@ -199,12 +205,12 @@
 
         {{-- Bottom Row: Clients List & Financial Ledger --}}
         <div class="col-xl-6">
-            <div class="card b-radius--10 h-100">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title text-dark mb-0">
                         <i class="las la-users text--primary me-1"></i> @lang('Clients Created by Reseller')
                     </h5>
-                    <span class="badge badge--info">{{ $clientUsers->total() }} @lang('Clients')</span>
+                    <span class="badge bg--primary text-white px-3 py-2 fw-semibold">{{ $clientUsers->total() }} @lang('Clients')</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -222,7 +228,7 @@
                                     <tr>
                                         <td>
                                             <span class="fw-bold text--dark d-block">{{ $client->fullname }}</span>
-                                            <a href="{{ route('admin.users.detail', $client->id) }}" class="small"><span>@</span>{{ $client->username }}</a>
+                                            <a href="{{ route('admin.users.detail', $client->id) }}" class="small text--primary"><span>@</span>{{ $client->username }}</a>
                                         </td>
                                         <td>
                                             @php
@@ -230,7 +236,7 @@
                                             @endphp
                                             @if($clientAssigned->isNotEmpty())
                                                 @foreach($clientAssigned as $cItem)
-                                                    <span class="badge badge--primary d-block mb-1 text-start" style="white-space: normal;">
+                                                    <span class="badge bg--primary text-white d-block mb-1 text-start" style="white-space: normal; font-size: 11px;">
                                                         {{ __(@$cItem->socialMedia->name) }} - {{ __($cItem->title) }}
                                                     </span>
                                                 @endforeach
@@ -246,13 +252,13 @@
                                             @endphp
                                             @if($cExp)
                                                 @if($cIsExp)
-                                                    <span class="badge badge--danger">@lang('Expired')</span>
+                                                    <span class="badge bg--danger text-white">@lang('Expired')</span>
                                                 @else
-                                                    <span class="badge badge--success">{{ ceil($cDays) }} @lang('Days')</span>
+                                                    <span class="badge bg--success text-white">{{ ceil($cDays) }} @lang('Days')</span>
                                                 @endif
                                                 <div class="small text-muted mt-1">{{ showDateTime($cExp, 'd M Y') }}</div>
                                             @else
-                                                <span class="badge badge--dark">@lang('N/A')</span>
+                                                <span class="badge bg--dark text-white">@lang('N/A')</span>
                                             @endif
                                         </td>
                                         <td class="text-end">
@@ -271,7 +277,7 @@
                     </div>
                 </div>
                 @if($clientUsers->hasPages())
-                    <div class="card-footer py-2">
+                    <div class="card-footer bg-white border-top py-2">
                         {{ paginateLinks($clientUsers) }}
                     </div>
                 @endif
@@ -279,12 +285,14 @@
         </div>
 
         <div class="col-xl-6">
-            <div class="card b-radius--10 h-100">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title text-dark mb-0">
                         <i class="las la-history text--primary me-1"></i> @lang('Wallet Financial Ledger')
                     </h5>
-                    <span class="badge badge--success">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</span>
+                    <span class="badge bg--success text-white px-3 py-2 fw-semibold">
+                        @lang('Balance'): {{ showAmount($reseller->balance) }} {{ gs('cur_text') }}
+                    </span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -310,10 +318,10 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="fw-semibold">{{ showAmount($trx->post_balance) }} {{ gs('cur_text') }}</span>
+                                            <span class="fw-semibold text-dark">{{ showAmount($trx->post_balance) }} {{ gs('cur_text') }}</span>
                                         </td>
                                         <td>
-                                            <small class="text-muted">{{ __($trx->details) }}</small>
+                                            <small class="text-dark">{{ __($trx->details) }}</small>
                                         </td>
                                     </tr>
                                 @empty
@@ -326,7 +334,7 @@
                     </div>
                 </div>
                 @if($transactions->hasPages())
-                    <div class="card-footer py-2">
+                    <div class="card-footer bg-white border-top py-2">
                         {{ paginateLinks($transactions) }}
                     </div>
                 @endif
@@ -339,11 +347,11 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
+                    <h5 class="modal-title text-dark">
                         @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                            <span>@lang('Ban Reseller Partner')</span>
+                            <span><i class="las la-ban text-warning me-1"></i> @lang('Ban Reseller Partner')</span>
                         @else
-                            <span>@lang('Unban Reseller Partner')</span>
+                            <span><i class="las la-undo text-success me-1"></i> @lang('Unban Reseller Partner')</span>
                         @endif
                     </h5>
                     <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
@@ -355,18 +363,19 @@
                     <div class="modal-body">
                         @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
                             <div class="form-group">
-                                <label class="fw-bold mb-2">@lang('Reason for Banning'):</label>
+                                <label class="fw-bold text-dark mb-2">@lang('Reason for Banning'):</label>
                                 <textarea class="form-control" name="ban_reason" rows="4" required placeholder="@lang('State reason for suspending reseller access...')"></textarea>
                             </div>
                         @else
-                            <p><span>@lang('Ban reason was'):</span></p>
+                            <p class="text-dark"><span>@lang('Ban reason was'):</span></p>
                             <p class="text-danger fw-semibold">{{ $reseller->ban_reason ?: __('No reason specified') }}</p>
-                            <h4 class="text-center mt-3">@lang('Are you sure you want to unban this reseller?')</h4>
+                            <h5 class="text-center text-dark mt-3">@lang('Are you sure you want to unban this reseller?')</h5>
                         @endif
                     </div>
                     <div class="modal-footer">
                         @if($reseller->status == \App\Constants\Status::USER_ACTIVE)
-                            <button type="submit" class="btn btn--danger w-100">@lang('Confirm Ban')</button>
+                            <button type="button" class="btn btn--dark" data-bs-dismiss="modal">@lang('Cancel')</button>
+                            <button type="submit" class="btn btn--danger">@lang('Confirm Ban')</button>
                         @else
                             <button type="button" class="btn btn--dark" data-bs-dismiss="modal">@lang('No')</button>
                             <button type="submit" class="btn btn--primary">@lang('Yes, Unban')</button>
@@ -382,7 +391,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="las la-wallet text-success me-1"></i> @lang('Manage Reseller Wallet Balance')</h5>
+                    <h5 class="modal-title text-dark"><i class="las la-wallet text-success me-1"></i> @lang('Manage Reseller Wallet Balance')</h5>
                     <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <i class="las la-times"></i>
                     </button>
@@ -391,7 +400,7 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group mb-3">
-                            <label class="fw-bold mb-2">@lang('Operation Type'):</label>
+                            <label class="fw-bold text-dark mb-2">@lang('Operation Type'):</label>
                             <div class="d-flex gap-2">
                                 <div class="form-check flex-fill p-2 border rounded bg-light">
                                     <input class="form-check-input ms-1" type="radio" name="act" id="actAdd" value="add" checked>
@@ -409,15 +418,15 @@
                         </div>
 
                         <div class="form-group mb-3">
-                            <label class="fw-bold mb-1 required">@lang('Amount') ({{ gs('cur_text') }}):</label>
+                            <label class="fw-bold text-dark mb-1 required">@lang('Amount') ({{ gs('cur_text') }}):</label>
                             <div class="input-group">
-                                <span class="input-group-text">{{ gs('cur_sym') }}</span>
-                                <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                                <span class="input-group-text bg-light text-dark fw-bold">{{ gs('cur_sym') }}</span>
+                                <input type="number" step="0.01" min="0.01" name="amount" class="form-control fw-bold" placeholder="0.00" required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="fw-bold mb-1 required">@lang('Remarks / Reason'):</label>
+                            <label class="fw-bold text-dark mb-1 required">@lang('Remarks / Reason'):</label>
                             <textarea name="remark" class="form-control" rows="3" placeholder="@lang('e.g. Manual wallet recharge via bank transfer / USDT')" required></textarea>
                         </div>
                     </div>
