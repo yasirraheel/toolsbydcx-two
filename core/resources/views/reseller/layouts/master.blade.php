@@ -24,6 +24,34 @@
             --accent-green: #10b981;
         }
 
+        /* Custom Sleek Dark Scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+            border: 1px solid #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0b0f19;
+        }
+
+        /* Prevent Window-level Horizontal Scrolling */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+            width: 100% !important;
+        }
+
         body {
             background-color: var(--bs-body-bg);
             color: var(--bs-body-color);

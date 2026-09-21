@@ -20,6 +20,117 @@
     <link rel="stylesheet" href="{{asset('assets/global/css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/admin/css/app.css')}}">
     <style>
+        /* Custom Sleek Dark Scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+            border: 1px solid #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:active {
+            background: #6366f1;
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0b0f19;
+        }
+
+        /* Prevent Any Window-level Horizontal Scrolling */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+            width: 100% !important;
+        }
+        .page-wrapper {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        .container-fluid {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+
+        /* Breadcrumb Nav Tabs (Top Bar) Dark Theme & Fix Margin Overflow */
+        .breadcrumb-nav,
+        ul.nav-tabs.breadcrumb-nav,
+        .topTap {
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            margin: 0 0 25px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            gap: 8px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .breadcrumb-nav li,
+        .breadcrumb-nav .nav-item {
+            margin: 0 !important;
+        }
+        .breadcrumb-nav li a,
+        .breadcrumb-nav .nav-link {
+            background: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 8px !important;
+            color: #94a3b8 !important;
+            padding: 9px 18px !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: all 0.2s ease !important;
+        }
+        .breadcrumb-nav li a i,
+        .breadcrumb-nav .nav-link i {
+            color: #94a3b8 !important;
+            font-size: 16px !important;
+            margin: 0 !important;
+        }
+        .breadcrumb-nav li a:hover,
+        .breadcrumb-nav .nav-link:hover {
+            background: #1e293b !important;
+            color: #ffffff !important;
+            border-color: rgba(99, 102, 241, 0.4) !important;
+        }
+        .breadcrumb-nav li a:hover i,
+        .breadcrumb-nav .nav-link:hover i {
+            color: #ffffff !important;
+        }
+        .breadcrumb-nav li.active a,
+        .breadcrumb-nav li.active .nav-link,
+        .breadcrumb-nav .nav-link.active,
+        .breadcrumb-nav li a.active {
+            background: #4634ff !important;
+            color: #ffffff !important;
+            border-color: #4634ff !important;
+            box-shadow: 0 2px 10px rgba(70, 52, 255, 0.35) !important;
+        }
+        .breadcrumb-nav li.active a i,
+        .breadcrumb-nav li.active .nav-link i,
+        .breadcrumb-nav .nav-link.active i,
+        .breadcrumb-nav li a.active i {
+            color: #ffffff !important;
+        }
+        .breadcrumb-nav li a::after,
+        .breadcrumb-nav li.active a::after {
+            display: none !important;
+        }
+        .breadcrumb-nav-close {
+            display: none !important;
+        }
+
         /* Floating Sidebar Card & Navigation (Matching Reseller Portal) */
         .navbar-wrapper {
             background-color: #0f172a !important;
