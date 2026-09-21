@@ -87,6 +87,23 @@ Route::middleware('admin')->group(function () {
         Route::get('notification-log/{id}', 'notificationLog')->name('notification.log');
     });
 
+    // Resellers Manager
+    Route::controller('ManageResellersController')->name('resellers.')->prefix('resellers')->group(function(){
+        Route::get('/', 'all')->name('all');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('active', 'active')->name('active');
+        Route::get('expired', 'expired')->name('expired');
+        Route::get('banned', 'banned')->name('banned');
+        Route::get('detail/{id}', 'detail')->name('detail');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('status/{id}', 'status')->name('status');
+        Route::post('add-sub-balance/{id}', 'addSubBalance')->name('add.sub.balance');
+        Route::get('login/{id}', 'login')->name('login');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        Route::post('delete-bulk', 'deleteBulk')->name('delete.bulk');
+    });
+
     // Extension Distribution
     Route::controller('ExtensionUploadController')->prefix('extension')->name('extension.')->group(function(){
         Route::get('upload', 'index')->name('upload');

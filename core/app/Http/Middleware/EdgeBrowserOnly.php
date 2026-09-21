@@ -16,8 +16,15 @@ class EdgeBrowserOnly
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Always allow Admin panel requests (web/login/dashboard/all admin routes)
-        if ($request->is('admin*') || $request->routeIs('admin.*') || str_starts_with($request->path(), 'admin')) {
+        // 1. Always allow Admin panel & Reseller portal requests on any browser
+        if (
+            $request->is('admin*') ||
+            $request->routeIs('admin.*') ||
+            str_starts_with($request->path(), 'admin') ||
+            $request->is('reseller*') ||
+            $request->routeIs('reseller.*') ||
+            str_starts_with($request->path(), 'reseller')
+        ) {
             return $next($request);
         }
 
@@ -32,6 +39,11 @@ class EdgeBrowserOnly
             $request->is('placeholder-image*') ||
             $request->is('maintenance-mode*')
         ) {
+            return $next($request);
+        }
+
+        // 3. Allow active Reseller sessions on deposit / payment gateway confirmation routes
+        if (auth()->check() && (bool) auth()->user()->is_reseller) {
             return $next($request);
         }
 

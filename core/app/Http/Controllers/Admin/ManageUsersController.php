@@ -122,6 +122,8 @@ class ManageUsersController extends Controller
             $users = User::query();
         }
 
+        $users = $users->nonResellers();
+
         if (request()->account_id) {
             $accId = (int) request()->account_id;
             $users = $users->where(function($q) use ($accId) {

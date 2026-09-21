@@ -26,6 +26,10 @@ class UserController extends Controller
         $pageTitle = 'Dashboard';
         $user      = auth()->user()->load('plan');
 
+        if ($user->is_reseller) {
+            return redirect()->route('reseller.dashboard');
+        }
+
         $isAdmin = auth()->guard('admin')->check() || session()->get('is_admin_testing') === true || (bool) $user->is_tester;
 
         $adminAccounts = null;

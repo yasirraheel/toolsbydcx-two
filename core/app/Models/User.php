@@ -38,7 +38,35 @@ class User extends Authenticatable
         'account_prices' => 'array',
         'is_tester' => 'integer',
         'is_exclusive' => 'integer',
+        'is_reseller' => 'integer',
+        'reseller_id' => 'integer',
     ];
+
+    public function reseller()
+    {
+        return $this->belongsTo(User::class, 'reseller_id');
+    }
+
+    public function resellerUsers()
+    {
+        return $this->hasMany(User::class, 'reseller_id');
+    }
+
+    public function scopeResellers($query)
+    {
+        return $query->where('is_reseller', 1);
+    }
+
+    public function scopeNonResellers($query)
+    {
+        return $query->where('is_reseller', 0);
+    }
+
+    public function getAccountPrice($accountId)
+    {
+        $prices = (array) ($this->account_prices ?? []);
+        return isset($prices[$accountId]) ? (float) $prices[$accountId] : 0.00;
+    }
 
     public function loginLogs()
     {

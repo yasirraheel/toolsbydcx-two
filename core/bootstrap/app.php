@@ -9,6 +9,7 @@ use App\Http\Middleware\MaintenanceMode;
 use App\Http\Middleware\RedirectIfAdmin;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RedirectIfNotAdmin;
+use App\Http\Middleware\RedirectIfNotReseller;
 use App\Http\Middleware\RegistrationStep;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -34,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->prefix('ipn')
                     ->name('ipn.')
                     ->group(base_path('routes/ipn.php'));
+
+                Route::middleware(['web','maintenance'])
+                    ->prefix('reseller')
+                    ->group(base_path('routes/reseller.php'));
 
                 Route::middleware(['web','maintenance','edge.only'])->prefix('user')->group(base_path('routes/user.php'));
                 Route::middleware(['web','maintenance','edge.only'])->group(base_path('routes/web.php'));
@@ -74,6 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'registration.complete' => RegistrationStep::class,
             'maintenance' => MaintenanceMode::class,
             'edge.only' => EdgeBrowserOnly::class,
+            'reseller' => RedirectIfNotReseller::class,
         ]);
 
         $middleware->validateCsrfTokens(

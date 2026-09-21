@@ -128,6 +128,43 @@
             }
         ]
     },
+    "manage_resellers": {
+        "title": "Manage Resellers",
+        "icon": "las la-handshake",
+        "menu_active": "admin.resellers*",
+        "submenu": [
+            {
+                "keyword": ["active resellers", "Manage Resellers", "Reseller partners"],
+                "title": "Active Resellers",
+                "route_name": "admin.resellers.active",
+                "menu_active": "admin.resellers.active"
+            },
+            {
+                "keyword": ["expired resellers", "Manage Resellers", "Expired subscription"],
+                "title": "Expired Resellers",
+                "route_name": "admin.resellers.expired",
+                "menu_active": "admin.resellers.expired"
+            },
+            {
+                "keyword": ["banned resellers", "Manage Resellers", "Account bans"],
+                "title": "Banned Resellers",
+                "route_name": "admin.resellers.banned",
+                "menu_active": "admin.resellers.banned"
+            },
+            {
+                "keyword": ["all resellers", "Manage Resellers", "Reseller list", "Reseller directory"],
+                "title": "All Resellers",
+                "route_name": "admin.resellers.all",
+                "menu_active": "admin.resellers.all"
+            },
+            {
+                "keyword": ["add new reseller", "Create reseller", "Add Reseller"],
+                "title": "Add New Reseller",
+                "route_name": "admin.resellers.create",
+                "menu_active": "admin.resellers.create"
+            }
+        ]
+    },
     "extension_distribution": {
         "keyword": ["Extension distribution", "Upload extension", "Distribute extension", "Browser extension"],
         "title": "Extension Distribution",
