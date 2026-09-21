@@ -62,61 +62,85 @@
             </div>
         @endif
 
-        {{-- App Native Dashboard Items (No Deposit/Balance, Focused on Tools & Validity) --}}
-        <div class="row gy-4 mb-4">
-            <div class="col-lg-3 col-sm-6">
-                <div class="dashboard-item">
-                    <div class="dashboard-item__content">
-                        <span class="dashboard-item__title"> @lang('Current Plan') </span>
-                        <h3 class="dashboard-item__currency" style="color: var(--base-color);">
-                            @if(auth()->user()->is_trial)
-                                @if(auth()->user()->pending_trial_minutes > 0)
-                                    @lang('Trial Pending')
-                                @else
-                                    @lang('Trial Active')
-                                @endif
-                            @else
-                                {{ $user->plan ? __($user->plan->name) : 'Standard Access' }}
-                            @endif
-                        </h3>
+        {{-- App Native Dashboard Items (Matching Sleek Reseller Stat Cards) --}}
+        <div class="row g-4 mb-4">
+            {{-- Current Plan Card --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.03)); border-color: rgba(99, 102, 241, 0.3);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold text-uppercase">@lang('Current Plan')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+                            <i class="las la-crown fs-4"></i>
+                        </div>
                     </div>
-                    <span class="dashboard-item__icon"> <i class="fas fa-crown"></i> </span>
+                    <h3 class="text-white fw-bold mb-1">
+                        @if(auth()->user()->is_trial)
+                            @if(auth()->user()->pending_trial_minutes > 0)
+                                @lang('Trial Pending')
+                            @else
+                                @lang('Trial Active')
+                            @endif
+                        @else
+                            {{ $user->plan ? __($user->plan->name) : 'Standard Access' }}
+                        @endif
+                    </h3>
+                    <div class="mt-auto pt-2 text-muted small">
+                        <a href="{{ route('plans') }}" class="text--primary fw-semibold"><i class="las la-arrow-right"></i> @lang('View Plans')</a>
+                    </div>
                 </div>
             </div>
             
-            <div class="col-lg-3 col-sm-6">
-                <div class="dashboard-item">
-                    <div class="dashboard-item__content">
-                        <span class="dashboard-item__title"> @lang('Validity Remaining') </span>
-                        <h3 class="dashboard-item__currency" style="color: {{ $isExpired ? '#dc3545' : 'var(--base-color)' }};">
-                            {{ $validityText }}
-                        </h3>
+            {{-- Validity Remaining Card --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.03)); border-color: rgba(16, 185, 129, 0.3);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold text-uppercase">@lang('Validity Remaining')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #34d399;">
+                            <i class="las la-clock fs-4"></i>
+                        </div>
                     </div>
-                    <span class="dashboard-item__icon"> <i class="las la-hourglass-half"></i> </span>
+                    <h3 class="fw-bold mb-1 {{ $isExpired ? 'text-danger' : 'text-white' }}">
+                        {{ $validityText }}
+                    </h3>
+                    <div class="mt-auto pt-2 text-muted small">
+                        <i class="las la-calendar text--success"></i> {{ showDateTime($expiryDate, 'd M Y') }}
+                    </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-sm-6">
-                <div class="dashboard-item">
-                    <div class="dashboard-item__content">
-                        <span class="dashboard-item__title"> @lang('Assigned Tools') </span>
-                        <h3 class="dashboard-item__currency">
-                            {{ count((array)($user->account_ids ?? [])) }} @lang('Available')
-                        </h3>
+            {{-- Assigned Tools Card --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.03)); border-color: rgba(59, 130, 246, 0.3);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold text-uppercase">@lang('Assigned Tools')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                            <i class="las la-cubes fs-4"></i>
+                        </div>
                     </div>
-                    <span class="dashboard-item__icon"> <i class="las la-cubes"></i> </span>
+                    <h3 class="text-white fw-bold mb-1">
+                        {{ count((array)($user->account_ids ?? [])) }} <small class="fs-6 text-muted">@lang('Unlocked')</small>
+                    </h3>
+                    <div class="mt-auto pt-2 text-muted small">
+                        <i class="las la-check-circle text-success"></i> @lang('Active on your account')
+                    </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-sm-6">
-                <div class="dashboard-item">
-                    <div class="dashboard-item__content">
-                        <a class="dashboard-item__title" href="{{ route('ticket.index') }}"> @lang('Support Tickets') </a>
-                        <h3 class="dashboard-item__currency">
-                            {{ $totalUserTickets }} @lang('Tickets')
-                        </h3>
+            {{-- Support Tickets Card --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.03)); border-color: rgba(234, 179, 8, 0.3);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-semibold text-uppercase">@lang('Support Tickets')</span>
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15;">
+                            <i class="las la-headset fs-4"></i>
+                        </div>
                     </div>
-                    <span class="dashboard-item__icon"> <i class="las la-headset"></i> </span>
+                    <h3 class="text-white fw-bold mb-1">
+                        {{ $totalUserTickets }} <small class="fs-6 text-muted">@lang('Tickets')</small>
+                    </h3>
+                    <div class="mt-auto pt-2 text-muted small">
+                        <a href="{{ route('ticket.open') }}" class="text-warning fw-semibold"><i class="las la-plus-circle"></i> @lang('Open New Ticket')</a>
+                    </div>
                 </div>
             </div>
         </div>
