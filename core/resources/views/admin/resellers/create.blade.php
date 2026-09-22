@@ -18,7 +18,7 @@
                             {{-- Reseller Name --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
-                                    <label class="fw-bold text--dark mb-2 required">
+                                    <label class="fw-bold text-white mb-2 required">
                                         <i class="las la-user text--primary"></i> @lang('Reseller / Business Name')
                                     </label>
                                     <input class="form-control form-control-lg" type="text" name="name" id="userNameInput" placeholder="@lang('e.g. Acme Reseller Tools')" required value="{{ old('name') }}" autofocus>
@@ -28,7 +28,7 @@
                             {{-- Reseller Email / Username --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
-                                    <label class="fw-bold text--dark mb-2 required">
+                                    <label class="fw-bold text-white mb-2 required">
                                         <i class="las la-envelope text--primary"></i> @lang('Username / Email Prefix')
                                     </label>
                                     <div class="input-group input-group-lg">
@@ -45,7 +45,7 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="fw-bold text--dark mb-0 required">
+                                        <label class="fw-bold text-white mb-0 required">
                                             <i class="las la-key text--primary"></i> @lang('Password')
                                         </label>
                                         <a href="javascript:void(0)" class="text--primary fw-bold text-decoration-none" id="generatePasswordBtn" style="font-size: 13px;">
@@ -67,7 +67,7 @@
                             {{-- Reseller Expiry --}}
                             <div class="col-md-6">
                                 <div class="form-group mb-0">
-                                    <label class="fw-bold text--dark mb-2">
+                                    <label class="fw-bold text-white mb-2">
                                         <i class="las la-calendar-alt text--primary"></i> @lang('Reseller Expiry Date')
                                     </label>
                                     <input type="date" name="expires_at" class="form-control form-control-lg" value="{{ old('expires_at', now()->addYear()->format('Y-m-d')) }}">
@@ -77,12 +77,12 @@
                             {{-- Initial Wallet Balance --}}
                             <div class="col-12">
                                 <div class="form-group mb-0">
-                                    <label class="fw-bold text--dark mb-2">
+                                    <label class="fw-bold text-white mb-2">
                                         <i class="las la-wallet text--primary"></i> @lang('Initial Wallet Balance') ({{ gs('cur_text') }})
                                     </label>
                                     <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg--light fw-bold">{{ gs('cur_sym') }}</span>
-                                        <input type="number" step="0.01" min="0" name="initial_balance" class="form-control" placeholder="0.00" value="{{ old('initial_balance', '0.00') }}">
+                                        <span class="input-group-text fw-bold" style="background: #1e293b; border-color: rgba(255,255,255,0.12); color: #94a3b8;">{{ gs('cur_sym') }}</span>
+                                        <input type="number" step="0.01" min="0" name="initial_balance" class="form-control fw-bold" placeholder="0.00" value="{{ old('initial_balance', '0.00') }}" style="color: #34d399;">
                                     </div>
                                     <small class="text-muted mt-1 d-block">@lang('Initial preloaded funds for the reseller wallet (optional).')</small>
                                 </div>
@@ -90,52 +90,69 @@
                         </div>
 
                         {{-- Custom Account Pricing Matrix --}}
-                        <div class="form-group mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="fw-bold text--dark mb-0">
-                                    <i class="las la-tags text--primary"></i> @lang('Reseller Account Pricing Matrix')
-                                </label>
-                                <span class="badge badge--info px-2 py-1">@lang('Per Client / Per Month')</span>
+                        <div class="card shadow-sm border-0 mb-4" style="background: #111827; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 12px; overflow: hidden;">
+                            <div class="card-header py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2" style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                                <div>
+                                    <h5 class="card-title text-white mb-1 fw-bold">
+                                        <i class="las la-tags text--primary me-1"></i> @lang('Reseller Account Pricing Matrix')
+                                    </h5>
+                                    <span class="text-muted small">@lang('Set the specific cost charged to this reseller per client user for each platform account.')</span>
+                                </div>
+                                <span class="badge bg--primary text-white px-3 py-2 fw-semibold" style="border-radius: 6px;">
+                                    <i class="las la-coins me-1"></i> @lang('Per Client / Month')
+                                </span>
                             </div>
-                            <p class="text-muted small mb-3">
-                                @lang('Set the specific cost charged to this reseller per client user for each assigned platform account. When the reseller creates or extends a client user with these accounts, this amount will be automatically deducted from their wallet.')
-                            </p>
-
-                            <div class="table-responsive border rounded" style="background: #fdfdfd;">
-                                <table class="table table--light table-bordered mb-0">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th>@lang('Platform')</th>
-                                            <th>@lang('Account Title')</th>
-                                            <th style="width: 200px;">@lang('Unit Price / Month') ({{ gs('cur_text') }})</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($accounts as $acc)
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table mb-0" style="color: #e2e8f0; vertical-align: middle;">
+                                        <thead style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
                                             <tr>
-                                                <td>
-                                                    <span class="fw-bold text--primary">{{ __(@$acc->socialMedia->name) }}</span>
-                                                </td>
-                                                <td>
-                                                    <span class="fw-semibold text--dark">{{ __($acc->title) }}</span>
-                                                    @if($acc->cookie_status == 1)
-                                                        <span class="badge badge--success ms-1">@lang('Cookie Ready')</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="input-group input-group-sm">
-                                                        <span class="input-group-text">{{ gs('cur_sym') }}</span>
-                                                        <input type="number" step="0.01" min="0" name="prices[{{ $acc->id }}]" class="form-control text-end fw-bold" placeholder="0.00" value="{{ old('prices.' . $acc->id, '0.00') }}">
-                                                    </div>
-                                                </td>
+                                                <th class="py-3 px-4 text-uppercase small text-muted fw-bold">@lang('Platform')</th>
+                                                <th class="py-3 px-4 text-uppercase small text-muted fw-bold">@lang('Account Title / Email')</th>
+                                                <th class="py-3 px-4 text-uppercase small text-muted fw-bold text-center">@lang('Cookie Status')</th>
+                                                <th class="py-3 px-4 text-uppercase small text-muted fw-bold text-end" style="min-width: 200px;">@lang('Unit Price / Month') ({{ gs('cur_text') }})</th>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="3" class="text-center text-muted py-3">@lang('No active platform accounts available.')</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($accounts as $acc)
+                                                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                                    <td class="py-3 px-4">
+                                                        <span class="badge px-2.5 py-1.5 fw-bold" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 13px;">
+                                                            {{ __(@$acc->socialMedia->name) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 px-4">
+                                                        <div class="fw-bold text-white fs-6">{{ __($acc->title) }}</div>
+                                                        @if(@$acc->username)
+                                                            <div class="text-muted small">{{ $acc->username }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-3 px-4 text-center">
+                                                        @if($acc->cookie_status == 1)
+                                                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-2.5 py-1" style="font-size: 11.5px;">
+                                                                <i class="las la-check-circle me-1"></i> @lang('Cookie Ready')
+                                                            </span>
+                                                        @else
+                                                            <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 px-2.5 py-1" style="font-size: 11.5px;">
+                                                                <i class="las la-exclamation-triangle me-1"></i> @lang('Cookie Expired')
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-3 px-4 text-end">
+                                                        <div class="input-group input-group-sm ms-auto" style="max-width: 180px;">
+                                                            <span class="input-group-text fw-bold" style="background: #1e293b; border-color: rgba(255,255,255,0.12); color: #94a3b8;">{{ gs('cur_sym') }}</span>
+                                                            <input type="number" step="0.01" min="0" name="prices[{{ $acc->id }}]" class="form-control text-end fw-bold" placeholder="0.00" value="{{ old('prices.' . $acc->id, '0.00') }}" style="background: #0b0f19; border-color: rgba(255,255,255,0.12); color: #34d399; font-size: 14px;">
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted py-4">@lang('No active platform accounts available.')</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 

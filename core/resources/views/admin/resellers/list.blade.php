@@ -27,7 +27,7 @@
                                 </td>
                                 <td class="text-start" style="text-align: left !important; word-break: break-word;">
                                     <div class="text-start">
-                                        <span class="fw-bold text--dark d-block">{{ $reseller->fullname }}</span>
+                                        <span class="fw-bold text-white d-block">{{ $reseller->fullname }}</span>
                                         <span class="small d-block">
                                             <a href="{{ route('admin.resellers.detail', $reseller->id) }}"><span>@</span>{{ $reseller->username }}</a>
                                         </span>
@@ -43,7 +43,7 @@
                                 </td>
 
                                 <td style="word-break: break-all;">
-                                    <span class="d-block text--dark fw-semibold">{{ $reseller->email }}</span>
+                                    <span class="d-block text-white fw-semibold">{{ $reseller->email }}</span>
                                     <span class="text-muted small">{{ $reseller->mobileNumber }}</span>
                                 </td>
 
