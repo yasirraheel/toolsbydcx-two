@@ -1,83 +1,59 @@
-<div class="sidebar bg--dark">
-    <button class="res-sidebar-close-btn"><i class="las la-times"></i></button>
-    <div class="sidebar__inner">
-        <div class="sidebar__logo">
-            <a href="{{ route('reseller.dashboard') }}" class="sidebar__main-logo">
-                <img src="{{ siteLogo() }}" alt="@lang('Logo')">
-            </a>
-        </div>
-        <div class="sidebar__menu-wrapper" id="sidebar__menuWrapper">
-            <ul class="sidebar__menu">
+<nav class="nav nav-pills flex-column gap-1" id="sidebar__menuWrapper">
+    {{-- Dashboard --}}
+    <a class="nav-link {{ request()->routeIs('reseller.dashboard') ? 'active' : '' }}" href="{{ route('reseller.dashboard') }}">
+        <i class="las la-home fs-5"></i>
+        <span>@lang('Dashboard')</span>
+    </a>
 
-                {{-- Dashboard --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.dashboard') }}">
-                    <a href="{{ route('reseller.dashboard') }}" class="nav-link">
-                        <i class="menu-icon las la-tachometer-alt"></i>
-                        <span class="menu-title">@lang('Dashboard')</span>
-                    </a>
-                </li>
+    {{-- Client Users --}}
+    <a class="nav-link {{ request()->routeIs('reseller.users.index', 'reseller.users.edit') ? 'active' : '' }}" href="{{ route('reseller.users.index') }}">
+        <i class="las la-users fs-5"></i>
+        <span>@lang('Client Users')</span>
+    </a>
 
-                {{-- Manage Clients --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.users.index') }}">
-                    <a href="{{ route('reseller.users.index') }}" class="nav-link">
-                        <i class="menu-icon las la-users"></i>
-                        <span class="menu-title">@lang('My Clients')</span>
-                    </a>
-                </li>
+    {{-- Create Client --}}
+    <a class="nav-link {{ request()->routeIs('reseller.users.create') ? 'active' : '' }}" href="{{ route('reseller.users.create') }}">
+        <i class="las la-user-plus fs-5"></i>
+        <span>@lang('Create Client')</span>
+    </a>
 
-                {{-- Create Client --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.users.create') }}">
-                    <a href="{{ route('reseller.users.create') }}" class="nav-link">
-                        <i class="menu-icon las la-user-plus"></i>
-                        <span class="menu-title">@lang('Create Client')</span>
-                    </a>
-                </li>
+    {{-- Account Pricing --}}
+    <a class="nav-link {{ request()->routeIs('reseller.pricing') ? 'active' : '' }}" href="{{ route('reseller.pricing') }}">
+        <i class="las la-tags fs-5"></i>
+        <span>@lang('Account Pricing')</span>
+    </a>
 
-                {{-- Recharge / Deposit Wallet --}}
-                <li class="sidebar-menu-item {{ menuActive(['reseller.deposit', 'reseller.deposit.*']) }}">
-                    <a href="{{ route('reseller.deposit') }}" class="nav-link">
-                        <i class="menu-icon las la-wallet"></i>
-                        <span class="menu-title">@lang('Recharge Wallet')</span>
-                    </a>
-                </li>
+    <div class="my-2 border-top border-secondary opacity-25"></div>
 
-                {{-- Deposit History --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.deposit.history') }}">
-                    <a href="{{ route('reseller.deposit.history') }}" class="nav-link">
-                        <i class="menu-icon las la-file-invoice-dollar"></i>
-                        <span class="menu-title">@lang('Deposit History')</span>
-                    </a>
-                </li>
+    {{-- Recharge Wallet --}}
+    <a class="nav-link text-success fw-bold {{ ((request()->routeIs('user.deposit*') || request()->routeIs('reseller.deposit*')) && !request()->routeIs('user.deposit.history*', 'reseller.deposit.history*')) ? 'active' : '' }}" href="{{ route('user.deposit.index') }}">
+        <i class="las la-wallet fs-5"></i>
+        <span>@lang('Recharge Wallet')</span>
+    </a>
 
-                {{-- Financial Transactions --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.transactions') }}">
-                    <a href="{{ route('reseller.transactions') }}" class="nav-link">
-                        <i class="menu-icon las la-history"></i>
-                        <span class="menu-title">@lang('Transactions')</span>
-                    </a>
-                </li>
+    {{-- Transactions --}}
+    <a class="nav-link {{ request()->routeIs('reseller.transactions') ? 'active' : '' }}" href="{{ route('reseller.transactions') }}">
+        <i class="las la-exchange-alt fs-5"></i>
+        <span>@lang('Transactions')</span>
+    </a>
 
-                {{-- Account Pricing Matrix --}}
-                <li class="sidebar-menu-item {{ menuActive('reseller.pricing') }}">
-                    <a href="{{ route('reseller.pricing') }}" class="nav-link">
-                        <i class="menu-icon las la-tags"></i>
-                        <span class="menu-title">@lang('My Account Rates')</span>
-                    </a>
-                </li>
+    {{-- Deposit History --}}
+    <a class="nav-link {{ (request()->routeIs('user.deposit.history*') || request()->routeIs('reseller.deposit.history*')) ? 'active' : '' }}" href="{{ route('user.deposit.history') }}">
+        <i class="las la-receipt fs-5"></i>
+        <span>@lang('Deposit History')</span>
+    </a>
 
-                {{-- Logout --}}
-                <li class="sidebar-menu-item">
-                    <a href="{{ route('user.logout') }}" class="nav-link text-danger">
-                        <i class="menu-icon las la-sign-out-alt text-danger"></i>
-                        <span class="menu-title text-danger">@lang('Logout')</span>
-                    </a>
-                </li>
+    <div class="my-2 border-top border-secondary opacity-25"></div>
 
-            </ul>
-        </div>
-        <div class="version-info text-center text-uppercase">
-            <span class="text--primary">{{ __(gs('site_name')) }}</span>
-            <span class="text--success">@lang('Reseller Portal')</span>
-        </div>
-    </div>
-</div>
+    {{-- Platform View --}}
+    <a class="nav-link text-muted" href="{{ route('user.home') }}">
+        <i class="las la-arrow-left fs-5"></i>
+        <span>@lang('Platform View')</span>
+    </a>
+
+    {{-- Logout --}}
+    <a class="nav-link text-danger" href="{{ route('user.logout') }}">
+        <i class="las la-sign-out-alt fs-5"></i>
+        <span>@lang('Logout')</span>
+    </a>
+</nav>

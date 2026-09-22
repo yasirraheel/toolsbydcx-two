@@ -279,70 +279,7 @@
 <body>
 
     {{-- Top Reseller Navbar --}}
-    <header class="reseller-navbar d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <a class="navbar-brand" href="{{ route('reseller.dashboard') }}">
-                <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
-            </a>
-            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2.5 py-1">
-                <i class="las la-handshake me-1"></i> @lang('Reseller Partner Portal')
-            </span>
-        </div>
-
-        <div class="d-flex align-items-center gap-3">
-            {{-- Wallet Balance Pill --}}
-            <div class="balance-pill">
-                <i class="las la-wallet fs-5"></i>
-                <span>{{ showAmount(auth()->user()->balance) }} {{ gs('cur_text') }}</span>
-            </div>
-
-            {{-- Recharge Wallet Button --}}
-            <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 fw-bold">
-                <i class="las la-plus-circle"></i> @lang('Recharge Wallet')
-            </a>
-
-            {{-- Reseller Dropdown --}}
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-white d-flex align-items-center gap-2 border-secondary" type="button" data-bs-toggle="dropdown">
-                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--base-color); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
-                        {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
-                    </div>
-                    <span>{{ auth()->user()->username }}</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                    <li>
-                        <h6 class="dropdown-header text-muted">@lang('Reseller Account')</h6>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('reseller.pricing') }}">
-                            <i class="las la-tags me-1"></i> @lang('My Account Rates')
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('reseller.transactions') }}">
-                            <i class="las la-history me-1"></i> @lang('Transactions')
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('user.deposit.history') }}">
-                            <i class="las la-file-invoice-dollar me-1"></i> @lang('Deposit History')
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider border-secondary"></li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('user.home') }}">
-                            <i class="las la-tv me-1"></i> @lang('User Platform Dashboard')
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="{{ route('user.logout') }}">
-                            <i class="las la-sign-out-alt me-1"></i> @lang('Logout')
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </header>
+    @include('reseller.partials.topnav')
 
     {{-- Main Container --}}
     <div class="container-fluid py-4 px-3 px-md-4 flex-grow-1">
@@ -350,37 +287,7 @@
             {{-- Sidebar Navigation --}}
             <div class="col-xl-2 col-lg-3">
                 <div class="card p-2 sticky-top sidebar-card-floating">
-                    <nav class="nav nav-pills flex-column gap-1">
-                        <a class="nav-link {{ request()->routeIs('reseller.dashboard') ? 'active' : '' }}" href="{{ route('reseller.dashboard') }}">
-                            <i class="las la-home fs-5"></i> @lang('Dashboard')
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('reseller.users.index') ? 'active' : '' }}" href="{{ route('reseller.users.index') }}">
-                            <i class="las la-users fs-5"></i> @lang('Client Users')
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('reseller.users.create') ? 'active' : '' }}" href="{{ route('reseller.users.create') }}">
-                            <i class="las la-user-plus fs-5"></i> @lang('Create Client')
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('reseller.pricing') ? 'active' : '' }}" href="{{ route('reseller.pricing') }}">
-                            <i class="las la-tags fs-5"></i> @lang('Account Pricing')
-                        </a>
-                        <div class="my-2 border-top border-secondary opacity-25"></div>
-                        <a class="nav-link text-success fw-bold {{ request()->routeIs('user.deposit*') ? 'active' : '' }}" href="{{ route('user.deposit.index') }}">
-                            <i class="las la-wallet fs-5"></i> @lang('Recharge Wallet')
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('reseller.transactions') ? 'active' : '' }}" href="{{ route('reseller.transactions') }}">
-                            <i class="las la-exchange-alt fs-5"></i> @lang('Transactions')
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('user.deposit.history') ? 'active' : '' }}" href="{{ route('user.deposit.history') }}">
-                            <i class="las la-receipt fs-5"></i> @lang('Deposit History')
-                        </a>
-                        <div class="my-2 border-top border-secondary opacity-25"></div>
-                        <a class="nav-link text-muted" href="{{ route('user.home') }}">
-                            <i class="las la-arrow-left fs-5"></i> @lang('Platform View')
-                        </a>
-                        <a class="nav-link text-danger" href="{{ route('user.logout') }}">
-                            <i class="las la-sign-out-alt fs-5"></i> @lang('Logout')
-                        </a>
-                    </nav>
+                    @include('reseller.partials.sidenav')
                 </div>
             </div>
 

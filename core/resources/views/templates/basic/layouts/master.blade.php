@@ -499,6 +499,31 @@
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             color: #ffffff !important;
         }
+
+        /* Reseller Top Navbar & Balance Pill */
+        .reseller-navbar {
+            background-color: #0f172a !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 0.75rem 1.5rem !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1020 !important;
+            margin-left: 0 !important;
+            width: 100% !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .balance-pill {
+            background: rgba(16, 185, 129, 0.12) !important;
+            border: 1px solid rgba(16, 185, 129, 0.3) !important;
+            border-radius: 9999px !important;
+            padding: 0.35rem 0.9rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            font-size: 0.9rem !important;
+            color: #34d399 !important;
+            font-weight: 600 !important;
+        }
     </style>
 
     @stack('style')
@@ -508,14 +533,22 @@
 
     {{-- Main Page Wrapper with Floating Sidebar Card Layout --}}
     <div class="page-wrapper default-version d-flex flex-column min-vh-100" style="background-color: #0b0f19;">
-        @include($activeTemplate . 'partials.user_topnav')
+        @if(auth()->check() && auth()->user()->is_reseller && (request()->routeIs('user.deposit*') || request()->is('user/deposit*') || request()->routeIs('reseller*') || !request()->routeIs('user.home', 'plans*')))
+            @include('reseller.partials.topnav')
+        @else
+            @include($activeTemplate . 'partials.user_topnav')
+        @endif
 
         <div class="container-fluid py-4 px-3 px-md-4 flex-grow-1">
             <div class="row g-4">
-                {{-- Floating Sidebar Card (Matching Reseller Portal) --}}
+                {{-- Floating Sidebar Card (Consistent Single Sidebar) --}}
                 <div class="col-xl-2 col-lg-3">
                     <div class="card p-2 sticky-top sidebar-card-floating">
-                        @include($activeTemplate . 'partials.user_sidenav')
+                        @if(auth()->check() && auth()->user()->is_reseller && (request()->routeIs('user.deposit*') || request()->is('user/deposit*') || request()->routeIs('reseller*') || !request()->routeIs('user.home', 'plans*')))
+                            @include('reseller.partials.sidenav')
+                        @else
+                            @include($activeTemplate . 'partials.user_sidenav')
+                        @endif
                     </div>
                 </div>
 

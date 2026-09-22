@@ -9,6 +9,8 @@
                             <div class="card-header">
                                 @if (session()->get('requestAmount'))
                                     <h5 class="card-title">@lang('Payment')</h5>
+                                @elseif(auth()->check() && auth()->user()->is_reseller)
+                                    <h5 class="card-title text-white mb-0"><i class="las la-wallet text-success me-1"></i> @lang('Recharge Reseller Wallet')</h5>
                                 @else
                                     <h5 class="card-title">@lang('Deposit')</h5>
                                 @endif
@@ -133,7 +135,13 @@
                                                 @endif
                                             </button>
                                             <div class="info-text pt-3">
-                                                <p class="text">@lang('Ensuring your funds grow safely through our secure deposit process with world-class payment options.')</p>
+                                                <p class="text">
+                                                    @if(auth()->check() && auth()->user()->is_reseller)
+                                                        @lang('Funds will be credited directly to your reseller wallet upon payment confirmation.')
+                                                    @else
+                                                        @lang('Ensuring your funds grow safely through our secure deposit process with world-class payment options.')
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

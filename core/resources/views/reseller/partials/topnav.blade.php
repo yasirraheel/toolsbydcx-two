@@ -1,65 +1,64 @@
-<nav class="navbar-wrapper bg--dark d-flex flex-wrap">
-    <div class="navbar__left">
-        <button type="button" class="res-sidebar-open-btn me-3"><i class="las la-bars"></i></button>
-        <div class="d-none d-md-flex align-items-center">
-            <span class="text-white fw-bold">
-                <i class="las la-handshake text--primary me-1" style="font-size: 18px;"></i>
-                @lang('Hi'), <span class="text--primary">{{ auth()->user()->fullname ?: auth()->user()->username }}</span>
-            </span>
-            <span class="badge badge--primary ms-2">@lang('Reseller Partner')</span>
+<header class="reseller-navbar d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a class="navbar-brand me-1" href="{{ route('reseller.dashboard') }}">
+            <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}" style="max-height: 38px;">
+        </a>
+        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2.5 py-1 d-none d-sm-inline-flex align-items-center">
+            <i class="las la-handshake me-1"></i> @lang('Reseller Partner Portal')
+        </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 gap-sm-3">
+        {{-- Wallet Balance Pill --}}
+        <div class="balance-pill">
+            <i class="las la-wallet fs-5"></i>
+            <span>{{ showAmount(auth()->user()->balance) }} {{ gs('cur_text') }}</span>
+        </div>
+
+        {{-- Recharge Wallet Button --}}
+        <a href="{{ route('user.deposit.index') }}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 fw-bold">
+            <i class="las la-plus-circle"></i> <span class="d-none d-sm-inline">@lang('Recharge Wallet')</span><span class="d-inline d-sm-none">@lang('Recharge')</span>
+        </a>
+
+        {{-- Reseller Dropdown --}}
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-white d-flex align-items-center gap-2 border-secondary" type="button" data-bs-toggle="dropdown">
+                <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--base-color, #6366f1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #fff;">
+                    {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                </div>
+                <span class="d-none d-md-inline">{{ auth()->user()->username }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                <li>
+                    <h6 class="dropdown-header text-muted">@lang('Reseller Account')</h6>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('reseller.pricing') }}">
+                        <i class="las la-tags me-1"></i> @lang('My Account Rates')
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('reseller.transactions') }}">
+                        <i class="las la-history me-1"></i> @lang('Transactions')
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('user.deposit.history') }}">
+                        <i class="las la-file-invoice-dollar me-1"></i> @lang('Deposit History')
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider border-secondary"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('user.home') }}">
+                        <i class="las la-tv me-1"></i> @lang('User Platform Dashboard')
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ route('user.logout') }}">
+                        <i class="las la-sign-out-alt me-1"></i> @lang('Logout')
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
-    <div class="navbar__right">
-        <ul class="navbar__action-list">
-
-            {{-- Wallet Balance & Quick Recharge --}}
-            <li class="d-flex align-items-center me-2">
-                <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn--success d-inline-flex align-items-center gap-2 px-3 py-1" style="border-radius: 20px; font-weight: 600;">
-                    <i class="las la-wallet"></i>
-                    <span>{{ showAmount(auth()->user()->balance) }} {{ gs('cur_text') }}</span>
-                    <span class="badge bg-white text-success ms-1" style="font-size: 11px;">+ @lang('Add')</span>
-                </a>
-            </li>
-
-            {{-- User Profile Dropdown --}}
-            <li class="dropdown d-flex profile-dropdown">
-                <button type="button" data-bs-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false">
-                    <span class="navbar-user">
-                        <span class="navbar-user__thumb">
-                            @if(auth()->user()->image)
-                                <img src="{{ getImage(getFilePath('userProfile') . '/' . auth()->user()->image, getFileSize('userProfile')) }}" alt="user">
-                            @else
-                                <img src="{{ getImage($activeTemplateTrue . 'images/avatar.png') }}" alt="user">
-                            @endif
-                        </span>
-                        <span class="navbar-user__info">
-                            <span class="navbar-user__name">{{ auth()->user()->username }}</span>
-                        </span>
-                        <span class="icon"><i class="las la-chevron-circle-down"></i></span>
-                    </span>
-                </button>
-                <div class="dropdown-menu dropdown-menu--sm p-0 border-0 box--shadow1 dropdown-menu-right">
-                    <a href="{{ route('reseller.pricing') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2">
-                        <i class="dropdown-menu__icon las la-tags"></i>
-                        <span class="dropdown-menu__caption">@lang('Account Rates')</span>
-                    </a>
-
-                    <a href="{{ route('reseller.transactions') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2">
-                        <i class="dropdown-menu__icon las la-history"></i>
-                        <span class="dropdown-menu__caption">@lang('Transactions')</span>
-                    </a>
-
-                    <a href="{{ route('reseller.deposit.history') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2">
-                        <i class="dropdown-menu__icon las la-file-invoice-dollar"></i>
-                        <span class="dropdown-menu__caption">@lang('Deposit History')</span>
-                    </a>
-
-                    <a href="{{ route('user.logout') }}" class="dropdown-menu__item d-flex align-items-center px-3 py-2 text-danger">
-                        <i class="dropdown-menu__icon las la-sign-out-alt text-danger"></i>
-                        <span class="dropdown-menu__caption text-danger">@lang('Logout')</span>
-                    </a>
-                </div>
-            </li>
-        </ul>
-    </div>
-</nav>
+</header>
