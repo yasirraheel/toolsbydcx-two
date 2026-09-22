@@ -284,38 +284,6 @@
             }
         ]
     },
-    "support_ticket": {
-        "title": "Support Ticket",
-        "icon": "la la-ticket",
-        "counters": ["pendingTicketCount"],
-        "menu_active": "admin.ticket*",
-        "submenu": [{
-                "keyword": ["Pending Ticket", "Support Ticket", "Ticket management", "Ticket control", "Ticket status", "Ticket activity"],
-                "title": "Pending Ticket",
-                "route_name": "admin.ticket.pending",
-                "menu_active": "admin.ticket.pending",
-                "counter": "pendingTicketCount"
-            },
-            {
-                "keyword": ["Closed Ticket", "Support Ticket", "Ticket management", "Ticket activity"],
-                "title": "Closed Ticket",
-                "route_name": "admin.ticket.closed",
-                "menu_active": "admin.ticket.closed"
-            },
-            {
-                "keyword": ["Answered Ticket", "Support Ticket", "Ticket management", "Ticket activity"],
-                "title": "Answered Ticket",
-                "route_name": "admin.ticket.answered",
-                "menu_active": "admin.ticket.answered"
-            },
-            {
-                "keyword": ["All Ticket", "Support Ticket", "Ticket management", "Ticket control", "Ticket activity"],
-                "title": "All Ticket",
-                "route_name": "admin.ticket.index",
-                "menu_active": "admin.ticket.index"
-            }
-        ]
-    },
     "reports": {
         "title": "Report",
         "icon": "la la-list",

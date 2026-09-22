@@ -1,8 +1,3 @@
-@php
-    $answeredTickets = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->latest()->take(5)->get();
-    $answeredTicketsCount = $answeredTickets->count();
-@endphp
-
 <nav class="navbar-wrapper d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-3">
         <a class="navbar-brand me-1" href="{{ route('user.home') }}">
@@ -28,47 +23,6 @@
                 <button type="button" class="primary--layer" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@lang('Visit Website')">
                     <a href="{{ route('home') }}" target="_blank"><i class="las la-globe"></i></a>
                 </button>
-            </li>
-
-            {{-- Support Tickets Bell --}}
-            <li class="dropdown">
-                <button type="button" class="primary--layer notification-bell" data-bs-toggle="dropdown" data-display="static"
-                    aria-haspopup="true" aria-expanded="false">
-                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="@lang('Support Tickets')">
-                        <i class="las la-bell @if($answeredTicketsCount > 0) icon-left-right @endif"></i>
-                    </span>
-                    @if($answeredTicketsCount > 0)
-                        <span class="notification-count">{{ $answeredTicketsCount }}</span>
-                    @endif
-                </button>
-                <div class="dropdown-menu dropdown-menu--md p-0 border-0 box--shadow1 dropdown-menu-right">
-                    <div class="dropdown-menu__header">
-                        <span class="caption">@lang('Ticket Notifications')</span>
-                        @if($answeredTicketsCount > 0)
-                            <p>@lang('You have') {{ $answeredTicketsCount }} @lang('answered support ticket(s)')</p>
-                        @endif
-                    </div>
-                    <div class="dropdown-menu__body @if($answeredTickets->isEmpty()) d-flex justify-content-center align-items-center @endif">
-                        @forelse($answeredTickets as $ticket)
-                            <a href="{{ route('ticket.view', $ticket->ticket) }}" class="dropdown-menu__item">
-                                <div class="navbar-notifi">
-                                    <div class="navbar-notifi__right">
-                                        <h6 class="notifi__title">@lang('Ticket') #{{ $ticket->ticket }}: {{ strLimit($ticket->subject, 35) }}</h6>
-                                        <span class="time"><i class="far fa-clock"></i> {{ diffForHumans($ticket->last_reply) }}</span>
-                                    </div>
-                                </div>
-                            </a>
-                        @empty
-                            <div class="empty-notification text-center py-3">
-                                <i class="las la-bell-slash" style="font-size: 32px; color: #888;"></i>
-                                <p class="mt-2 text-muted" style="font-size: 13px;">@lang('No new notifications')</p>
-                            </div>
-                        @endforelse
-                    </div>
-                    <div class="dropdown-menu__footer">
-                        <a href="{{ route('ticket.index') }}" class="view-all-message">@lang('View All Tickets')</a>
-                    </div>
-                </div>
             </li>
 
             {{-- User Profile Dropdown --}}

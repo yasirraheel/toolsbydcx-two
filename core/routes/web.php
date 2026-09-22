@@ -39,15 +39,15 @@ Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(
 });
 
 
-// User Support Ticket
-Route::controller('TicketController')->prefix('ticket')->name('ticket.')->group(function () {
-    Route::get('/', 'supportTicket')->name('index');
-    Route::get('new', 'openSupportTicket')->name('open');
-    Route::post('create', 'storeSupportTicket')->name('store');
-    Route::get('view/{ticket}', 'viewTicket')->name('view');
-    Route::post('reply/{id}', 'replyTicket')->name('reply');
-    Route::post('close/{id}', 'closeTicket')->name('close');
-    Route::get('download/{attachment_id}', 'ticketDownload')->name('download');
+// User Support Ticket (Disabled)
+Route::prefix('ticket')->name('ticket.')->group(function () {
+    Route::any('/', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('index');
+    Route::any('new', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('open');
+    Route::any('create', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('store');
+    Route::any('view/{ticket}', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('view');
+    Route::any('reply/{id}', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('reply');
+    Route::any('close/{id}', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('close');
+    Route::any('download/{attachment_id}', function () { return auth()->check() ? redirect()->route('user.home') : redirect()->route('home'); })->name('download');
 });
 
 

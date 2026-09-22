@@ -45,18 +45,6 @@
                         <div class="top-button d-flex align-items-center flex-wrap gap-2">
                             @if(auth()->check())
                                 @php
-                                    $userAnsweredCount = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->count();
-                                    $ticketUrl = $userAnsweredCount > 0 ? route('ticket.index') : route('ticket.open');
-                                @endphp
-                                <div class="top-button__button" style="margin-bottom: 10px;">
-                                    <a class="btn position-relative" href="{{ $ticketUrl }}" style="background-color: #0d6efd; color: #ffffff; border: none; font-size: 14px; font-weight: 600; padding: 10px 15px; border-radius: 5px; text-decoration: none;" title="{{ $userAnsweredCount > 0 ? __($userAnsweredCount . ' Ticket Answered by Staff - Click to View') : __('Create Support Ticket') }}">
-                                        <i class="las la-headset me-1"></i> @lang('Create Ticket')
-                                        @if($userAnsweredCount > 0)
-                                            <span class="badge rounded-pill bg-danger ms-1" style="font-size: 11px; padding: 3px 6px;">{{ $userAnsweredCount }}</span>
-                                        @endif
-                                    </a>
-                                </div>
-                                @php
                                     $expiryDate = auth()->user()->expires_at ?: auth()->user()->created_at->addDays(30);
                                     $isExpired = now()->greaterThanOrEqualTo($expiryDate);
                                     $daysRemaining = $isExpired ? 0 : (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiryDate)->startOfDay(), false);
@@ -77,18 +65,6 @@
                 <div class="d-none d-lg-block">
                     <div class="top-button d-flex justify-content-between align-items-center flex-wrap">
                         @if(auth()->check())
-                            @php
-                                $userAnsweredCount = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->count();
-                                $ticketUrl = $userAnsweredCount > 0 ? route('ticket.index') : route('ticket.open');
-                            @endphp
-                            <div class="top-button__button" style="margin-right: 15px;">
-                                <a class="btn position-relative" href="{{ $ticketUrl }}" style="background-color: #0d6efd; color: #ffffff; border: none; font-size: 14px; font-weight: 600; padding: 10px 15px; border-radius: 5px; text-decoration: none;" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ $userAnsweredCount > 0 ? __($userAnsweredCount . ' Ticket Answered by Staff - Click to View') : __('Create Support Ticket') }}">
-                                    <i class="las la-headset me-1"></i> @lang('Create Ticket')
-                                    @if($userAnsweredCount > 0)
-                                        <span class="badge rounded-pill bg-danger ms-1" style="font-size: 11px; padding: 3px 6px;">{{ $userAnsweredCount }}</span>
-                                    @endif
-                                </a>
-                            </div>
                             @php
                                 $expiryDate = auth()->user()->expires_at ?: auth()->user()->created_at->addDays(30);
                                 $isExpired = auth()->user()->expires_at ? now()->greaterThanOrEqualTo($expiryDate) : false;
@@ -183,17 +159,6 @@
                                             </a>
                                         </li>
                                         <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('ticket.index')}} user-info-dropdown__link d-flex align-items-center justify-content-between" href="{{ route('ticket.index') }}">
-                                                <div>
-                                                    <span class="icon"> <i class="las la-ticket-alt"></i> </span>
-                                                    <span class="text"> @lang('My Ticket') </span>
-                                                </div>
-                                                @if(@$userAnsweredCount > 0)
-                                                    <span class="badge bg--success ms-2">{{ $userAnsweredCount }} @lang('New')</span>
-                                                @endif
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
                                             <a class="{{menuActive('user.general.profile')}} user-info-dropdown__link" href="{{ route('user.general.profile') }}">
                                                 <span class="icon"><i class="far fa-user"></i></span>
                                                 <span class="text"> @lang('Account Details') </span>
@@ -274,12 +239,6 @@
                 <a class="{{menuActive('user.transactions')}} user-info-dropdown__link" href="{{ route('user.transactions') }}">
                     <span class="icon"> <i class="far fa-file-alt"></i> </span>
                     <span class="text"> @lang('Transaction History') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('ticket.index')}} user-info-dropdown__link" href="{{ route('ticket.index') }}">
-                    <span class="icon"> <i class="las la-ticket-alt"></i> </span>
-                    <span class="text"> @lang('My Ticket') </span>
                 </a>
             </li>
             <li class="user-info-dropdown__item">

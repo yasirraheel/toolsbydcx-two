@@ -2,29 +2,6 @@
 
 @section('content')
     <div class="dashboard-section">
-        {{-- Answered Ticket Alert Banner --}}
-        @php
-            $userAnsweredTickets = \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', \App\Constants\Status::TICKET_ANSWER)->get();
-            $totalUserTickets = \App\Models\SupportTicket::where('user_id', auth()->id())->count();
-        @endphp
-        @if($userAnsweredTickets->isNotEmpty())
-            <div class="mb-4">
-                @foreach($userAnsweredTickets as $ansTicket)
-                    <div class="alert alert--info d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2" style="background-color: rgba(13, 110, 253, 0.15); border: 1px solid #0d6efd; color: #ffffff; padding: 14px 20px; border-radius: 8px;">
-                        <div class="d-flex align-items-center me-3">
-                            <i class="las la-envelope-open-text me-3" style="font-size: 28px; color: #0d6efd;"></i>
-                            <div>
-                                <h6 class="mb-1" style="color: #60a5fa; font-weight: 700;">@lang('Support Team Answered Your Ticket!')</h6>
-                                <div style="font-size: 14px; color: #e2e8f0;">@lang('Ticket') <strong>#{{ $ansTicket->ticket }}</strong>: {{ strLimit($ansTicket->subject, 60) }}</div>
-                            </div>
-                        </div>
-                        <a href="{{ route('ticket.view', $ansTicket->ticket) }}" class="btn btn-sm btn--primary text-nowrap" style="padding: 8px 16px; font-size: 13px; font-weight: 600;">
-                            <i class="las la-eye me-1"></i> @lang('View Reply')
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-        @endif
 
         {{-- Subscription Expiry Calculation --}}
         @php
@@ -65,7 +42,7 @@
         {{-- App Native Dashboard Items (Matching Sleek Reseller Stat Cards) --}}
         <div class="row g-4 mb-4">
             {{-- Current Plan Card --}}
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.03)); border-color: rgba(99, 102, 241, 0.3);">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="text-muted small fw-semibold text-uppercase">@lang('Current Plan')</span>
@@ -91,7 +68,7 @@
             </div>
             
             {{-- Validity Remaining Card --}}
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.03)); border-color: rgba(16, 185, 129, 0.3);">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="text-muted small fw-semibold text-uppercase">@lang('Validity Remaining')</span>
@@ -109,7 +86,7 @@
             </div>
 
             {{-- Assigned Tools Card --}}
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.03)); border-color: rgba(59, 130, 246, 0.3);">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="text-muted small fw-semibold text-uppercase">@lang('Assigned Tools')</span>
@@ -122,24 +99,6 @@
                     </h3>
                     <div class="mt-auto pt-2 text-muted small">
                         <i class="las la-check-circle text-success"></i> @lang('Active on your account')
-                    </div>
-                </div>
-            </div>
-
-            {{-- Support Tickets Card --}}
-            <div class="col-sm-6 col-xl-3">
-                <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.03)); border-color: rgba(234, 179, 8, 0.3);">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="text-muted small fw-semibold text-uppercase">@lang('Support Tickets')</span>
-                        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15;">
-                            <i class="las la-headset fs-4"></i>
-                        </div>
-                    </div>
-                    <h3 class="text-white fw-bold mb-1">
-                        {{ $totalUserTickets }} <small class="fs-6 text-muted">@lang('Tickets')</small>
-                    </h3>
-                    <div class="mt-auto pt-2 text-muted small">
-                        <a href="{{ route('ticket.open') }}" class="text-warning fw-semibold"><i class="las la-plus-circle"></i> @lang('Open New Ticket')</a>
                     </div>
                 </div>
             </div>
@@ -165,18 +124,18 @@
             </div>
 
             <div class="col-md-6">
-                <div class="card p-4 h-100" style="background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 12px;">
+                <div class="card p-4 h-100" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
-                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15;">
-                            <i class="las la-headset fs-4"></i>
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #34d399;">
+                            <i class="las la-wallet fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('Help & Support')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('Recharge Funds')</h5>
                     </div>
                     <p class="text-muted small mb-3">
-                        @lang('Need assistance with your assigned platform accounts? Our support team is available 24/7.')
+                        @lang('Easily deposit funds into your account wallet to purchase or renew platform subscriptions.')
                     </p>
-                    <a href="{{ route('ticket.open') }}" class="btn btn-outline-warning w-100 fw-bold py-2 mt-auto" style="border-color: #eab308; color: #facc15; border-radius: 8px;">
-                        <i class="las la-plus-circle me-1"></i> @lang('Open Support Ticket')
+                    <a href="{{ route('user.deposit.index') }}" class="btn btn-outline-success w-100 fw-bold py-2 mt-auto" style="border-radius: 8px;">
+                        <i class="las la-plus-circle me-1"></i> @lang('Deposit Funds Now')
                     </a>
                 </div>
             </div>

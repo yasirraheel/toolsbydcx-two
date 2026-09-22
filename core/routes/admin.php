@@ -240,17 +240,17 @@ Route::middleware('admin')->group(function () {
     });
 
 
-    // Admin Support
-    Route::controller('SupportTicketController')->prefix('ticket')->name('ticket.')->group(function(){
-        Route::get('/', 'tickets')->name('index');
-        Route::get('pending', 'pendingTicket')->name('pending');
-        Route::get('closed', 'closedTicket')->name('closed');
-        Route::get('answered', 'answeredTicket')->name('answered');
-        Route::get('view/{id}', 'ticketReply')->name('view');
-        Route::post('reply/{id}', 'replyTicket')->name('reply');
-        Route::post('close/{id}', 'closeTicket')->name('close');
-        Route::get('download/{attachment_id}', 'ticketDownload')->name('download');
-        Route::post('delete/{id}', 'ticketDelete')->name('delete');
+    // Admin Support (Disabled)
+    Route::prefix('ticket')->name('ticket.')->group(function(){
+        Route::any('/', function () { return redirect()->route('admin.dashboard'); })->name('index');
+        Route::any('pending', function () { return redirect()->route('admin.dashboard'); })->name('pending');
+        Route::any('closed', function () { return redirect()->route('admin.dashboard'); })->name('closed');
+        Route::any('answered', function () { return redirect()->route('admin.dashboard'); })->name('answered');
+        Route::any('view/{id}', function () { return redirect()->route('admin.dashboard'); })->name('view');
+        Route::any('reply/{id}', function () { return redirect()->route('admin.dashboard'); })->name('reply');
+        Route::any('close/{id}', function () { return redirect()->route('admin.dashboard'); })->name('close');
+        Route::any('download/{attachment_id}', function () { return redirect()->route('admin.dashboard'); })->name('download');
+        Route::any('delete/{id}', function () { return redirect()->route('admin.dashboard'); })->name('delete');
     });
 
 
