@@ -23,18 +23,30 @@
                         <input type="text" name="name" id="nameInput" class="form-control form-control-lg" placeholder="@lang('e.g. John Doe')" required value="{{ old('name') }}" autofocus>
                     </div>
 
-                    {{-- Username / Email Prefix --}}
+                    {{-- Username / Email Prefix & Editable Suffix --}}
                     <div class="form-group mb-3">
                         <label class="form-label text-white fw-semibold required">
-                            <i class="las la-envelope text-primary"></i> @lang('Client Username / Login Prefix')
+                            <i class="las la-envelope text-primary"></i> @lang('Client Username / Login Email')
                         </label>
                         <div class="input-group input-group-lg">
-                            <input type="text" name="email_prefix" id="prefixInput" class="form-control" placeholder="@lang('username_or_prefix')" value="{{ old('email_prefix') }}" required>
-                            <span class="input-group-text">@ {{ $domain }}</span>
+                            <input type="text" name="email_prefix" id="prefixInput" class="form-control" placeholder="@lang('username_or_prefix')" value="{{ old('email_prefix') }}" required style="flex: 1.2;">
+                            <span class="input-group-text bg-dark text-muted border-secondary fw-bold px-3">@</span>
+                            <input type="text" name="email_suffix" id="suffixInput" class="form-control" placeholder="@lang('domain.com')" value="{{ old('email_suffix', $domain) }}" required style="flex: 1;">
+                            <button type="button" class="btn btn-outline-primary fw-semibold px-3" id="saveSuffixBtn" title="@lang('Save this suffix permanently as default for future clients')">
+                                <i class="las la-save me-1"></i> <span class="d-none d-sm-inline">@lang('Save Suffix')</span>
+                            </button>
                         </div>
-                        <small class="text-muted mt-1 d-block">
-                            <i class="las la-info-circle"></i> @lang('Your client will use this username to log into the access extension and web portal.')
-                        </small>
+                        <div class="d-flex justify-content-between align-items-center mt-1 flex-wrap gap-2">
+                            <small class="text-muted">
+                                <i class="las la-info-circle"></i> @lang('Your client will use this full username or email to log into the access extension and web portal.')
+                            </small>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="checkbox" name="save_suffix_default" id="saveSuffixDefault" value="1" checked>
+                                <label class="form-check-label text-muted small cursor-pointer" for="saveSuffixDefault">
+                                    @lang('Save suffix permanently as default')
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Password --}}
@@ -121,7 +133,7 @@
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <span class="fw-bold text-white">{{ __(@$acc->socialMedia->name) }}</span>
                                                     <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-                                                        {{ showAmount($unitPrice) }} {{ gs('cur_text') }}/mo
+                                                        {{ showAmount($unitPrice) }}/mo
                                                     </span>
                                                 </div>
                                                 <small class="text-muted d-block mt-1">{{ __($acc->title) }}</small>
@@ -156,7 +168,7 @@
                 <div class="p-3 rounded mb-3 d-flex justify-content-between align-items-center" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);">
                     <div>
                         <span class="text-muted small d-block">@lang('Your Wallet Balance')</span>
-                        <h4 class="text-success fw-bold mb-0">{{ showAmount($reseller->balance) }} {{ gs('cur_text') }}</h4>
+                        <h4 class="text-success fw-bold mb-0">{{ showAmount($reseller->balance) }}</h4>
                     </div>
                     <a href="{{ route('reseller.deposit') }}" class="btn btn-sm btn-outline-success">
                         <i class="las la-plus-circle"></i>
@@ -368,6 +380,39 @@
             $('.account-option-card').toggleClass('selected', !allChecked);
             $(this).text(allChecked ? '@lang("Select All")' : '@lang("Deselect All")');
             calculateOrderSummary();
+        });
+
+        // Save Suffix Button AJAX
+        $('#saveSuffixBtn').on('click', function() {
+            let btn = $(this);
+            let suffix = $('#suffixInput').val().trim();
+            if (!suffix) {
+                notify('error', '@lang("Please enter a domain suffix first.")');
+                return;
+            }
+
+            btn.prop('disabled', true).html('<i class="las la-spinner la-spin me-1"></i> @lang("Saving...")');
+
+            $.ajax({
+                url: '{{ route("reseller.users.save_suffix") }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    email_suffix: suffix
+                },
+                success: function(resp) {
+                    btn.prop('disabled', false).html('<i class="las la-check me-1"></i> @lang("Saved")');
+                    setTimeout(function() {
+                        btn.html('<i class="las la-save me-1"></i> <span class="d-none d-sm-inline">@lang("Save Suffix")</span>');
+                    }, 2000);
+                    notify(resp.status || 'success', resp.message);
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).html('<i class="las la-save me-1"></i> <span class="d-none d-sm-inline">@lang("Save Suffix")</span>');
+                    let errMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '@lang("Error saving suffix")';
+                    notify('error', errMsg);
+                }
+            });
         });
 
         calculateOrderSummary();

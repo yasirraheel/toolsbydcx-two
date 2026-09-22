@@ -507,10 +507,25 @@
             padding: 0.75rem 1.5rem !important;
             position: sticky !important;
             top: 0 !important;
-            z-index: 1020 !important;
+            z-index: 1090 !important;
             margin-left: 0 !important;
             width: 100% !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .reseller-navbar .dropdown-menu {
+            z-index: 99999 !important;
+        }
+        .reseller-navbar .dropdown-item {
+            color: #cbd5e1 !important;
+            transition: all 0.15s ease !important;
+        }
+        .reseller-navbar .dropdown-item:hover {
+            background-color: rgba(99, 102, 241, 0.2) !important;
+            color: #ffffff !important;
+        }
+        .reseller-navbar .dropdown-item.text-danger:hover {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            color: #ef4444 !important;
         }
         .balance-pill {
             background: rgba(16, 185, 129, 0.12) !important;

@@ -45,12 +45,6 @@
 
     <div class="my-2 border-top border-secondary opacity-25"></div>
 
-    {{-- Platform View --}}
-    <a class="nav-link text-muted" href="{{ route('user.home') }}">
-        <i class="las la-arrow-left fs-5"></i>
-        <span>@lang('Platform View')</span>
-    </a>
-
     {{-- Logout --}}
     <a class="nav-link text-danger" href="{{ route('user.logout') }}">
         <i class="las la-sign-out-alt fs-5"></i>

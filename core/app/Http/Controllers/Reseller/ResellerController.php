@@ -100,7 +100,7 @@ class ResellerController extends Controller
     {
         $pageTitle = 'Create New Client User';
         $reseller = auth()->user();
-        $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
+        $domain = $reseller->email_suffix ?: (parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost());
 
         $accounts = AccountListing::with('socialMedia')
             ->active()
@@ -111,14 +111,44 @@ class ResellerController extends Controller
         return view('reseller.users.create', compact('pageTitle', 'reseller', 'domain', 'accounts'));
     }
 
+    public function saveEmailSuffix(Request $request)
+    {
+        $request->validate([
+            'email_suffix' => 'required|string|max:100',
+        ]);
+
+        $suffix = strtolower(trim($request->email_suffix));
+        $suffix = ltrim($suffix, '@');
+        $suffix = preg_replace('/[^a-z0-9.-]/i', '', $suffix);
+
+        if (empty($suffix)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Please enter a valid domain suffix.',
+            ], 422);
+        }
+
+        $reseller = auth()->user();
+        $reseller->email_suffix = $suffix;
+        $reseller->save();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Default email suffix "@' . $suffix . '" saved permanently.',
+            'suffix'  => $suffix,
+        ]);
+    }
+
     public function storeUser(Request $request)
     {
         $reseller = auth()->user();
-        $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
+        $defaultHost = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
+        $domain = $reseller->email_suffix ?: $defaultHost;
 
         $request->validate([
             'name'          => 'required|string|max:80',
             'email_prefix'  => 'required|string|max:60',
+            'email_suffix'  => 'nullable|string|max:100',
             'password'      => 'required|string|min:4',
             'duration_days' => 'required|integer|in:30,60,90,180,365',
             'account_ids'   => 'required|array|min:1',
@@ -133,7 +163,19 @@ class ResellerController extends Controller
             return back()->withNotify($notify)->withInput();
         }
 
-        $email = $prefix . '@' . $domain;
+        $rawSuffix = trim($request->email_suffix ?: ($reseller->email_suffix ?: $domain));
+        $rawSuffix = ltrim($rawSuffix, '@');
+        $suffix = strtolower(preg_replace('/[^a-z0-9.-]/i', '', $rawSuffix));
+        if (empty($suffix)) {
+            $suffix = $domain;
+        }
+
+        if ($request->boolean('save_suffix_default') && $reseller->email_suffix !== $suffix) {
+            $reseller->email_suffix = $suffix;
+            $reseller->save();
+        }
+
+        $email = $prefix . '@' . $suffix;
         $username = $prefix;
 
         if (User::where('email', $email)->exists() || User::where('username', $username)->exists()) {

@@ -68,7 +68,23 @@
             padding: 0.75rem 1.5rem;
             position: sticky;
             top: 0;
-            z-index: 1020;
+            z-index: 1090 !important;
+        }
+
+        .reseller-navbar .dropdown-menu {
+            z-index: 99999 !important;
+        }
+        .reseller-navbar .dropdown-item {
+            color: #cbd5e1 !important;
+            transition: all 0.15s ease !important;
+        }
+        .reseller-navbar .dropdown-item:hover {
+            background-color: rgba(99, 102, 241, 0.2) !important;
+            color: #ffffff !important;
+        }
+        .reseller-navbar .dropdown-item.text-danger:hover {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            color: #ef4444 !important;
         }
 
         .navbar-brand img {

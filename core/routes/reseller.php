@@ -21,6 +21,7 @@ Route::namespace('Reseller')->name('reseller.')->middleware(['auth', 'reseller']
             Route::get('/', 'users')->name('index');
             Route::get('create', 'createUser')->name('create');
             Route::post('store', 'storeUser')->name('store');
+            Route::post('save-suffix', 'saveEmailSuffix')->name('save_suffix');
             Route::get('edit/{id}', 'editUser')->name('edit');
             Route::post('update/{id}', 'updateUser')->name('update');
             Route::post('extend/{id}', 'extendUser')->name('extend');

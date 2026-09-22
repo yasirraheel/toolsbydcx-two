@@ -12,7 +12,7 @@
         {{-- Wallet Balance Pill --}}
         <div class="balance-pill">
             <i class="las la-wallet fs-5"></i>
-            <span>{{ showAmount(auth()->user()->balance) }} {{ gs('cur_text') }}</span>
+            <span>{{ showAmount(auth()->user()->balance) }}</span>
         </div>
 
         {{-- Recharge Wallet Button --}}
@@ -21,41 +21,36 @@
         </a>
 
         {{-- Reseller Dropdown --}}
-        <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-white d-flex align-items-center gap-2 border-secondary" type="button" data-bs-toggle="dropdown">
+        <div class="dropdown position-relative" style="z-index: 1099;">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-white d-flex align-items-center gap-2 border-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--base-color, #6366f1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #fff;">
                     {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
                 </div>
                 <span class="d-none d-md-inline">{{ auth()->user()->username }}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="background: #0f172a !important; border: 1px solid rgba(99, 102, 241, 0.4) !important; box-shadow: 0 16px 45px rgba(0, 0, 0, 0.95) !important; min-width: 220px; z-index: 99999 !important;">
                 <li>
-                    <h6 class="dropdown-header text-muted">@lang('Reseller Account')</h6>
+                    <h6 class="dropdown-header text-muted text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">@lang('Reseller Account')</h6>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="{{ route('reseller.pricing') }}">
-                        <i class="las la-tags me-1"></i> @lang('My Account Rates')
+                    <a class="dropdown-item text-white py-2" href="{{ route('reseller.pricing') }}">
+                        <i class="las la-tags me-1 text--primary"></i> @lang('My Account Rates')
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="{{ route('reseller.transactions') }}">
-                        <i class="las la-history me-1"></i> @lang('Transactions')
+                    <a class="dropdown-item text-white py-2" href="{{ route('reseller.transactions') }}">
+                        <i class="las la-history me-1 text--primary"></i> @lang('Transactions')
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="{{ route('user.deposit.history') }}">
-                        <i class="las la-file-invoice-dollar me-1"></i> @lang('Deposit History')
+                    <a class="dropdown-item text-white py-2" href="{{ route('user.deposit.history') }}">
+                        <i class="las la-file-invoice-dollar me-1 text--primary"></i> @lang('Deposit History')
                     </a>
                 </li>
-                <li><hr class="dropdown-divider border-secondary"></li>
+                <li><hr class="dropdown-divider" style="border-color: rgba(255, 255, 255, 0.1);"></li>
                 <li>
-                    <a class="dropdown-item" href="{{ route('user.home') }}">
-                        <i class="las la-tv me-1"></i> @lang('User Platform Dashboard')
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item text-danger" href="{{ route('user.logout') }}">
-                        <i class="las la-sign-out-alt me-1"></i> @lang('Logout')
+                    <a class="dropdown-item text-danger py-2" href="{{ route('user.logout') }}">
+                        <i class="las la-sign-out-alt me-1 text-danger"></i> @lang('Logout')
                     </a>
                 </li>
             </ul>
