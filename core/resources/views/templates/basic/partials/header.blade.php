@@ -1,264 +1,45 @@
-@php
-    $languages       = App\Models\Language::get();
-    $defaultLanguage = App\Models\Language::where('code', config('app.locale'))->first();
-    $pages           = App\Models\Page::where('tempname', $activeTemplate)->where('is_default', Status::NO)->get();
-@endphp
-
-<header class="header" id="header">
-
+<header class="landing-header sticky-top" id="landingHeader">
     <div class="container">
-        <nav class="navbar navbar-expand-lg navbar-light">
-            <a class="navbar-brand logo" href="{{ route('home') }}"><img src="{{ siteLogo() }}" alt="logo"></a>
-            @auth
-            <div class="header-account-button d-lg-none d-block">
-                <span class="account-icon ">
-                    <i class="las la-user"></i>
-                </span>
+        <div class="d-flex align-items-center justify-content-between py-3">
+            {{-- Brand Logo --}}
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
+                <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}" style="max-height: 42px;">
+            </a>
+
+            {{-- Right Action Button: ONLY ONE BUTTON (Login for guest, Dashboard for logged-in user/reseller) --}}
+            <div class="header-action-wrapper">
+                @guest
+                    <a href="{{ route('user.login') }}" class="btn btn--base d-inline-flex align-items-center gap-2 fw-semibold px-4 py-2" style="border-radius: 9999px; box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45); font-size: 14px; transition: all 0.25s ease;">
+                        <i class="las la-sign-in-alt fs-5"></i>
+                        <span>@lang('Login')</span>
+                    </a>
+                @else
+                    @php
+                        $dashboardRoute = auth()->user()->is_reseller ? route('reseller.dashboard') : route('user.home');
+                    @endphp
+                    <a href="{{ $dashboardRoute }}" class="btn btn--base d-inline-flex align-items-center gap-2 fw-semibold px-4 py-2" style="border-radius: 9999px; box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45); font-size: 14px; transition: all 0.25s ease;">
+                        <i class="las la-tachometer-alt fs-5"></i>
+                        <span>@lang('Dashboard')</span>
+                    </a>
+                @endguest
             </div>
-            @endauth
-            <button class="navbar-toggler header-button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" type="button" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span id="hiddenNav"><i class="las la-bars"></i></span>
-            </button>
-
-            <div class="navbar-collapse collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav nav-menu align-items-lg-center">
-                    <!-- Removed Home menu as requested -->
-                    @foreach ($pages as $page)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('pages', [$page->slug]) }}" aria-current="page"> {{ __($page->name) }} </a>
-                        </li>
-                    @endforeach
-                    @auth
-                    <li class="nav-item {{menuActive('user.home')}}">
-                        <a class="nav-link" href="{{ route('user.home') }}" aria-current="page"> @lang('Dashboard') </a>
-                    </li>
-                    @endauth
-                    <li class="nav-item {{menuActive('buy.account')}}">
-                        <a class="nav-link" href="{{ route('buy.account') }}" aria-current="page"> @lang('Buy Account') </a>
-                    </li>
-                    <!-- Removed Blog menu as requested -->
-                    <li class="nav-item {{menuActive('contact')}}">
-                        <a class="nav-link" href="{{ route('contact') }}" aria-current="page"> @lang('Contact') </a>
-                    </li>
-
-                    <li class="nav-item d-block d-lg-none">
-                        <div class="top-button d-flex align-items-center flex-wrap gap-2">
-                            @if(auth()->check())
-                                @php
-                                    $expiryDate = auth()->user()->expires_at ?: auth()->user()->created_at->addDays(30);
-                                    $isExpired = now()->greaterThanOrEqualTo($expiryDate);
-                                    $daysRemaining = $isExpired ? 0 : (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiryDate)->startOfDay(), false);
-                                @endphp
-                                <div class="top-button__button" style="margin-bottom: 10px;">
-                                    <span class="btn" style="background-color: {{ $isExpired ? '#dc3545' : '#ffc107' }}; color: {{ $isExpired ? 'white' : 'black' }}; border: none; font-size: 14px; font-weight: 600; cursor: default; padding: 10px 15px;">
-                                        @if($isExpired)
-                                            <i class="las la-times-circle"></i> @lang('Expired')
-                                        @else
-                                            <i class="las la-clock"></i> {{ $daysRemaining }} @lang('Days Remaining')
-                                        @endif
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                    </li>
-                </ul>
-                <div class="d-none d-lg-block">
-                    <div class="top-button d-flex justify-content-between align-items-center flex-wrap">
-                        @if(auth()->check())
-                            @php
-                                $expiryDate = auth()->user()->expires_at ?: auth()->user()->created_at->addDays(30);
-                                $isExpired = auth()->user()->expires_at ? now()->greaterThanOrEqualTo($expiryDate) : false;
-                                if (!auth()->user()->expires_at && !auth()->user()->is_trial) {
-                                    $isExpired = now()->greaterThanOrEqualTo($expiryDate);
-                                }
-                                
-                                $trialText = '';
-                                if (auth()->user()->is_trial) {
-                                    if (auth()->user()->pending_trial_minutes > 0) {
-                                        $trialText = 'Trial: Pending Start';
-                                        $isExpired = false;
-                                    } else {
-                                        $diff = now()->diff(\Carbon\Carbon::parse($expiryDate));
-                                        if ($isExpired) {
-                                            $trialText = 'Trial Expired';
-                                        } elseif ($diff->days > 0) {
-                                            $trialText = 'Trial: ' . $diff->days . ' ' . __('Days');
-                                        } elseif ($diff->h > 0) {
-                                            $trialText = 'Trial: ' . $diff->h . ' ' . __('Hours');
-                                        } else {
-                                            $trialText = 'Trial: ' . $diff->i . ' ' . __('Mins');
-                                        }
-                                    }
-                                } else {
-                                    $daysRemaining = $isExpired ? 0 : (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($expiryDate)->startOfDay(), false);
-                                }
-                            @endphp
-                            <div class="top-button__button" style="margin-right: 15px;">
-                                <span class="btn" style="background-color: {{ $isExpired ? '#dc3545' : '#ffc107' }}; color: {{ $isExpired ? 'white' : 'black' }}; border: none; font-size: 14px; font-weight: 600; cursor: default; padding: 10px 15px;">
-                                    @if(auth()->user()->is_trial)
-                                        <i class="las la-clock"></i> {{ $trialText }}
-                                    @elseif($isExpired)
-                                        <i class="las la-times-circle"></i> @lang('Expired')
-                                    @else
-                                        <i class="las la-clock"></i> {{ $daysRemaining }} @lang('Days Remaining')
-                                    @endif
-                                </span>
-                            </div>
-                        @endif
-                        <div class="top-header__login">
-                            <div class="user-info">
-                                @if (auth()->check())
-                                    <button class="user-info__button flex-align">
-                                        <span class="user-info__icon">
-                                            <i class="fas fa-user"></i>
-                                        </span>
-                                        @lang('Accounts')
-                                    </button>
-
-                                    <ul class="user-info-dropdown">
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.home')}} user-info-dropdown__link" href="{{ route('user.home') }}">
-                                                <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
-                                                <span class="text"> @lang('Dashboard') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('plans')}} user-info-dropdown__link" href="{{ route('plans') }}">
-                                                <span class="icon"><i class="fas fa-crown"></i></span>
-                                                <span class="text"> @lang('Subscription Plans') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.deposit.index')}} user-info-dropdown__link" href="{{ route('user.deposit.index') }}">
-                                                <span class="icon"> <i class="las la-coins"></i> </span>
-                                                <span class="text"> @lang('Deposit') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.deposit.history')}} user-info-dropdown__link" href="{{ route('user.deposit.history') }}">
-                                                <span class="icon"> <i class="las la-file-invoice-dollar"></i> </span>
-                                                <span class="text"> @lang('Deposit History') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.withdraw')}} user-info-dropdown__link" href="{{ route('user.withdraw') }}">
-                                                <span class="icon"> <i class="las la-hand-holding-usd"></i> </span>
-                                                <span class="text"> @lang('Withdraw') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.withdraw.history')}} user-info-dropdown__link" href="{{ route('user.withdraw.history') }}">
-                                                <span class="icon"> <i class="las la-file-invoice-dollar"></i></span>
-                                                <span class="text"> @lang('Withdraw History') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.transactions')}} user-info-dropdown__link" href="{{ route('user.transactions') }}">
-                                                <span class="icon"> <i class="far fa-file-alt"></i> </span>
-                                                <span class="text"> @lang('Transaction History') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.general.profile')}} user-info-dropdown__link" href="{{ route('user.general.profile') }}">
-                                                <span class="icon"><i class="far fa-user"></i></span>
-                                                <span class="text"> @lang('Account Details') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.twofactor')}} user-info-dropdown__link" href="{{ route('user.twofactor') }}">
-                                                <span class="icon"> <i class="fas fa-shield-alt"></i> </span>
-                                                <span class="text"> @lang(' 2FA Security') </span>
-                                            </a>
-                                        </li>
-                                        <li class="user-info-dropdown__item">
-                                            <a class="{{menuActive('user.logout')}} user-info-dropdown__link" href="{{ route('user.logout') }}">
-                                                <span class="icon"> <i class="fas fa-sign-out-alt"></i> </span>
-                                                <span class="text"> @lang('Logout') </span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                @else
-                                    <button class="user-info__button icon">
-                                        <a href="{{ route('user.login') }}" class="user-info__button-link"></a>
-                                        <span class="user-info__icon">
-                                            <i class="las la-sign-in-alt"></i>
-                                        </span>@lang('Login')
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </nav>
+        </div>
     </div>
 </header>
 
-    @auth
-    <div class="user-dropdown-wrapper">
-        <span class="user-dropdown-wrapper__close d-lg-none d-block"><i class="las la-times"></i></span>
-        <ul class="user-info-dropdown">
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.home')}} user-info-dropdown__link" href="{{ route('user.home') }}">
-                    <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
-                    <span class="text"> @lang('Dashboard') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('plans')}} user-info-dropdown__link" href="{{ route('plans') }}">
-                    <span class="icon"><i class="fas fa-crown"></i></span>
-                    <span class="text"> @lang('Subscription Plans') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.deposit.index')}} user-info-dropdown__link" href="{{ route('user.deposit.index') }}">
-                    <span class="icon"> <i class="las la-coins"></i> </span>
-                    <span class="text"> @lang('Deposit') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.deposit.history')}} user-info-dropdown__link" href="{{ route('user.deposit.history') }}">
-                    <span class="icon"> <i class="las la-file-invoice-dollar"></i> </span>
-                    <span class="text"> @lang('Deposit History') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.withdraw')}} user-info-dropdown__link" href="{{ route('user.withdraw') }}">
-                    <span class="icon"> <i class="las la-hand-holding-usd"></i> </span>
-                    <span class="text"> @lang('Withdraw') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.withdraw.history')}} user-info-dropdown__link" href="{{ route('user.withdraw.history') }}">
-                    <span class="icon"> <i class="las la-file-invoice-dollar"></i></span>
-                    <span class="text"> @lang('Withdraw History') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.transactions')}} user-info-dropdown__link" href="{{ route('user.transactions') }}">
-                    <span class="icon"> <i class="far fa-file-alt"></i> </span>
-                    <span class="text"> @lang('Transaction History') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.general.profile')}} user-info-dropdown__link" href="{{ route('user.general.profile') }}">
-                    <span class="icon"><i class="far fa-user"></i></span>
-                    <span class="text"> @lang('Account Details') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.twofactor')}} user-info-dropdown__link" href="{{ route('user.twofactor') }}">
-                    <span class="icon"> <i class="fas fa-shield-alt"></i> </span>
-                    <span class="text"> @lang('2FA Security') </span>
-                </a>
-            </li>
-            <li class="user-info-dropdown__item">
-                <a class="{{menuActive('user.logout')}} user-info-dropdown__link" href="{{ route('user.logout') }}">
-                    <span class="icon"> <i class="fas fa-sign-out-alt"></i> </span>
-                    <span class="text"> @lang('Logout') </span>
-                </a>
-            </li>
-        </ul>
-    </div>
-    @endauth
+<style>
+    .landing-header {
+        background: rgba(11, 15, 25, 0.88) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        transition: all 0.3s ease !important;
+        z-index: 1050 !important;
+        position: sticky !important;
+        top: 0 !important;
+    }
+    .landing-header .btn--base:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6) !important;
+    }
+</style>
