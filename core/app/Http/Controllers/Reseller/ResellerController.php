@@ -178,7 +178,7 @@ class ResellerController extends Controller
         $email = $prefix . '@' . $suffix;
         $username = $prefix;
 
-        if (User::where('email', $email)->exists() || User::where('username', $username)->exists()) {
+        if (User::withTrashed()->where('email', $email)->orWhere('username', $username)->exists()) {
             $notify[] = ['error', 'The username/email "' . $prefix . '" is already taken. Please choose another prefix.'];
             return back()->withNotify($notify)->withInput();
         }
@@ -256,6 +256,10 @@ class ResellerController extends Controller
             $user->save();
 
             DB::commit();
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            DB::rollBack();
+            $notify[] = ['error', 'The username/email "' . $prefix . '" is already registered. Please choose another prefix.'];
+            return back()->withNotify($notify)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
             $notify[] = ['error', 'Failed to create client user: ' . $e->getMessage()];

@@ -107,7 +107,7 @@ class ManageResellersController extends Controller
         $email = $prefix . '@' . $domain;
         $username = $prefix;
 
-        if (User::where('email', $email)->exists() || User::where('username', $username)->exists()) {
+        if (User::withTrashed()->where('email', $email)->orWhere('username', $username)->exists()) {
             $notify[] = ['error', 'The username/email "' . $prefix . '" is already registered.'];
             return back()->withNotify($notify)->withInput();
         }
@@ -124,50 +124,58 @@ class ManageResellersController extends Controller
             }
         }
 
-        $reseller = new User();
-        $reseller->firstname = $firstname;
-        $reseller->lastname = $lastname;
-        $reseller->email = $email;
-        $reseller->username = $username;
-        $reseller->password = Hash::make($password);
-        $reseller->country_name = 'United States';
-        $reseller->country_code = 'US';
-        $reseller->dial_code = '1';
-        $reseller->plan_id = 0;
-        $reseller->account_ids = [];
-        $reseller->account_prices = $accountPrices;
-        $reseller->expires_at = $request->expires_at ? Carbon::parse($request->expires_at) : now()->addYear();
-        $reseller->is_reseller = 1;
-        $reseller->is_tester = 0;
-        $reseller->is_exclusive = 1; // Allow reseller to copy cookies by default if needed
-        $reseller->balance = $request->initial_balance ? (float) $request->initial_balance : 0.00;
+        try {
+            $reseller = new User();
+            $reseller->firstname = $firstname;
+            $reseller->lastname = $lastname;
+            $reseller->email = $email;
+            $reseller->username = $username;
+            $reseller->password = Hash::make($password);
+            $reseller->country_name = 'United States';
+            $reseller->country_code = 'US';
+            $reseller->dial_code = '1';
+            $reseller->plan_id = 0;
+            $reseller->account_ids = [];
+            $reseller->account_prices = $accountPrices;
+            $reseller->expires_at = $request->expires_at ? Carbon::parse($request->expires_at) : now()->addYear();
+            $reseller->is_reseller = 1;
+            $reseller->is_tester = 0;
+            $reseller->is_exclusive = 1; // Allow reseller to copy cookies by default if needed
+            $reseller->balance = $request->initial_balance ? (float) $request->initial_balance : 0.00;
 
-        // Active profile & verified flags
-        $reseller->ev = Status::VERIFIED;
-        $reseller->sv = Status::VERIFIED;
-        $reseller->kv = Status::KYC_VERIFIED;
-        $reseller->tv = Status::DISABLE;
-        $reseller->ts = Status::DISABLE;
-        $reseller->status = Status::USER_ACTIVE;
-        $reseller->profile_complete = 1;
+            // Active profile & verified flags
+            $reseller->ev = Status::VERIFIED;
+            $reseller->sv = Status::VERIFIED;
+            $reseller->kv = Status::KYC_VERIFIED;
+            $reseller->tv = Status::DISABLE;
+            $reseller->ts = Status::DISABLE;
+            $reseller->status = Status::USER_ACTIVE;
+            $reseller->profile_complete = 1;
 
-        $reseller->save();
+            $reseller->save();
 
-        if ($request->initial_balance && (float) $request->initial_balance > 0) {
-            $transaction = new Transaction();
-            $transaction->user_id = $reseller->id;
-            $transaction->amount = (float) $request->initial_balance;
-            $transaction->post_balance = $reseller->balance;
-            $transaction->charge = 0;
-            $transaction->trx_type = '+';
-            $transaction->details = 'Initial wallet balance assigned by Administrator';
-            $transaction->trx = getTrx();
-            $transaction->remark = 'admin_credit';
-            $transaction->save();
+            if ($request->initial_balance && (float) $request->initial_balance > 0) {
+                $transaction = new Transaction();
+                $transaction->user_id = $reseller->id;
+                $transaction->amount = (float) $request->initial_balance;
+                $transaction->post_balance = $reseller->balance;
+                $transaction->charge = 0;
+                $transaction->trx_type = '+';
+                $transaction->details = 'Initial wallet balance assigned by Administrator';
+                $transaction->trx = getTrx();
+                $transaction->remark = 'admin_credit';
+                $transaction->save();
+            }
+
+            $notify[] = ['success', 'Reseller account "' . $reseller->username . '" created successfully with password: ' . $password];
+            return redirect()->route('admin.resellers.detail', $reseller->id)->withNotify($notify);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $notify[] = ['error', 'The username/email "' . $prefix . '" is already registered. Please choose another prefix.'];
+            return back()->withNotify($notify)->withInput();
+        } catch (\Exception $e) {
+            $notify[] = ['error', 'Failed to create reseller: ' . $e->getMessage()];
+            return back()->withNotify($notify)->withInput();
         }
-
-        $notify[] = ['success', 'Reseller account "' . $reseller->username . '" created successfully with password: ' . $password];
-        return redirect()->route('admin.resellers.detail', $reseller->id)->withNotify($notify);
     }
 
     public function detail($id)
@@ -326,7 +334,7 @@ class ManageResellersController extends Controller
         $reseller = User::resellers()->findOrFail($id);
         $reseller->delete();
 
-        $notify[] = ['success', 'Reseller has been soft deleted.'];
+        $notify[] = ['success', 'Reseller deleted successfully.'];
         return back()->withNotify($notify);
     }
 
@@ -337,7 +345,12 @@ class ManageResellersController extends Controller
             'ids.*' => 'integer|exists:users,id',
         ]);
 
-        $count = User::resellers()->whereIn('id', $request->ids)->delete();
+        $resellers = User::resellers()->whereIn('id', $request->ids)->get();
+        $count = 0;
+        foreach ($resellers as $reseller) {
+            $reseller->delete();
+            $count++;
+        }
         $notify[] = ['success', $count . ' reseller(s) deleted successfully.'];
         return back()->withNotify($notify);
     }

@@ -194,46 +194,54 @@ class ManageUsersController extends Controller
             $username = $emailPrefix;
         }
 
-        // Ensure unique username & email
+        // Ensure unique username & email (check active and trashed records)
         $baseUsername = $username;
-        while (User::where('username', $username)->orWhere('email', $email)->exists()) {
+        while (User::withTrashed()->where('username', $username)->orWhere('email', $email)->exists()) {
             $username = $baseUsername . '_' . rand(100, 999);
             $email = $username . '@' . $domain;
         }
 
         $password = $request->password ?: \Illuminate\Support\Str::random(10);
 
-        $user = new User();
-        $user->firstname = $firstname;
-        $user->lastname = $lastname;
-        $user->email = $email;
-        $user->username = $username;
-        $user->password = \Illuminate\Support\Facades\Hash::make($password);
-        $user->country_name = 'United States';
-        $user->country_code = 'US';
-        $user->dial_code = '1';
-        $user->mobile = null;
-        $user->plan_id = 0;
-        $user->account_prices = [];
-        $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
-        $user->expires_at = now()->addDays(30);
-        $user->is_trial = 0;
-        $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
-        $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
+        try {
+            $user = new User();
+            $user->firstname = $firstname;
+            $user->lastname = $lastname;
+            $user->email = $email;
+            $user->username = $username;
+            $user->password = \Illuminate\Support\Facades\Hash::make($password);
+            $user->country_name = 'United States';
+            $user->country_code = 'US';
+            $user->dial_code = '1';
+            $user->mobile = null;
+            $user->plan_id = 0;
+            $user->account_prices = [];
+            $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+            $user->expires_at = now()->addDays(30);
+            $user->is_trial = 0;
+            $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
+            $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
 
-        // Force all verifications and active profile so user can log in immediately
-        $user->ev = Status::VERIFIED;
-        $user->sv = Status::VERIFIED;
-        $user->kv = Status::KYC_VERIFIED;
-        $user->tv = Status::DISABLE;
-        $user->ts = Status::DISABLE;
-        $user->status = Status::USER_ACTIVE;
-        $user->profile_complete = 1;
+            // Force all verifications and active profile so user can log in immediately
+            $user->ev = Status::VERIFIED;
+            $user->sv = Status::VERIFIED;
+            $user->kv = Status::KYC_VERIFIED;
+            $user->tv = Status::DISABLE;
+            $user->ts = Status::DISABLE;
+            $user->status = Status::USER_ACTIVE;
+            $user->profile_complete = 1;
 
-        $user->save();
+            $user->save();
 
-        $notify[] = ['success', 'User ' . $user->username . ' created successfully'];
-        return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
+            $notify[] = ['success', 'User ' . $user->username . ' created successfully'];
+            return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $notify[] = ['error', 'A user with username "' . $username . '" or email "' . $email . '" already exists.'];
+            return back()->withNotify($notify)->withInput();
+        } catch (\Exception $e) {
+            $notify[] = ['error', 'Failed to create user: ' . $e->getMessage()];
+            return back()->withNotify($notify)->withInput();
+        }
     }
 
     public function detail($id)
@@ -325,7 +333,7 @@ class ManageUsersController extends Controller
         }
 
         // Check if email changed and if duplicate exists
-        if ($rawEmail !== $user->email && User::where('email', $rawEmail)->where('id', '!=', $user->id)->exists()) {
+        if ($rawEmail !== $user->email && User::withTrashed()->where('email', $rawEmail)->where('id', '!=', $user->id)->exists()) {
             $notify[] = ['error', 'The email address is already taken.'];
             return back()->withNotify($notify);
         }
@@ -344,9 +352,12 @@ class ManageUsersController extends Controller
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
         }
 
-        $user->save();
-
-        $notify[] = ['success', 'User details updated successfully.'];
+        try {
+            $user->save();
+            $notify[] = ['success', 'User details updated successfully.'];
+        } catch (\Exception $e) {
+            $notify[] = ['error', 'Failed to update user: ' . $e->getMessage()];
+        }
         return back()->withNotify($notify);
     }
 
@@ -354,7 +365,7 @@ class ManageUsersController extends Controller
     {
         $user = User::findOrFail($id);
         $user->delete();
-        $notify[] = ['success', 'User has been soft deleted.'];
+        $notify[] = ['success', 'User deleted successfully.'];
         return back()->withNotify($notify);
     }
 
@@ -365,7 +376,12 @@ class ManageUsersController extends Controller
             'ids.*' => 'integer|exists:users,id',
         ]);
 
-        $count = User::whereIn('id', $request->ids)->delete();
+        $users = User::whereIn('id', $request->ids)->get();
+        $count = 0;
+        foreach ($users as $user) {
+            $user->delete();
+            $count++;
+        }
         $notify[] = ['success', $count . ' user(s) deleted successfully.'];
         return back()->withNotify($notify);
     }

@@ -42,6 +42,32 @@ class User extends Authenticatable
         'reseller_id' => 'integer',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($user) {
+            // Terminate active sessions for this user
+            try {
+                \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+            } catch (\Exception $e) {
+                // ignore session cleanup failure
+            }
+
+            // If soft-deleting, free unique constraints (username & email) so new accounts can reuse them
+            if (!method_exists($user, 'isForceDeleting') || !$user->isForceDeleting()) {
+                $suffix = '_del_' . $user->id . '_' . time();
+                if (!str_contains($user->username ?? '', '_del_')) {
+                    $user->username = substr((string)$user->username, 0, 30) . $suffix;
+                }
+                if (!str_contains($user->email ?? '', 'del_')) {
+                    $user->email = 'del_' . $user->id . '_' . time() . '_' . $user->email;
+                }
+                $user->saveQuietly();
+            }
+        });
+    }
+
     public function reseller()
     {
         return $this->belongsTo(User::class, 'reseller_id');
