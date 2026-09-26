@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BunnyFlow</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header class="brand">
+      <div class="brand-left">
+        <div class="logo-circle"><img class="logo" src="icons/logo.png" alt="BunnyFlow"></div>
+        <div class="brand-copy"><div class="brand-title"><h1>BunnyFlow</h1></div></div>
+      </div>
+      <span class="version-badge" id="version-badge">v1.6</span>
+    </header>
+
+    <section class="card user-card">
+      <div class="avatar" id="user-avatar">?</div>
+      <div class="user-details">
+        <div class="user-username" id="customer-name">Checking BunnyFlow</div>
+        <div class="user-plan" id="customer-plan" hidden></div>
+        <div class="user-days"><span id="subscription-days">Checking plan…</span></div>
+      </div>
+    </section>
+
+    <div id="status" role="status" aria-live="polite">Checking your plan…</div>
+    <button id="start" class="main-action-btn" type="button" disabled>Open Flow</button>
+    <p id="error" class="error" role="alert" hidden></p>
+  </main>
+  <script src="browser-guard.js"></script>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

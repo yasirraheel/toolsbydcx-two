@@ -423,5 +423,18 @@ Route::middleware('admin')->group(function () {
         });
 
     });
-});
 
+    // Google Flow Admin Routes
+    Route::controller('GoogleFlowController')->prefix('google-flow')->name('google-flow.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
+        Route::get('/edit/{id}', 'edit')->name('edit');
+        Route::post('/update/{id}', 'update')->name('update');
+        Route::post('/delete/{id}', 'delete')->name('delete');
+        Route::post('/generate-pairing', 'generatePairingCode')->name('generate-pairing-code');
+        Route::post('/revoke-extension/{id}', 'revokeExtension')->name('revoke-extension');
+        Route::get('/pairings', 'pairings')->name('pairings');
+        Route::get('/login-attempts', 'loginAttempts')->name('login-attempts');
+    });
+});

@@ -35,6 +35,31 @@
         "route_name": "admin.account.listing.index",
         "menu_active": "admin.account.listing*"
     },
+    "google_flow": {
+        "title": "Google Flow",
+        "icon": "las la-google",
+        "menu_active": "admin.google-flow*",
+        "submenu": [
+            {
+                "keyword": ["Google accounts", "Flow accounts", "Manage Google Flow"],
+                "title": "Accounts",
+                "route_name": "admin.google-flow.index",
+                "menu_active": "admin.google-flow.index"
+            },
+            {
+                "keyword": ["Pairings", "Extension pairings", "Active connections"],
+                "title": "Extension Pairings",
+                "route_name": "admin.google-flow.pairings",
+                "menu_active": "admin.google-flow.pairings"
+            },
+            {
+                "keyword": ["Login attempts", "Flow attempts", "Login history"],
+                "title": "Login Attempts",
+                "route_name": "admin.google-flow.login-attempts",
+                "menu_active": "admin.google-flow.login-attempts"
+            }
+        ]
+    },
     "plans": {
         "keyword": ["Subscription plans","Plans","Pricing plans","Access plans"],
         "title": "Plans",
