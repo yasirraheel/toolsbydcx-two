@@ -1,6 +1,6 @@
 import { FLOW_URL } from "./config.js";
 
-const DCX_FLOW_DASHBOARD_URL = "https://toolsbydcx.com/user/flow-extension";
+const DCX_FLOW_DASHBOARD_URL = FLOW_URL;
 const BLOCKED_WEB_HOSTS = new Set([
   "myaccount.google.com",
   "myaccounts.google.com",

@@ -752,6 +752,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.webNavigation.onBeforeNavigate.addListener(async details => {
   if (details.frameId !== 0) return;
   if (blockedNavigation(details.url)) {
-    await chrome.tabs.update(details.tabId, { url: "https://toolsbydcx.com/dashboard" }).catch(() => {});
+    await chrome.tabs.update(details.tabId, { url: FLOW_URL }).catch(() => {});
   }
 });

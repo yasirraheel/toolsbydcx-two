@@ -1226,10 +1226,19 @@
         const dismissBtn = button(/^(not now|skip|ask me later|no thanks|cancel|remind me later|continue without|maybe later)$/i) ||
           elements('button, [role="button"], a').find(el => /\b(not now|skip|ask me later|no thanks|maybe later)\b/i.test(label(el)));
         if (dismissBtn) {
-          if (clickOnce(`speedbump:${location.pathname}`, dismissBtn)) return;
+          if (clickOnce(`speedbump:${location.pathname}`, dismissBtn)) {
+            setTimeout(() => {
+              if (location.hostname === "accounts.google.com") {
+                if (typeof location.assign === "function") location.assign("https://flow.google.com/");
+                else location.href = "https://flow.google.com/";
+              }
+            }, 1200);
+            return;
+          }
         }
         if (settled("speedbump-screen")) {
-          await needManual(null, epoch);
+          if (typeof location.assign === "function") location.assign("https://flow.google.com/");
+          else location.href = "https://flow.google.com/";
           return;
         }
         return;
@@ -1587,7 +1596,15 @@
         elements('button, [role="button"], a').find(el => /\b(not now|skip|ask me later|no thanks|maybe later)\b/i.test(label(el)));
       if (fallbackDismiss) {
         hideShield();
-        if (clickOnce(`fallback-dismiss:${location.pathname}`, fallbackDismiss)) return;
+        if (clickOnce(`fallback-dismiss:${location.pathname}`, fallbackDismiss)) {
+          setTimeout(() => {
+            if (location.hostname === "accounts.google.com") {
+              if (typeof location.assign === "function") location.assign("https://flow.google.com/");
+              else location.href = "https://flow.google.com/";
+            }
+          }, 1200);
+          return;
+        }
       }
     } catch (caught) {
       // Deliberately never include DOM contents, passwords, OTPs, or provider
