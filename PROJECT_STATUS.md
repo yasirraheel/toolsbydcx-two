@@ -68,3 +68,31 @@ Verified after deployment:
 
 Google credentials are transiently delivered to Google's form; this is not cookie injection. CAPTCHA requires the user. Extension-manager redirects and privacy overlays are usability restrictions, not tamper-proof browser security.
 
+
+
+---
+
+## Session 2026-09-29 — Auto-Pairing (BunnyFlow-identical)
+
+**Commit:** `7cb5eaf`
+
+Key change: Removed manual code-entry from popup. Pairing now happens automatically through the logged-in web session, identical to BunnyFlow.
+
+### How auto-pairing works:
+1. User opens toolsbydcx.com while logged in + extension installed
+2. site-bridge.js sends SITE_STATUS to page via postMessage
+3. flow-bridge.js calls GET /flow/status -> {state: ready, userId}
+4. Extension generates PKCE pair, sends codeChallenge -> POST /flow/pair-challenge
+5. Server creates pairing record, returns short-lived code
+6. Background sends code+verifier to /api/dcx-flow/pair -> gets accessToken
+7. Popup shows plan status + Open Flow button (no manual code entry)
+
+### Files changed this session:
+- site-bridge.js: full rewrite - BunnyFlow-identical auto-pairing
+- site-onboarding.js: new module - PKCE pairing + presence cache
+- background.js: full rewrite - imports site-onboarding, SITE_AUTO_* handlers
+- popup.html/js/css: removed code form, shows connect-hint + Open Flow
+- FlowBridgeController.php: new - status() + pairChallenge()
+- user.php routes: added /flow/status and /flow/pair-challenge
+- flow-bridge.js: new website JS that answers extension postMessages
+- app.blade.php: injects flow-bridge.js for auth users
