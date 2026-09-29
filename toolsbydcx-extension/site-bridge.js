@@ -65,6 +65,7 @@
     function safePanelMessage(message) {
       const text = String(message || "").toLowerCase();
       if (text.includes("captcha")) return "Complete the CAPTCHA when prompted.";
+      if (message && message.length < 120 && !text.includes("object")) return message;
       return "Setup needs attention. Try again when ready.";
     }
     function showPanel(title, message, confirm = false) {
@@ -139,6 +140,7 @@
         else closePanel();
       } catch (error) {
         if (/extension context invalidated/i.test(error.message)) { disposed = true; closePanel(); return; }
+        console.warn("[ToolsByDcx Flow Bridge]", error);
         showPanel("Workspace setup", safePanelMessage(error.message));
         schedule(15000);
       } finally { running = false; }

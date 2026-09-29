@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ gs()->siteName(__($pageTitle ?? 'User Portal')) }}</title>
     @include('partials.seo')
 
@@ -838,5 +839,9 @@
 
     @stack('script')
 
+    {{-- ToolsByDcx Flow Extension Website Bridge --}}
+    @auth
+    <script src="{{ asset('assets/js/flow-bridge.js') }}?v={{ config('app.version', '1') }}" defer></script>
+    @endauth
 </body>
 </html>

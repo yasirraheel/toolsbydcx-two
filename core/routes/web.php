@@ -38,6 +38,12 @@ Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(
     });
 });
 
+// ToolsByDcx Flow Website Bridge Endpoints
+Route::middleware(['web', 'auth'])->namespace('User')->prefix('flow')->name('flow.')->group(function () {
+    Route::get('status', 'FlowBridgeController@status')->name('status');
+    Route::post('pair-challenge', 'FlowBridgeController@pairChallenge')->name('pair.challenge');
+});
+
 
 // User Support Ticket (Disabled)
 Route::prefix('ticket')->name('ticket.')->group(function () {
