@@ -418,15 +418,18 @@ async function api(path, body, anonymous = false) {
   if (!anonymous && !saved.accessToken) throw new Error("Connect your ToolsByDcx account first.");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
+  const simplePairRequest = anonymous && path === "/pair" && body !== undefined;
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       method: body === undefined ? "GET" : "POST",
       credentials: "omit",
       cache: "no-store",
       headers: {
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-        "X-ToolsByDcx-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
-        "X-ToolsByDcx-Auto-Login-Version": "1.0.1",
+        ...(body === undefined ? {} : { "Content-Type": simplePairRequest ? "text/plain;charset=UTF-8" : "application/json" }),
+        ...(!simplePairRequest ? {
+          "X-DCX-Flow-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
+          "X-DCX-Flow-Version": "1.0.1"
+        } : {}),
         ...(!anonymous ? { Authorization: `Bearer ${saved.accessToken}` } : {})
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),

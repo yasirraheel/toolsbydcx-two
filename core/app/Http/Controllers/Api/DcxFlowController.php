@@ -17,6 +17,13 @@ class DcxFlowController extends Controller
 {
     public function pair(Request $request)
     {
+        if (!$request->isJson()) {
+            $payload = json_decode($request->getContent(), true);
+            if (is_array($payload)) {
+                $request->merge($payload);
+            }
+        }
+
         $request->validate(['code' => 'required|string|max:128', 'installationId' => 'required|string|max:64', 'codeVerifier' => 'nullable|string|min:43|max:128', 'expectedUserId' => 'nullable|integer']);
         return DB::transaction(function () use ($request) {
             $pairing = ExtensionPairing::where('pairing_code', $request->code)->where('is_active', true)->lockForUpdate()->first();

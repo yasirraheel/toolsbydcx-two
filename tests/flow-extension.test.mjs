@@ -49,6 +49,9 @@ test('popup pairs, reads status, and disconnects using the API contract',async()
   assert.equal((await w.send({type:'STATUS'})).data.connected,false);
   assert.equal((await w.send({type:'PAIR',code:'123456'})).ok,true);
   assert.equal(w.chrome.storage.local.data.accessToken,'server-token');
+  const pairCall = w.calls.find(c=>c.url.endsWith('/pair'));
+  assert.equal(pairCall.options.headers['Content-Type'],'text/plain;charset=UTF-8');
+  assert.equal(pairCall.options.headers['X-DCX-Flow-Version'],undefined);
   assert.equal((await w.send({type:'STATUS'})).data.user.name,'Test User');
   assert.equal(w.calls.find(c=>c.url.endsWith('/status')).options.headers.Authorization,'Bearer server-token');
   assert.equal((await w.send({type:'DISCONNECT'})).ok,true);
