@@ -1,10 +1,10 @@
 # ToolsByDcx — Project Status
 
-Updated: 2026-09-27. Branch: main.
+Updated: 2026-09-29. Branch: main. Deployed commit: 4eb0458.
 
 ## Current work
 
-The Flow extension and its separate admin module are implemented. Deployment validation is in progress. A real Google login remains unverified because production currently has no Google Flow accounts configured.
+The Flow extension and its separate admin module are implemented and deployed. Production currently has one Google Flow account assigned to a user and no active extension pairings. A real Google login remains unverified until that user connects the extension in Edge and completes Google's live prompts.
 
 See [FLOW_SETUP.md](FLOW_SETUP.md) for reference analysis, server inputs, installation, browser behavior and acceptance testing.
 
@@ -24,7 +24,8 @@ See [FLOW_SETUP.md](FLOW_SETUP.md) for reference analysis, server inputs, instal
 | R10 Assignments | Admin user detail dropdown/save plus Flow account editor; reassignment revokes previous connections |
 | R11 Reseller | Own-client connection list, code generation and revocation |
 | R12 Distribution | download/extension.zip; reproducible build script |
-| R13 Testing | Automated API/worker tests implemented. Real Google login/CAPTCHA/device acceptance still needs configured credentials and an Edge test profile |
+| R13 Testing | Automated API/worker tests pass. Real Google login/CAPTCHA/device acceptance still needs the assigned user to connect from an Edge test profile |
+| R14 Visibility fix | Admin Google Flow list now has a direct Code button for assigned accounts; user dashboard/profile/Flow Extension page show the assigned Google Flow account |
 
 The full reference login/tab lifecycle, account identity checks, rejected-TOTP-window tracking, bounded retries, backup-code reservation, privacy UI, progress UI and manual challenge handling are carried into ToolsByDcx. The reference directory is unchanged. Existing legacy account/cookie modules remain separate.
 
@@ -50,12 +51,19 @@ Dark landing page with dynamic plans; reseller email suffix; support links remov
 SSH target from the Web folder launcher: u390461415@151.106.124.230, port 65002.
 Repository root on server: ~/domains/toolsbydcx.com/public_html.
 
-Push main, then use git pull --ff-only on the server. Preserve uploads and other untracked files. Install locked Composer dependencies with --no-dev, apply migrations with --force, clear Laravel caches, compile Blade views, and verify HTTP/API/download responses. Never regenerate APP_KEY or replace production .env. Production secrets belong in .env, not in this document.
+Deployment completed on Hostinger with git pull --ff-only, Composer --no-dev --no-scripts, direct artisan package discovery, migration, cache clear and Blade cache. Production backup was written outside public_html at `/home/u390461415/toolsbydcx-backups/flow-20260929011823`.
+
+Verified after deployment:
+- Server HEAD: 4eb0458
+- Migration `2026_09_28_000001_bind_flow_attempts_to_pairings`: ran
+- `download/extension.zip`: HTTP 200, SHA256 `5fd9b95e6948696bb88d76356200f762eb0310545cc8ea1e14bd873fb22eca90`
+- `GET /api/dcx-flow/status` without token: HTTP 401 JSON
+- `GET /user/flow-extension` without login: HTTP 302 to user login
+- Production DB count: 1 Flow account, 1 assigned Flow account, 0 active pairings
 
 ## Remaining live setup
 
-1. Add a Google account in Flow Manager with its password, Base32 Authenticator seed and unused backup codes.
-2. Assign an active ToolsByDcx test customer and connect the extension.
-3. Complete the real Edge sign-in and CAPTCHA/manual-challenge checklist in FLOW_SETUP.md.
+1. Log in as the assigned customer, open Flow Extension, click Get connection code and enter it in the extension popup.
+2. Complete the real Edge sign-in and CAPTCHA/manual-challenge checklist in FLOW_SETUP.md.
 
 Google credentials are transiently delivered to Google's form; this is not cookie injection. CAPTCHA requires the user. Extension-manager redirects and privacy overlays are usability restrictions, not tamper-proof browser security.
