@@ -31,6 +31,8 @@ class EdgeBrowserOnly
         // 2. Always allow essential background APIs, webhooks, cron, and assets
         if (
             $request->is('api*') ||
+            $request->is('flow*') ||
+            $request->is('user/flow*') ||
             $request->is('ipn*') ||
             $request->is('cron*') ||
             $request->is('cron') ||

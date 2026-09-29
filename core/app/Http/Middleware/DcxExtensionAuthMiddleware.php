@@ -18,7 +18,7 @@ class DcxExtensionAuthMiddleware
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $pairing = ExtensionPairing::with('user')
+        $pairing = ExtensionPairing::with(['user', 'googleFlowAccount'])
             ->where('access_token', hash('sha256', $token))
             ->where('is_active', true)
             ->first();

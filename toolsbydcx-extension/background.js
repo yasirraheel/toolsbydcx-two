@@ -239,8 +239,10 @@ async function api(path, body, anonymous = false) {
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       method: body === undefined ? "GET" : "POST",
-      credentials: "omit", cache: "no-store",
+      credentials: "include", cache: "no-store",
       headers: {
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         "X-DCX-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
         "X-DCX-Flow-Version": "1.0.0",
@@ -252,7 +254,7 @@ async function api(path, body, anonymous = false) {
     const result = await response.json().catch(() => ({}));
     if (path !== "/disconnect" && (epoch !== mobileLogoutEpoch || mobileLogoutActive)) throw new Error(MOBILE_LOGOUT_MESSAGE);
     if (!response.ok) throw Object.assign(
-      new Error(result.message || `Request failed (${response.status}).`),
+      new Error(result.message || result.error || `Request failed (${response.status}).`),
       { status: response.status, reason: typeof result.reason === "string" ? result.reason : null, rejectedToken: anonymous ? null : saved.accessToken }
     );
     return result;
