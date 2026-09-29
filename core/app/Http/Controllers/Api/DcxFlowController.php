@@ -109,12 +109,14 @@ class DcxFlowController extends Controller
                 ->where('extension_pairing_id', $request->attributes->get('extension_pairing')->id)
                 ->where('status', 'in_progress')->lockForUpdate()->first();
             abort_unless($attempt && $attempt->expires_at->isFuture(), 422, 'Invalid or expired attempt.');
-            $account = GoogleFlowAccount::whereKey($attempt->google_flow_account_id)->lockForUpdate()->first();
-            abort_unless($account && $account->status === 'active' && $account->assigned_to_user_id == $request->user()->id,
-                403, 'Account assignment changed.');
+            if (!$account || $account->status !== 'active' || (int) $account->assigned_to_user_id !== (int) $request->user()->id) {
+                abort(response()->json(['message' => 'Account assignment changed.', 'reason' => 'account_inactive'], 403));
+            }
             switch ($request->stage) {
-                case 'email': return response()->json(['value' => $account->email]);
-                case 'password': return response()->json(['value' => $account->password]);
+                case 'email':
+                    return response()->json(['value' => $account->email, 'attemptId' => $attempt->id]);
+                case 'password':
+                    return response()->json(['value' => $account->password, 'attemptId' => $attempt->id]);
                 case 'otp':
                     abort_if($attempt->otp_attempt_count >= 2, 422, 'Automatic OTP limit reached. Use another verification method.');
                     abort_unless($account->totp_secret_encrypted, 422, 'No authenticator secret is configured.');
@@ -125,7 +127,11 @@ class DcxFlowController extends Controller
                     }
                     // Near-expiry prefetches are discarded by the client without submitting.
                     if (30 - (time() % 30) >= 8) { $attempt->increment('otp_attempt_count'); }
-                    return response()->json(['value' => $otp, 'expiresAt' => now()->setTimestamp((intdiv(time(), 30) + 1) * 30)->toIso8601String()]);
+                    return response()->json([
+                        'value' => $otp,
+                        'expiresAt' => now()->setTimestamp((intdiv(time(), 30) + 1) * 30)->toIso8601String(),
+                        'attemptId' => $attempt->id,
+                    ]);
                 case 'backup_code':
                     abort_if($attempt->backup_code_used, 422, 'A backup code was already issued for this attempt.');
                     $codes = array_values($account->backup_codes ?? []);
@@ -133,7 +139,7 @@ class DcxFlowController extends Controller
                     $code = array_shift($codes);
                     $account->update(['backup_codes' => $codes]);
                     $attempt->update(['backup_code_used' => true]);
-                    return response()->json(['value' => $code]);
+                    return response()->json(['value' => $code, 'attemptId' => $attempt->id]);
             }
         });
     }

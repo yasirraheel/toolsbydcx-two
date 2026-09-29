@@ -645,7 +645,7 @@ async function messageHandler(message, sender) {
       const result = await api("/step", { attemptId: state.attemptId, stage });
       if (!result?.value) return err("The server did not return a credential for this stage.");
       updateAutomationHealth(state, { stage });
-      return ok(result);
+      return ok({ ...result, attemptId: result.attemptId || state.attemptId });
     } catch (error) {
       if (error.status === 401 || error.status === 403) void handleUnauthorized(error);
       return err(error.message || "The credential step failed.");
