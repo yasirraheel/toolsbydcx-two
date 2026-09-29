@@ -23,32 +23,65 @@ class SiteController extends Controller
     public function downloadExtension($filename = null)
     {
         $directory = storage_path('app/public/extension');
-        
+        $filePath = null;
+        $ver = gs('min_extension_version') ?: '1.0.2';
+        $cleanVer = preg_replace('/[^0-9.]/', '', $ver) ?: '1.0.2';
+        $downloadName = 'toolsbydcx-flow-v' . $cleanVer . '.zip';
+
         if ($filename) {
-            $filePath = $directory . '/' . $filename;
-        } else {
-            $filename = 'toolsbydcx-ext.zip';
-            $filePath = $directory . '/' . $filename;
-            if (is_dir($directory)) {
-                $files = scandir($directory);
-                foreach ($files as $file) {
-                    if (pathinfo($file, PATHINFO_EXTENSION) === 'zip' && (str_starts_with($file, 'toolsbydcx-ext') || str_starts_with($file, 'extension'))) {
-                        $filename = $file;
-                        $filePath = $directory . '/' . $file;
-                        break;
+            $candidate = $directory . '/' . basename($filename);
+            if (file_exists($candidate)) {
+                $filePath = $candidate;
+                $downloadName = basename($filename);
+            }
+        }
+
+        if (!$filePath) {
+            try {
+                $history = \App\Models\ExtensionHistory::where('is_current', true)->first()
+                         ?: \App\Models\ExtensionHistory::orderByDesc('id')->first();
+                if ($history && file_exists($directory . '/' . $history->filename)) {
+                    $filePath = $directory . '/' . $history->filename;
+                    $downloadName = $history->filename;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$filePath && is_dir($directory)) {
+            $files = scandir($directory);
+            $latestTime = 0;
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'zip' && !str_starts_with($file, 'temp_')) {
+                    $fp = $directory . '/' . $file;
+                    $mtime = filemtime($fp);
+                    if ($mtime > $latestTime) {
+                        $latestTime = $mtime;
+                        $filePath = $fp;
+                        $downloadName = $file;
                     }
                 }
             }
         }
-        
-        if (file_exists($filePath)) {
-            return response()->download($filePath, $filename, [
+
+        if (!$filePath) {
+            $publicFallback = public_path('download/extension.zip');
+            if (file_exists($publicFallback)) {
+                $filePath = $publicFallback;
+            }
+        }
+
+        if ($filePath && file_exists($filePath)) {
+            if ($downloadName === 'extension.zip' || $downloadName === 'toolsbydcx-ext.zip' || $downloadName === 'toolsbydcx-extension.zip') {
+                $downloadName = 'toolsbydcx-flow-v' . $cleanVer . '.zip';
+            }
+
+            return response()->download($filePath, $downloadName, [
                 'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0'
+                'Pragma'        => 'no-cache',
+                'Expires'       => '0',
             ]);
         }
-        
+
         $notify[] = ['error', 'Extension file not found.'];
         return back()->withNotify($notify);
     }

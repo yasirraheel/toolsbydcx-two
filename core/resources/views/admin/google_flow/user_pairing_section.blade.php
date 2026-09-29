@@ -3,49 +3,22 @@
         <h5 class="card-title text-white">@lang('Google Flow Extension Pairing')</h5>
     </div>
     <div class="card-body">
-        @if(session('flow_pairing_code'))
-            <div class="alert alert-success">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <div>
-                        <strong>@lang('Connection code generated')</strong>
-                        <div class="small text-muted">
-                            @lang('User'): {{ session('flow_pairing_user') }} |
-                            @lang('Account'): {{ session('flow_pairing_account') }}
-                        </div>
-                    </div>
-                    <code class="fs-4 fw-bold text-dark">{{ session('flow_pairing_code') }}</code>
-                </div>
-            </div>
-        @endif
-        <a href="{{ asset('download/extension.zip') }}" class="btn btn-outline--primary mb-3">Download Flow Extension</a>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <a href="{{ route('extension.download') }}" class="btn btn-outline--primary"><i class="las la-download me-1"></i>Download Flow Extension</a>
+        </div>
         <form action="{{ route('admin.google-flow.assign', $user->id) }}" method="POST" class="mb-4">
             @csrf
-            <label for="flow-account">Google Flow account assignment</label>
-            <select id="flow-account" name="google_flow_account_id" class="form-control mb-2">
-                <option value="">No account (remove assignment)</option>
-                @foreach(\App\Models\GoogleFlowAccount::active()->where(fn($q) => $q->whereNull('assigned_to_user_id')->orWhere('assigned_to_user_id', $user->id))->get() as $acc)
-                    <option value="{{ $acc->id }}" @selected($acc->assigned_to_user_id == $user->id)>{{ $acc->label ?: $acc->email }}</option>
-                @endforeach
-            </select>
-            <button class="btn btn--primary" type="submit">Save assignment</button>
-        </form>
-        <form action="{{ route('admin.google-flow.generate-pairing-code') }}" method="POST">
-            @csrf
-            <input type="hidden" name="user_id" value="{{ $user->id }}">
-            <div class="row align-items-end">
-                <div class="col-md-8 form-group">
-                    <label>@lang('Assign Google Account for Flow Extension')</label>
-                    <select name="google_flow_account_id" class="form-control" required>
-                        <option value="">@lang('Select Account')</option>
-                        @foreach(\App\Models\GoogleFlowAccount::active()->where('assigned_to_user_id', $user->id)->get() as $acc)
-                            <option value="{{ $acc->id }}">{{ $acc->email }} ({{ $acc->label }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4 form-group">
-                    <button type="submit" class="btn btn--primary w-100 h-45">@lang('Generate Pairing Code')</button>
-                </div>
+            <label for="flow-account" class="fw-bold">@lang('Google Flow Account Assignment')</label>
+            <div class="input-group">
+                <select id="flow-account" name="google_flow_account_id" class="form-control">
+                    <option value="">No account (remove assignment)</option>
+                    @foreach(\App\Models\GoogleFlowAccount::active()->where(fn($q) => $q->whereNull('assigned_to_user_id')->orWhere('assigned_to_user_id', $user->id))->get() as $acc)
+                        <option value="{{ $acc->id }}" @selected($acc->assigned_to_user_id == $user->id)>{{ $acc->label ?: $acc->email }}</option>
+                    @endforeach
+                </select>
+                <button class="btn btn--primary" type="submit">@lang('Save Assignment')</button>
             </div>
+            <small class="text-muted">@lang('Clients auto-connect to this assigned account through their web session upon opening the extension.')</small>
         </form>
 
         <hr>
@@ -56,7 +29,7 @@
                 <thead>
                     <tr>
                         <th>@lang('Account')</th>
-                        <th>@lang('Code / Token')</th>
+                        <th>@lang('Status')</th>
                         <th>@lang('Browser')</th>
                         <th>@lang('Expires At')</th>
                         <th>@lang('Action')</th>
@@ -70,11 +43,7 @@
                         <tr>
                             <td>{{ $pairing->googleFlowAccount ? $pairing->googleFlowAccount->email : 'None' }}</td>
                             <td>
-                                @if($pairing->pairing_code)
-                                    <span class="badge badge--warning">Code: {{ $pairing->pairing_code }}</span>
-                                @else
-                                    <span class="badge badge--success">@lang('Connected')</span>
-                                @endif
+                                <span class="badge badge--success">@lang('Connected')</span>
                             </td>
                             <td>{{ $pairing->browser ?? 'N/A' }}</td>
                             <td>{{ $pairing->expires_at ? showDateTime($pairing->expires_at) : 'Never' }}</td>

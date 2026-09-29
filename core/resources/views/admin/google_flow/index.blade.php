@@ -4,20 +4,6 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body p-0">
-                    @if(session('flow_pairing_code'))
-                        <div class="alert alert-success m-3 mb-0">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                <div>
-                                    <strong>@lang('Connection code generated')</strong>
-                                    <div class="small text-muted">
-                                        @lang('User'): {{ session('flow_pairing_user') }} |
-                                        @lang('Account'): {{ session('flow_pairing_account') }}
-                                    </div>
-                                </div>
-                                <code class="fs-4 fw-bold text-dark">{{ session('flow_pairing_code') }}</code>
-                            </div>
-                        </div>
-                    @endif
                     <div class="table-responsive--sm table-responsive">
                         <table class="table--light style--two table">
                             <thead>
@@ -57,14 +43,6 @@
                                         <td>
                                             <div class="d-flex justify-content-end gap-1 flex-wrap">
                                                 @if($account->user)
-                                                    <form action="{{ route('admin.google-flow.generate-pairing-code') }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <input type="hidden" name="user_id" value="{{ $account->user->id }}">
-                                                        <input type="hidden" name="google_flow_account_id" value="{{ $account->id }}">
-                                                        <button type="submit" class="btn btn-outline--success btn-sm">
-                                                            <i class="las la-key"></i>@lang('Code')
-                                                        </button>
-                                                    </form>
                                                     <a href="{{ route('admin.users.detail', $account->user->id) }}" class="btn btn-outline--info btn-sm">
                                                         <i class="las la-user"></i>@lang('User')
                                                     </a>

@@ -6,8 +6,8 @@ import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
 const supportedBrowser = globalThis.flowAutoLoginIsEdge === true;
 const EDGE_REQUIRED = "ToolsByDcx Flow is available only in desktop Microsoft Edge or Android Kiwi Browser.";
-const AUTOMATION_VERSION = "1.0.0";
-const SITE_BRIDGE_VERSION = "1.0.0";
+const AUTOMATION_VERSION = "1.0.2";
+const SITE_BRIDGE_VERSION = "1.0.2";
 
 let operationBusy = false;
 let mobileLogoutActive = false;
@@ -245,7 +245,7 @@ async function api(path, body, anonymous = false) {
         "X-Requested-With": "XMLHttpRequest",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         "X-DCX-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
-        "X-DCX-Flow-Version": "1.0.0",
+        "X-DCX-Flow-Version": "1.0.2",
         ...(!anonymous ? { Authorization: `Bearer ${saved.accessToken}` } : {})
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),

@@ -19,29 +19,26 @@
         </div>
     @endif
     <div class="d-flex gap-2 flex-wrap mb-3">
-        <a href="{{ asset('download/extension.zip') }}" class="btn btn--base">Download extension</a>
-        <button id="flow-connect" type="button" class="btn btn-outline-primary" @disabled(!$account)>Get connection code</button>
+        <a href="{{ route('extension.download') }}" class="btn btn--base"><i class="las la-download me-1"></i>Download extension</a>
         <button id="flow-auto-connect" type="button" class="btn btn-outline-primary" hidden>Connect this browser</button>
-        <button id="flow-start" type="button" class="btn btn--base" hidden>Start Flow login</button>
+        <button id="flow-start" type="button" class="btn btn--base" hidden>Open Flow</button>
     </div>
     <ol>
-        <li>Download and extract the ZIP into a folder.</li>
-        <li>Open <code>edge://extensions</code>, enable Developer mode, select Load unpacked, and choose the extracted folder.</li>
-        <li>Click Get connection code here, or ask your administrator for a code. Enter it in the extension popup.</li>
-        <li>After connecting, click Open Flow in the popup. Solve any Google CAPTCHA yourself when prompted.</li>
+        <li>Download the extension ZIP file above.</li>
+        <li>Open <code>edge://extensions</code>, turn on <strong>Developer mode</strong>, and drag & drop the ZIP file into the page (or click <strong>Load unpacked</strong> and select the extracted folder).</li>
+        <li>The extension connects automatically to your account through your active ToolsByDcx session.</li>
+        <li>Click the <strong>ToolsByDcx Flow</strong> extension icon in your browser toolbar or click <strong>Open Flow</strong> to launch your workspace.</li>
     </ol>
-    <p id="flow-message" role="status">{{ $account ? 'Click Get connection code, then enter the six-digit code in the extension popup.' : 'Contact your administrator to assign a Google Flow account.' }}</p>
-    <p id="flow-code" class="fs-3 fw-bold" hidden></p>
-    <p class="text-muted">Codes expire in 15 minutes and can be used once. Browser controls do not replace account security: use a dedicated browser profile.</p>
-    <h5>Connections</h5>
+    <p id="flow-message" role="status">{{ $account ? 'Once installed, the extension connects automatically to your assigned workspace.' : 'Contact your administrator to assign a Google Flow account.' }}</p>
+    <h5>@lang('Active Connections')</h5>
     <ul>
         @forelse($pairings as $pairing)
-            <li>{{ $pairing->access_token ? 'Connected extension' : 'Awaiting connection' }} — expires {{ showDateTime($pairing->expires_at) }}</li>
+            <li><span class="badge bg-success">@lang('Connected extension')</span> — {{ $pairing->browser ?? 'Browser' }} (expires {{ showDateTime($pairing->expires_at) }})</li>
         @empty
-            <li>No active connections.</li>
+            <li>@lang('No active connections yet. Install the extension to connect.')</li>
         @endforelse
     </ul>
-    <form method="POST" action="{{ route('user.flow-extension.revoke') }}">@csrf<button type="submit" class="btn btn-outline-danger">Revoke all connections</button></form>
+    <form method="POST" action="{{ route('user.flow-extension.revoke') }}">@csrf<button type="submit" class="btn btn-outline-danger">Disconnect & Revoke</button></form>
 </div>
 @endsection
 @push('script')
@@ -49,7 +46,6 @@
 (() => {
     const userId = @json(auth()->id());
     const message = document.getElementById('flow-message');
-    const button = document.getElementById('flow-connect');
     const auto = document.getElementById('flow-auto-connect');
     const start = document.getElementById('flow-start');
     const pending = new Map();
@@ -73,19 +69,9 @@
     async function issue(codeChallenge = null) {
         const response = await fetch(@json(route('user.flow-extension.pair')), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) }, body: JSON.stringify({ codeChallenge }) });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not create a connection code.');
+        if (!response.ok) throw new Error(result.message || 'Could not connect extension.');
         return result;
     }
-    button.addEventListener('click', async () => {
-        button.disabled = true;
-        try {
-            const result = await issue();
-            const code = document.getElementById('flow-code');
-            code.textContent = result.code; code.hidden = false;
-            message.textContent = 'Enter this code in the extension popup within 15 minutes.';
-        } catch (error) { message.textContent = error.message; }
-        finally { button.disabled = false; }
-    });
     auto.addEventListener('click', async () => {
         auto.disabled = true;
         try {

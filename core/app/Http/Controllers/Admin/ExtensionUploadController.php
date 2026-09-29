@@ -153,7 +153,7 @@ class ExtensionUploadController extends Controller
         $manifestPath = null;
         $prefix = '';
         for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
+            $name = str_replace('\\', '/', $zip->getNameIndex($i));
             if ($name === 'manifest.json') {
                 $manifestPath = $name;
                 $prefix = '';
@@ -165,11 +165,6 @@ class ExtensionUploadController extends Controller
             }
         }
 
-        if (!$manifestPath || $prefix === '') {
-            $zip->close();
-            return true;
-        }
-
         $tempZipPath = $zipPath . '.clean.tmp.zip';
         $newZip = new \ZipArchive();
         if ($newZip->open($tempZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
@@ -177,22 +172,43 @@ class ExtensionUploadController extends Controller
             return false;
         }
 
+        $createdDirs = [];
+
         for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
+            $name = str_replace('\\', '/', $zip->getNameIndex($i));
 
             if (strpos($name, '__MACOSX/') === 0 || basename($name) === '.DS_Store' || basename($name) === 'Thumbs.db') {
                 continue;
             }
 
-            if (strpos($name, $prefix) === 0) {
-                $relName = substr($name, strlen($prefix));
+            if ($prefix === '' || strpos($name, $prefix) === 0) {
+                $relName = $prefix !== '' ? substr($name, strlen($prefix)) : $name;
+                $relName = ltrim($relName, '/');
                 if ($relName === '' || $relName === false) {
                     continue;
                 }
 
                 if (substr($relName, -1) === '/') {
-                    $newZip->addEmptyDir($relName);
+                    $dirPath = rtrim($relName, '/');
+                    if (!isset($createdDirs[$dirPath])) {
+                        $newZip->addEmptyDir($dirPath);
+                        $createdDirs[$dirPath] = true;
+                    }
                 } else {
+                    // Ensure all parent directories exist explicitly in the zip
+                    $dir = dirname($relName);
+                    if ($dir !== '.' && $dir !== '' && !isset($createdDirs[$dir])) {
+                        $parts = explode('/', $dir);
+                        $acc = '';
+                        foreach ($parts as $p) {
+                            $acc = $acc === '' ? $p : $acc . '/' . $p;
+                            if (!isset($createdDirs[$acc])) {
+                                $newZip->addEmptyDir($acc);
+                                $createdDirs[$acc] = true;
+                            }
+                        }
+                    }
+
                     $content = $zip->getFromIndex($i);
                     if ($content !== false) {
                         $newZip->addFromString($relName, $content);
