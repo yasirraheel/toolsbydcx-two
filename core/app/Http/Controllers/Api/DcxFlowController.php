@@ -109,6 +109,7 @@ class DcxFlowController extends Controller
                 ->where('extension_pairing_id', $request->attributes->get('extension_pairing')->id)
                 ->where('status', 'in_progress')->lockForUpdate()->first();
             abort_unless($attempt && $attempt->expires_at->isFuture(), 422, 'Invalid or expired attempt.');
+            $account = GoogleFlowAccount::whereKey($attempt->google_flow_account_id)->lockForUpdate()->first();
             if (!$account || $account->status !== 'active' || (int) $account->assigned_to_user_id !== (int) $request->user()->id) {
                 abort(response()->json(['message' => 'Account assignment changed.', 'reason' => 'account_inactive'], 403));
             }
