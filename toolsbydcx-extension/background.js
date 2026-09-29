@@ -231,8 +231,8 @@ const logoutGrant = async () => {
 const redirectingTabs = new Set();
 // Volatile, non-sensitive diagnostics only; never retain credential values.
 const automationHealth = new Map();
-const AUTOMATION_VERSION = "1.0.1";
-const SITE_BRIDGE_VERSION = "1.0.1";
+const AUTOMATION_VERSION = "1.0.2";
+const SITE_BRIDGE_VERSION = "1.0.2";
 const AUTOMATION_RECOVERY_DETAIL = "ToolsByDcx could not start sign-in automation in this tab. Reload the Flow or Google sign-in page, allow this extension on both sites, then click Open / resume Flow.";
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function updateAutomationHealth(state, patch) {
@@ -377,6 +377,22 @@ async function ensureSiteBridge(tabId) {
   } catch {}
   return false;
 }
+async function pairViaToolsByDcxPage(payload) {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  const candidates = tabs.filter(tab => Number.isInteger(tab.id) && isToolsByDcxSiteUrl(tab.url))
+    .sort((a, b) => Number(b.active === true) - Number(a.active === true));
+  for (const tab of candidates) {
+    if (!await ensureSiteBridge(tab.id).catch(() => false)) continue;
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "SITE_PAGE_PAIR", payload }).catch(() => null);
+    if (response?.ok) return response.data;
+    if (response && response.ok === false) {
+      const error = new Error(response.error || "Request failed.");
+      error.status = response.status || null;
+      throw error;
+    }
+  }
+  return null;
+}
 async function resumeTabAutomation(tabId) {
   for (const delay of [0, 250, 750]) {
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
@@ -428,7 +444,7 @@ async function api(path, body, anonymous = false) {
         ...(body === undefined ? {} : { "Content-Type": simplePairRequest ? "text/plain;charset=UTF-8" : "application/json" }),
         ...(!simplePairRequest ? {
           "X-DCX-Flow-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
-          "X-DCX-Flow-Version": "1.0.1"
+          "X-DCX-Flow-Version": "1.0.2"
         } : {}),
         ...(!anonymous ? { Authorization: `Bearer ${saved.accessToken}` } : {})
       },
@@ -1227,7 +1243,8 @@ async function messageHandler(message, sender) {
       const saved = await localState();
       if (saved.accessToken) throw new Error("Disconnect the current connection before pairing again.");
       const installationId = saved.installationId || crypto.randomUUID();
-      const paired = await api("/pair", { code: message.code, installationId }, true);
+      const payload = { code: message.code, installationId };
+      const paired = await pairViaToolsByDcxPage(payload) || await api("/pair", payload, true);
       if (!paired.accessToken || !paired.expiresAt || !paired.uninstallToken) throw new Error("Incomplete pairing response.");
       await chrome.storage.local.set({ installationId, accessToken: paired.accessToken, expiresAt: paired.expiresAt, uninstallToken: paired.uninstallToken, consent: false });
       await chrome.runtime.setUninstallURL(`${API_BASE}/uninstall?key=${encodeURIComponent(paired.uninstallToken)}`);
@@ -1241,7 +1258,8 @@ async function messageHandler(message, sender) {
       if (saved.accessToken) throw new Error("Disconnect the current connection before pairing again.");
       const installationId = saved.installationId || crypto.randomUUID();
       await chrome.storage.local.set({ installationId });
-      const paired = await api("/pair", { code: message.code.trim(), installationId }, true);
+      const payload = { code: message.code.trim(), installationId };
+      const paired = await pairViaToolsByDcxPage(payload) || await api("/pair", payload, true);
       if (!paired.accessToken || !paired.expiresAt || !paired.uninstallToken) throw new Error("The server returned an incomplete connection.");
       await chrome.storage.local.set({ accessToken: paired.accessToken, expiresAt: paired.expiresAt, uninstallToken: paired.uninstallToken, consent: true });
       await chrome.runtime.setUninstallURL(`${API_BASE}/uninstall?key=${encodeURIComponent(paired.uninstallToken)}`);

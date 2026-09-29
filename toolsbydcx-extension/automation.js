@@ -13,9 +13,9 @@
       return;
     }
     if (window.top !== window) return;
-    if (globalThis.flowAutoLoginAutomationVersion === "1.0.1") return;
+    if (globalThis.flowAutoLoginAutomationVersion === "1.0.2") return;
     globalThis.flowAutoLoginAutomationCleanup?.();
-    globalThis.flowAutoLoginAutomationVersion = "1.0.1";
+    globalThis.flowAutoLoginAutomationVersion = "1.0.2";
     let busy = false;
     let paused = false;
     let resumeInFlight = false;
@@ -1670,7 +1670,7 @@
     const onResume = (message, sender, respond) => {
     if (sender.id !== chrome.runtime.id) return;
     if (message?.type === "AUTOMATION_PING") {
-      respond?.({ ready: true, version: "1.0.1" });
+      respond?.({ ready: true, version: "1.0.2" });
       return;
     }
     if (message?.type !== "RESUME") return;

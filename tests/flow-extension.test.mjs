@@ -5,9 +5,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { webcrypto } from 'node:crypto';
 
-async function worker() {
+async function worker(options = {}) {
   const calls = [];
   let listener;
+  const siteTab = options.sitePair ? { id: 12, url: 'https://toolsbydcx.com/user/flow-extension', active: true, windowId: 1 } : null;
   const area = () => {
     const data = {};
     return { data, async setAccessLevel() {}, async get(keys) { return Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map(k => [k, data[k]])); },
@@ -19,7 +20,14 @@ async function worker() {
       onMessage: { addListener(fn) { listener=fn; } }, onInstalled:event, onStartup:event },
     storage: { local:area(), session:area() },
     alarms: { async clear() {}, async create() {}, onAlarm:event },
-    tabs: { async query() { return []; }, async remove() {}, onUpdated:event,onCreated:event,onAttached:event,onRemoved:event },
+    tabs: { async query() { return siteTab ? [siteTab] : []; }, async get(id) { return siteTab?.id === id ? siteTab : null; }, async remove() {},
+      async sendMessage(id,message) {
+        if (!siteTab || siteTab.id !== id) throw new Error('No receiver');
+        if (message.type === 'SITE_BRIDGE_PING') return { ready:true, version:'1.0.2' };
+        if (message.type === 'SITE_PAGE_PAIR') return { ok:true, data:{ accessToken:'page-token', expiresAt:'2030-01-01T00:00:00Z', uninstallToken:'private', userId:1 } };
+        return null;
+      },
+      onUpdated:event,onCreated:event,onAttached:event,onRemoved:event },
     declarativeNetRequest: { async getSessionRules() { return []; }, async updateSessionRules() {} },
     webNavigation: { onBeforeNavigate:event },
   };
@@ -56,6 +64,13 @@ test('popup pairs, reads status, and disconnects using the API contract',async()
   assert.equal(w.calls.find(c=>c.url.endsWith('/status')).options.headers.Authorization,'Bearer server-token');
   assert.equal((await w.send({type:'DISCONNECT'})).ok,true);
   assert.equal(w.chrome.storage.local.data.accessToken,undefined);
+});
+
+test('popup pairs through an open ToolsByDcx page when available',async()=>{
+  const w=await worker({sitePair:true});
+  assert.equal((await w.send({type:'PAIR',code:'123456'})).ok,true);
+  assert.equal(w.chrome.storage.local.data.accessToken,'page-token');
+  assert.equal(w.calls.some(c=>c.url.endsWith('/pair')),false);
 });
 
 test('only trusted top-level website and popup can pair',async()=>{

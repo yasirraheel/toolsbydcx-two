@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Opens and prepares Google Flow for your active ToolsByDcx plan.",
   "icons": {
     "16": "icons/icon16.png",
