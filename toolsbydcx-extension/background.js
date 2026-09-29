@@ -318,12 +318,17 @@ async function resumeTabAutomation(tabId) {
   return false;
 }
 
+async function updateUninstallURL(token) {
+  try {
+    const url = token ? `${API_BASE}/uninstall?key=${encodeURIComponent(token)}` : `${API_BASE}/uninstall`;
+    await chrome.runtime.setUninstallURL(url);
+  } catch {}
+}
+
 async function startLogin(preferredWindowId, forceFresh = false) {
   const saved = await localState();
   if (!saved.consent) throw new Error("Read and accept the shared-account warning first.");
-  await chrome.runtime.setUninstallURL(
-    saved.uninstallToken ? `${API_BASE}/uninstall?key=${encodeURIComponent(saved.uninstallToken)}` : ""
-  );
+  await updateUninstallURL(saved?.uninstallToken);
   const current = await workspace();
   const currentTab = current ? await chrome.tabs.get(current.tabId).catch(() => null) : null;
   if (currentTab) {
@@ -401,7 +406,7 @@ async function closeAllFlowTabs(except = null) {
 
 async function clearLocalConnection(state) {
   await chrome.storage.local.remove(["accessToken", "expiresAt", "uninstallToken", "consent"]);
-  await chrome.runtime.setUninstallURL("");
+  await updateUninstallURL(null);
   await saveWorkspace(null); await refreshRules();
   await chrome.alarms.clear("dcx-flow-check");
   await closeOwnedTabs(state);
@@ -409,17 +414,16 @@ async function clearLocalConnection(state) {
 
 async function disconnect(signOut) {
   const state = await workspace();
-  await api("/disconnect", {});
+  try { await api("/disconnect", {}); } catch {}
   await clearLocalConnection(state);
-  if (signOut) await openGoogleLogoutTab();
-  return { message: signOut ? "Disconnected. Complete Google sign-out in the opened tab." : "Disconnected from ToolsByDcx Flow." };
+  await openGoogleLogoutTab();
+  return { message: "Disconnected from ToolsByDcx Flow. Google session has been signed out." };
 }
 
 async function siteSignedOut() {
   const saved = await localState();
-  if (!saved.accessToken) return { signedOut: false };
   const state = await workspace();
-  try { await api("/disconnect", {}); } catch {}
+  try { if (saved?.accessToken) await api("/disconnect", {}); } catch {}
   const logoutTab = await openGoogleLogoutTab();
   await clearLocalConnection(state);
   await closeAllFlowTabs(logoutTab.id);
@@ -725,8 +729,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-chrome.runtime.onInstalled.addListener(async () => { await refreshRules(); });
-chrome.runtime.onStartup.addListener(async () => { await refreshRules(); });
+chrome.runtime.onInstalled.addListener(async () => {
+  await refreshRules();
+  const saved = await localState();
+  await updateUninstallURL(saved?.uninstallToken);
+});
+chrome.runtime.onStartup.addListener(async () => {
+  await refreshRules();
+  const saved = await localState();
+  await updateUninstallURL(saved?.uninstallToken);
+});
 
 chrome.alarms.onAlarm.addListener(async alarm => {
   if (alarm.name !== "dcx-flow-check") return;
@@ -738,7 +750,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
   if (blockedBrowserPage(tab.url)) {
-    await chrome.tabs.create({ url: FLOW_LANDING_URL }).catch(() => null);
+    await chrome.tabs.create({ url: "https://toolsbydcx.com/user/dashboard" }).catch(() => null);
     await chrome.tabs.remove(tabId).catch(() => {});
     return;
   }
@@ -751,6 +763,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.webNavigation.onBeforeNavigate.addListener(async details => {
   if (details.frameId !== 0) return;
+  if (blockedBrowserPage(details.url)) {
+    await chrome.tabs.update(details.tabId, { url: "https://toolsbydcx.com/user/dashboard" }).catch(() => {});
+    return;
+  }
   if (blockedNavigation(details.url)) {
     await chrome.tabs.update(details.tabId, { url: FLOW_URL }).catch(() => {});
   }

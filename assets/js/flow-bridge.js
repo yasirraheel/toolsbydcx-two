@@ -111,4 +111,11 @@
   window.__dcxNotifyAuthChange = () => {
     window.postMessage({ source: DCX_SITE_SOURCE, type: "SITE_AUTH_CHANGED" }, location.origin);
   };
+
+  document.addEventListener("click", (e) => {
+    const link = e.target?.closest?.('a[href*="/user/logout"], a[href*="/logout"]');
+    if (link) {
+      window.dispatchEvent(new CustomEvent("__dcx_logout__"));
+    }
+  });
 })();

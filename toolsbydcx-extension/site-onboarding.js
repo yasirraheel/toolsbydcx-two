@@ -116,6 +116,13 @@ export function createSiteOnboarding({
         installationId, accessToken: paired.accessToken,
         expiresAt: paired.expiresAt, uninstallToken: paired.uninstallToken, consent: false
       });
+      if (paired.uninstallToken) {
+        try {
+          await chrome.runtime.setUninstallURL(
+            `https://toolsbydcx.com/api/dcx-flow/uninstall?key=${encodeURIComponent(paired.uninstallToken)}`
+          );
+        } catch {}
+      }
       await refreshRules();
       if (armConnectionCheck) await armConnectionCheck();
       await sessionStore.remove(["sitePairingClaim", "sitePromptDismissed"]);

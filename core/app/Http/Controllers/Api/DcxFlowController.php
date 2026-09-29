@@ -158,9 +158,10 @@ class DcxFlowController extends Controller
 
     public function uninstall(Request $request)
     {
-        $request->validate(['key' => 'required|string|size:48']);
-        FlowAccess::revoke(ExtensionPairing::where('uninstall_token', hash('sha256', $request->key)));
-        return response('ToolsByDcx extension connection removed.', 200)->header('Cache-Control', 'no-store');
+        if ($request->filled('key')) {
+            FlowAccess::revoke(ExtensionPairing::where('uninstall_token', hash('sha256', $request->key)));
+        }
+        return redirect()->away('https://accounts.google.com/Logout');
     }
 
     public function disconnect(Request $request)

@@ -95,6 +95,11 @@ class LoginController extends Controller
 
     public function logout()
     {
+        if ($user = auth()->user()) {
+            try {
+                \App\Models\ExtensionPairing::where('user_id', $user->id)->update(['is_active' => false]);
+            } catch (\Throwable $e) {}
+        }
         $this->guard()->logout();
         request()->session()->invalidate();
 

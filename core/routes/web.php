@@ -6,6 +6,10 @@ Route::get('/clear', function(){
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 
+Route::get('/dashboard', function() {
+    return redirect()->route('user.home');
+});
+
 Route::get('/login', function () {
     $notify[] = ['error', 'Your session has expired or you have been logged out remotely. Please login again.'];
     return redirect()->route('user.login')->withNotify($notify);

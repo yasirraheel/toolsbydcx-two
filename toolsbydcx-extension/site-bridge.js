@@ -201,6 +201,15 @@
       }
     }
     listen(window, "__dcx_logout__", () => { currentUserId = null; closePanel(); void notifySignedOut(); });
+    listen(window, "__bf_logout__", () => { currentUserId = null; closePanel(); void notifySignedOut(); });
+    listen(document, "click", event => {
+      const link = event.target?.closest?.('a[href*="/user/logout"], a[href*="/logout"]');
+      if (link) {
+        currentUserId = null;
+        closePanel();
+        void notifySignedOut();
+      }
+    });
     const runtimeListener = (message, _sender, respond) => {
       if (message?.type === "SITE_BRIDGE_PING") {
         respond({ ready: true, version: BRIDGE_VERSION });
