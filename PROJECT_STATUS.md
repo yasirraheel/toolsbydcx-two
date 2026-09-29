@@ -1,6 +1,6 @@
 # ToolsByDcx — Project Status
 
-Updated: 2026-09-29. Branch: main. Deployed commit: 4eb0458.
+Updated: 2026-09-29. Branch: main. Deployed commit: bc22fc0.
 
 ## Current work
 
@@ -54,12 +54,12 @@ Repository root on server: ~/domains/toolsbydcx.com/public_html.
 Deployment completed on Hostinger with git pull --ff-only, Composer --no-dev --no-scripts, direct artisan package discovery, migration, cache clear and Blade cache. Production backup was written outside public_html at `/home/u390461415/toolsbydcx-backups/flow-20260929011823`.
 
 Verified after deployment:
-- Server HEAD: 4eb0458
+- Server HEAD: bc22fc0
 - Migration `2026_09_28_000001_bind_flow_attempts_to_pairings`: ran
-- `download/extension.zip`: HTTP 200, SHA256 `5fd9b95e6948696bb88d76356200f762eb0310545cc8ea1e14bd873fb22eca90`
+- `download/extension.zip`: HTTP 200, SHA256 `b9ab534dbd57320860ba1adaa4871313b7449450d8517b146c860436aa6b3c9d`
 - `GET /api/dcx-flow/status` without token: HTTP 401 JSON
 - `GET /user/flow-extension` without login: HTTP 302 to user login
-- Production DB count: 1 Flow account, 1 assigned Flow account, 0 active pairings
+- Production DB count: 1 Flow account, 1 assigned Flow account, 0 active pairings after revoking the verification pairing
 
 ## Remaining live setup
 
@@ -67,3 +67,4 @@ Verified after deployment:
 2. Complete the real Edge sign-in and CAPTCHA/manual-challenge checklist in FLOW_SETUP.md.
 
 Google credentials are transiently delivered to Google's form; this is not cookie injection. CAPTCHA requires the user. Extension-manager redirects and privacy overlays are usability restrictions, not tamper-proof browser security.
+
