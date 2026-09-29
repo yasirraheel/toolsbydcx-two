@@ -53,6 +53,12 @@ Route::middleware('auth')->name('user.')->group(function () {
 
     Route::middleware(['check.status','registration.complete'])->group(function () {
 
+        // ToolsByDcx Flow Extension — Website bridge endpoints (called by site-bridge.js via page JS)
+        Route::prefix('flow')->name('flow.bridge.')->controller('FlowBridgeController')->namespace('User')->group(function () {
+            Route::get('status', 'status')->name('status');
+            Route::post('pair-challenge', 'pairChallenge')->name('pair.challenge');
+        });
+
         Route::namespace('User')->group(function () {
             Route::get('flow-extension', 'FlowExtensionController@index')->name('flow-extension');
             Route::post('flow-extension/pair', 'FlowExtensionController@pair')->middleware('throttle:5,1')->name('flow-extension.pair');

@@ -1,4 +1,6 @@
-// ToolsByDcx Flow Popup Script
+// ToolsByDcx Flow — Popup Script
+// No connection code entry — pairing happens automatically via website session.
+// This popup only shows plan status and the Open Flow button, same as BunnyFlow.
 const $ = id => document.getElementById(id);
 const DAY_MS = 24 * 60 * 60 * 1000;
 let working = false;
@@ -16,11 +18,11 @@ function text(value) {
 function planLabel(user) {
   if (text(user?.planLabel)) return text(user.planLabel);
   const plan = text(user?.plan)?.toLowerCase();
-  return plan === "basic" ? "Starter Plan"
-    : plan === "pro" ? "Pro Plan"
-      : plan === "ultra" ? "Max Plan"
-        : plan === "heavy" ? "Heavy Plan"
-          : plan ? `${plan[0].toUpperCase()}${plan.slice(1)} Plan` : null;
+  return plan === "basic"  ? "Starter Plan"
+    : plan === "pro"   ? "Pro Plan"
+    : plan === "ultra" ? "Max Plan"
+    : plan === "heavy" ? "Heavy Plan"
+    : plan ? `${plan[0].toUpperCase()}${plan.slice(1)} Plan` : null;
 }
 
 function daysLabel(user) {
@@ -39,26 +41,29 @@ function render(result) {
   const connected = result?.connected === true;
   const user = result?.user || null;
   const name = text(user?.name) || text(user?.username) ||
-    (connected ? "ToolsByDcx customer" : "Connect on ToolsByDcx");
+    (connected ? "ToolsByDcx user" : "Not connected");
   $("customer-name").textContent = name;
   $("user-avatar").textContent = (name[0] || "?").toUpperCase();
 
   const label = planLabel(user);
   $("customer-plan").textContent = label || "";
   $("customer-plan").hidden = !label;
-  $("subscription-days").textContent = connected ? daysLabel(user) : "Active plan required";
+  $("subscription-days").textContent = connected ? daysLabel(user) : "Visit toolsbydcx.com to connect";
 
   const manifestVersion = chrome.runtime.getManifest?.().version;
   $("version-badge").textContent = `v${manifestVersion || "1.0.0"}`;
-  $("pair-form").hidden = connected || !supported;
-  $("disconnect").hidden = !connected;
-  $("start").hidden = !connected;
   $("start").disabled = !supported || !connected || working;
-  $("status").textContent = !supported
-    ? "Use desktop Microsoft Edge."
-    : connected
-    ? "Your plan is ready."
-    : (result?.message || "Enter a connection code from your dashboard or administrator.");
+
+  if (!supported) {
+    $("status").textContent = "Use desktop Microsoft Edge.";
+  } else if (connected) {
+    $("status").textContent = "Your plan is active.";
+  } else {
+    $("status").textContent = "Open ToolsByDcx in Edge to connect automatically.";
+    // Show the connect hint section
+    const hint = $("connect-hint");
+    if (hint) hint.hidden = false;
+  }
 }
 
 async function refresh() {
@@ -82,29 +87,11 @@ $("start").addEventListener("click", async () => {
     await refresh().catch(() => {});
   } finally {
     working = false;
-    await refresh().catch(() => {});
   }
 });
 
-$("pair-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (working) return;
-  working = true;
-  $("connect").disabled = true;
-  $("error").hidden = true;
-  try { await send("PAIR", { code: $("pair-code").value.trim() }); }
-  catch (error) { $("error").textContent = error.message; $("error").hidden = false; }
-  finally { working = false; $("connect").disabled = false; await refresh().catch(() => {}); }
-});
-$("disconnect").addEventListener("click", async () => {
-  $("disconnect").disabled = true;
-  try { await send("DISCONNECT"); await refresh(); }
-  catch (error) { $("error").textContent = error.message; $("error").hidden = false; }
-  finally { $("disconnect").disabled = false; }
-});
-
 refresh().catch(error => {
-  $("status").textContent = "ToolsByDcx could not check your plan.";
+  $("status").textContent = "Could not check your plan.";
   $("error").textContent = error?.message || "Please reopen the extension.";
   $("error").hidden = false;
 });

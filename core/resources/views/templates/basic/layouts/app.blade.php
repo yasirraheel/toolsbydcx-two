@@ -259,6 +259,14 @@
 
         })(jQuery);
     </script>
+
+    {{-- ToolsByDcx Flow Extension Bridge --}}
+    {{-- Responds to site-bridge.js postMessage events for auto-pairing (no manual code needed) --}}
+    @auth
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset('assets/js/flow-bridge.js') }}?v={{ config('app.version', '1') }}" defer></script>
+    @endauth
 </body>
+
 
 </html>

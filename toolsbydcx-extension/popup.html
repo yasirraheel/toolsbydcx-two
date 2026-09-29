@@ -11,13 +11,12 @@
     <header class="brand">
       <div class="brand-left">
         <div class="logo-circle">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+              stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <div class="brand-copy">
-          <div class="brand-title"><h1>ToolsByDcx Flow</h1></div>
-        </div>
+        <h1 class="brand-title">ToolsByDcx Flow</h1>
       </div>
       <span class="version-badge" id="version-badge">v1.0</span>
     </header>
@@ -25,20 +24,19 @@
     <section class="card user-card">
       <div class="avatar" id="user-avatar">?</div>
       <div class="user-details">
-        <div class="user-username" id="customer-name">Checking status…</div>
+        <div class="user-username" id="customer-name">Checking…</div>
         <div class="user-plan" id="customer-plan" hidden></div>
         <div class="user-days"><span id="subscription-days">Checking plan…</span></div>
       </div>
     </section>
 
     <div id="status" role="status" aria-live="polite">Checking your plan…</div>
-    <form id="pair-form" hidden>
-      <label for="pair-code">Connection code</label>
-      <input id="pair-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>
-      <button id="connect" class="main-action-btn" type="submit">Connect</button>
-      <p><a href="https://toolsbydcx.com/user/flow-extension" target="_blank" rel="noopener">Get a code from your dashboard</a></p>
-    </form>
-    <button id="disconnect" type="button" hidden>Disconnect</button>
+
+    <!-- Shown only when not connected -->
+    <div id="connect-hint" class="connect-hint" hidden>
+      <p>Visit <strong>toolsbydcx.com</strong> while signed in — the extension connects automatically.</p>
+    </div>
+
     <button id="start" class="main-action-btn" type="button" disabled>Open Flow</button>
     <p id="error" class="error" role="alert" hidden></p>
   </main>
