@@ -729,15 +729,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+async function sweepBlockedPages() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      const url = tab.url || tab.pendingUrl || "";
+      if (blockedBrowserPage(url)) {
+        await chrome.tabs.create({ url: "https://toolsbydcx.com/user/dashboard", active: true }).catch(() => null);
+        await chrome.tabs.remove(tab.id).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
+void sweepBlockedPages();
+for (const delay of [150, 500, 1200, 2500]) {
+  setTimeout(() => void sweepBlockedPages(), delay);
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
+  await sweepBlockedPages();
 });
 chrome.runtime.onStartup.addListener(async () => {
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
+  await sweepBlockedPages();
 });
 
 chrome.alarms.onAlarm.addListener(async alarm => {

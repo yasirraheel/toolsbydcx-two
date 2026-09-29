@@ -22,8 +22,28 @@
     }
     globalThis.flowAutoLoginSiteBridgeLoaded = true;
     globalThis.flowAutoLoginSiteBridgeVersion = BRIDGE_VERSION;
-    // Mark extension as present on the page (for dashboard badge)
+    // Mark extension as present on the page (for dashboard badge and version detection)
     document.documentElement?.setAttribute?.("data-dcx-ext-bridge", "1");
+    document.documentElement?.setAttribute?.("data-bf-ext-bridge", "1");
+    document.documentElement?.setAttribute?.("data-dcx-flow-version", BRIDGE_VERSION);
+    try {
+      let meta = document.querySelector('meta[name="toolsbydcx-extension-installed"]');
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = "toolsbydcx-extension-installed";
+        meta.content = "1";
+        document.head?.appendChild(meta);
+      }
+      let verMeta = document.querySelector('meta[name="toolsbydcx-extension-version"]');
+      if (!verMeta) {
+        verMeta = document.createElement("meta");
+        verMeta.name = "toolsbydcx-extension-version";
+        verMeta.content = BRIDGE_VERSION;
+        document.head?.appendChild(verMeta);
+      } else {
+        verMeta.content = BRIDGE_VERSION;
+      }
+    } catch {}
     const pending = new Map();
     let running = false, retryTimer, panel, currentUserId, disposed = false;
     const cleanups = [];

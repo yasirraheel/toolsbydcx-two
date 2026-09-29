@@ -640,7 +640,10 @@
                 $contactContent = getContent('contact.content', true)->data_values;
                 $whatsappNumber = preg_replace('/[^0-9]/', '', @$contactContent->phone_number);
                 $whatsappUrl = "https://wa.me/{$whatsappNumber}?text=" . urlencode("Hello, I would like to renew my account.");
-                $minExtVersion = gs('min_extension_version') ?: '1.9.6';
+                $minExtVersion = gs('min_extension_version') ?: '1.0.0';
+                if (!preg_match('/^\d+(\.\d+)*$/', $minExtVersion)) {
+                    $minExtVersion = '1.0.0';
+                }
                 $forceExtUpdate = (bool) gs('force_extension_update');
                 $extDownloadUrl = getExtensionDownloadUrl();
             @endphp
@@ -776,6 +779,11 @@
             }
 
             function checkPanelExtensionUpdate() {
+                if (window.location.pathname.indexOf('/flow') !== -1 ||
+                    document.documentElement.getAttribute('data-dcx-ext-bridge') === '1' ||
+                    document.documentElement.getAttribute('data-bf-ext-bridge') === '1') {
+                    return;
+                }
                 var extInstalledMeta = $('meta[name="toolsbydcx-extension-installed"]').length > 0 ||
                                        $('meta[name="wemate-extension-installed"]').length > 0 ||
                                        $('meta[name="shahabtech-extension-installed"]').length > 0 || 
