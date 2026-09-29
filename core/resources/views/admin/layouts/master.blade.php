@@ -44,20 +44,32 @@
             scrollbar-color: #334155 #0b0f19;
         }
 
-        /* Prevent Any Window-level Horizontal Scrolling */
-        html, body {
+        /* Prevent Nested Scrollbars - Single Root Window Scrollbar */
+        html {
             overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            height: 100%;
+        }
+        body {
+            overflow: visible !important;
+            overflow-x: clip !important;
+            overflow-y: visible !important;
+            min-height: 100%;
+            width: 100% !important;
             max-width: 100vw !important;
-            width: 100% !important;
+            position: relative;
         }
-        .page-wrapper {
-            overflow-x: hidden !important;
+        .page-wrapper,
+        .body-wrapper,
+        .bodywrapper__inner,
+        .container-fluid,
+        .col-xl-10,
+        .col-lg-9,
+        .row {
+            overflow: visible !important;
+            overflow-x: clip !important;
+            overflow-y: visible !important;
             max-width: 100% !important;
-            width: 100% !important;
-        }
-        .container-fluid {
-            max-width: 100% !important;
-            overflow-x: hidden !important;
         }
 
         /* Breadcrumb Nav Tabs (Top Bar) Dark Theme & Fix Margin Overflow */
@@ -262,13 +274,16 @@
             color: #cbd5e1 !important;
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
+            overflow: visible !important;
         }
         .page-wrapper {
             background-color: #0b0f19 !important;
             min-height: 100vh;
+            overflow: visible !important;
         }
         .body-wrapper {
             background-color: #0b0f19 !important;
+            overflow: visible !important;
         }
         .bodywrapper__inner {
             background-color: #0b0f19 !important;
