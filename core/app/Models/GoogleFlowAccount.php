@@ -53,6 +53,17 @@ class GoogleFlowAccount extends Model
         return is_array($this->backup_codes) ? count($this->backup_codes) : 0;
     }
 
+    public function getCurrentTotpCodeAttribute(): ?string
+    {
+        if (!$this->totp_secret_encrypted) return null;
+        try {
+            $secret = Crypt::decryptString($this->totp_secret_encrypted);
+            return (new \PragmaRX\Google2FA\Google2FA())->getCurrentOtp($secret);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

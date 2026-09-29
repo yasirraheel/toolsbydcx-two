@@ -26,6 +26,13 @@
                             <div class="col-md-6 form-group">
                                 <label>@lang('TOTP Secret (Base32)')</label>
                                 <input type="text" class="form-control" name="totp_secret" placeholder="Leave blank to keep unchanged">
+                                @if($account->current_totp_code)
+                                    <small class="text-success d-block mt-1">
+                                        <i class="las la-check-circle"></i> Configured — <strong>Live Code: <span class="badge badge--success" style="font-size: 1rem; letter-spacing: 2px;">{{ $account->current_totp_code }}</span></strong> (matches Google Authenticator)
+                                    </small>
+                                @else
+                                    <small class="text-muted d-block mt-1">Not configured. Enter Base32 key if 2FA is enabled.</small>
+                                @endif
                             </div>
                             <div class="col-md-6 form-group">
                                 <label>@lang('Status') <span class="text-danger">*</span></label>

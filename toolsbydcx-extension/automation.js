@@ -165,6 +165,10 @@
     let shieldShownAt = 0;
     function showShield() {
       if (!["accounts.google.com", "flow.google.com"].includes(location.hostname)) return;
+      if (/\/speedbump|\/passkey/i.test(location.pathname)) {
+        hideShield();
+        return;
+      }
       if (shieldHost?.isConnected) return;
       const parent = document.documentElement;
       if (!parent || typeof document.createElement !== "function") return;
@@ -1215,6 +1219,21 @@
       }
       if (!context.active) return;
       if (location.hostname !== "accounts.google.com") return;
+      // Google speedbump / passkey enrollment / recovery prompt handling:
+      // If Google shows a speedbump screen, dismiss it or make it visible
+      if (/\/speedbump|\/passkey/i.test(location.pathname)) {
+        hideShield();
+        const dismissBtn = button(/^(not now|skip|ask me later|no thanks|cancel|remind me later|continue without|maybe later)$/i) ||
+          elements('button, [role="button"], a').find(el => /\b(not now|skip|ask me later|no thanks|maybe later)\b/i.test(label(el)));
+        if (dismissBtn) {
+          if (clickOnce(`speedbump:${location.pathname}`, dismissBtn)) return;
+        }
+        if (settled("speedbump-screen")) {
+          await needManual(null, epoch);
+          return;
+        }
+        return;
+      }
       // A remembered-account chooser can expose stale alert text while its
       // controls are still painting. Handle this supported screen before the
       // generic error fallback so the first pass never pauses unnecessarily.
@@ -1562,6 +1581,13 @@
       if (/\/challenge\//.test(location.pathname)) {
         await needManual(null, epoch);
         if (!isCurrent(epoch)) return;
+      }
+      // If landed on any other Google prompt or speedbump screen with an optional skip/dismiss button
+      const fallbackDismiss = button(/^(not now|skip|ask me later|no thanks|cancel|remind me later|continue without|maybe later)$/i) ||
+        elements('button, [role="button"], a').find(el => /\b(not now|skip|ask me later|no thanks|maybe later)\b/i.test(label(el)));
+      if (fallbackDismiss) {
+        hideShield();
+        if (clickOnce(`fallback-dismiss:${location.pathname}`, fallbackDismiss)) return;
       }
     } catch (caught) {
       // Deliberately never include DOM contents, passwords, OTPs, or provider
