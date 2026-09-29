@@ -6,6 +6,9 @@
                 <form action="{{ route('admin.google-flow.store') }}" method="POST">
                     @csrf
                     <div class="card-body">
+                        <div class="alert alert-info">
+                            Add a Google account with access to Flow. Enter its current password, the Authenticator setup key (Base32 secret, not the changing 6-digit code), and unused Google backup codes (one 8-digit code per line). Assign an active ToolsByDcx user below. Google CAPTCHA, SMS, recovery, and approval prompts may still require manual completion.
+                        </div>
                         <div class="row">
                             <div class="col-md-6 form-group">
                                 <label>@lang('Label / Name')</label>

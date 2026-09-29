@@ -1,7 +1,7 @@
-// ToolsByDcx Flow - Browser Guard
 // Shared by the service worker and isolated extension/content-script contexts.
-// Detects Microsoft Edge (desktop) and Kiwi Browser (Android) as supported browsers.
+// This is a compatibility restriction, not a tamper-proof security boundary.
 (() => {
+  // One package supports desktop Microsoft Edge and Android Kiwi Browser.
   const browser = globalThis.navigator;
   const ua = browser?.userAgent || "";
   const brands = Array.isArray(browser?.userAgentData?.brands)
@@ -20,6 +20,8 @@
     !!browser?.brave;
   const lemur = brands.some(entry => /Lemur/i.test(entry?.brand || "")) ||
     /\bLemur\/\d+/i.test(ua);
+  // Kiwi commonly reports a Chrome-like Android UA. Exclude identifiable
+  // other browsers; this compatibility check is not browser attestation.
   const otherMobile = /EdgA\/|EdgiOS\/|OPR\/|Opera\/|Lemur\/|Firefox\/|FxiOS\/|SamsungBrowser\/|Quetta\/|Vivaldi\/|YaBrowser\//i.test(ua) ||
     brands.some(entry => /Edge|Opera|Brave|Lemur|Samsung|Quetta|Vivaldi/i.test(entry?.brand || "")) ||
     brave || edge || opera || lemur;
@@ -32,6 +34,10 @@
   globalThis.flowAutoLoginBrowser = runtimeAvailable ? browserKind : "unsupported";
   globalThis.flowAutoLoginIsEdge = runtimeAvailable && ["edge", "kiwi"].includes(browserKind);
   globalThis.flowAutoLoginIsMobile = runtimeAvailable && mobile;
+  // A page's navigator can be masked for compatibility and expose a Chrome-like
+  // UA even when it is open in Edge. Content scripts
+  // therefore ask the extension worker, whose navigator is authoritative,
+  // instead of making a browser decision from the page context.
   const isContentContext = typeof globalThis.window !== "undefined" &&
     globalThis.window.top === globalThis.window &&
     /^https?:$/.test(globalThis.location?.protocol || "");
@@ -45,7 +51,7 @@
           const response = await runtime.sendMessage({ type: "BROWSER_SUPPORT" });
           if (response?.ok === true) return response?.data?.supportedBrowser === true;
         } catch {
-          // Retry while worker starts.
+          // Retry a bounded number of times while the worker starts.
         }
       }
       return false;

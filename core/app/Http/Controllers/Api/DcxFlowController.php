@@ -6,168 +6,145 @@ use App\Http\Controllers\Controller;
 use App\Models\ExtensionPairing;
 use App\Models\FlowLoginAttempt;
 use App\Models\GoogleFlowAccount;
+use App\Services\FlowAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
+use PragmaRX\Google2FA\Google2FA;
 
 class DcxFlowController extends Controller
 {
     public function pair(Request $request)
     {
-        $request->validate([
-            'code' => 'required|string',
-            'installationId' => 'required|string',
-        ]);
-
-        $pairing = ExtensionPairing::where('pairing_code', $request->code)
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })->first();
-
-        if (!$pairing) {
-            return response()->json(['error' => 'Invalid or expired pairing code'], 400);
-        }
-
-        $pairing->access_token = Str::random(64);
-        $pairing->uninstall_token = Str::random(32);
-        $pairing->installation_id = $request->installationId;
-        $pairing->pairing_code = null;
-        $pairing->browser = $request->header('User-Agent');
-        $pairing->save();
-
-        return response()->json([
-            'accessToken' => $pairing->access_token,
-            'expiresAt' => $pairing->expires_at,
-            'uninstallToken' => $pairing->uninstall_token,
-        ]);
+        $request->validate(['code' => 'required|string|max:128', 'installationId' => 'required|string|max:64', 'codeVerifier' => 'nullable|string|min:43|max:128', 'expectedUserId' => 'nullable|integer']);
+        return DB::transaction(function () use ($request) {
+            $pairing = ExtensionPairing::where('pairing_code', $request->code)->where('is_active', true)->lockForUpdate()->first();
+            if (!$pairing || !$pairing->expires_at || $pairing->isExpired()) {
+                return response()->json(['message' => 'Invalid or expired pairing code.'], 422);
+            }
+            if ($pairing->code_challenge) {
+                $challenge = rtrim(strtr(base64_encode(hash('sha256', (string) $request->codeVerifier, true)), '+/', '-_'), '=');
+                if (!hash_equals($pairing->code_challenge, $challenge) || (int) $request->expectedUserId !== (int) $pairing->user_id) {
+                    return response()->json(['message' => 'The connection proof does not match this browser.'], 422);
+                }
+            }
+            $user = $pairing->user;
+            $account = $pairing->googleFlowAccount;
+            if (!FlowAccess::eligible($user) || !$account || $account->status !== 'active' || $account->assigned_to_user_id != $user->id) {
+                return response()->json(['message' => 'An active plan and assigned account are required.'], 403);
+            }
+            $token = Str::random(64);
+            $pairing->update([
+                'access_token' => hash('sha256', $token), 'uninstall_token' => hash('sha256', $uninstallToken = Str::random(48)),
+                'installation_id' => $request->installationId, 'pairing_code' => null, 'code_challenge' => null,
+                'expires_at' => $user->expires_at,
+                'browser' => Str::limit($request->header('User-Agent', ''), 250, ''),
+                'extension_version' => Str::limit($request->header('X-DCX-Flow-Version', ''), 50, ''),
+            ]);
+            return response()->json(['accessToken' => $token, 'expiresAt' => $pairing->expires_at->toIso8601String(),
+                'uninstallToken' => $uninstallToken, 'userId' => $user->id])->header('Cache-Control', 'no-store, private');
+        });
     }
 
     public function status(Request $request)
     {
         $user = $request->user();
+        $account = $this->account($request);
         return response()->json([
-            'status' => 'connected',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]
+            'connected' => true, 'userId' => $user->id,
+            'user' => ['id' => $user->id, 'name' => trim($user->fullname) ?: $user->username,
+                'plan' => $user->plan?->name, 'planLabel' => $user->plan?->name,
+                'planExpiresAt' => $user->expires_at?->toIso8601String()],
+            'assignedAccount' => ['email' => $account->email],
         ]);
+    }
+
+    private function account(Request $request): GoogleFlowAccount
+    {
+        $pairing = $request->attributes->get('extension_pairing');
+        $account = $pairing->googleFlowAccount;
+        abort_unless($account && $account->status === 'active' && $account->assigned_to_user_id == $request->user()->id,
+            403, 'No active Google account is assigned to this connection.');
+        return $account;
     }
 
     public function start(Request $request)
     {
-        $user = $request->user();
-        $pairing = $request->attributes->get('extension_pairing');
-
-        if (!$pairing || !$pairing->google_flow_account_id) {
-            return response()->json(['error' => 'No assigned Google account'], 400);
-        }
-
-        $account = $pairing->googleFlowAccount;
-        if ($account->status !== 'active') {
-            return response()->json(['error' => 'Assigned account is not active'], 400);
-        }
-
-        $attempt = FlowLoginAttempt::create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'google_flow_account_id' => $account->id,
-            'status' => 'in_progress',
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        return response()->json([
-            'attemptId' => $attempt->id,
-            'email' => $account->email,
-        ]);
+        $account = $this->account($request);
+        return DB::transaction(function () use ($request, $account) {
+            $pairing = ExtensionPairing::whereKey($request->attributes->get('extension_pairing')->id)->lockForUpdate()->firstOrFail();
+            abort_unless($pairing->is_active && $pairing->access_token, 401, 'Connection revoked.');
+            FlowLoginAttempt::where('extension_pairing_id', $pairing->id)->where('status', 'in_progress')
+                ->update(['status' => 'cancelled', 'outcome' => 'cancelled']);
+            $attempt = FlowLoginAttempt::create([
+                'id' => (string) Str::uuid(), 'user_id' => $request->user()->id,
+                'google_flow_account_id' => $account->id, 'extension_pairing_id' => $pairing->id,
+                'status' => 'in_progress', 'expires_at' => now()->addMinutes(10),
+            ]);
+            return response()->json(['attemptId' => $attempt->id, 'expiresAt' => $attempt->expires_at->toIso8601String()]);
+        });
     }
 
     public function step(Request $request)
     {
-        $request->validate([
-            'attemptId' => 'required|string',
-            'stage' => 'required|string|in:email,password,otp,backup_code',
-        ]);
-
-        $attempt = FlowLoginAttempt::where('id', $request->attemptId)
-            ->where('user_id', $request->user()->id)
-            ->where('status', 'in_progress')
-            ->first();
-
-        if (!$attempt || $attempt->expires_at->isPast()) {
-            return response()->json(['error' => 'Invalid or expired attempt'], 400);
-        }
-
-        $account = $attempt->googleFlowAccount;
-
-        switch ($request->stage) {
-            case 'email':
-                return response()->json(['email' => $account->email]);
-            case 'password':
-                return response()->json(['password' => $account->password]);
-            case 'otp':
-                try {
-                    $google2fa = new \PragmaRX\Google2FA\Google2FA();
-                    $secret = Crypt::decryptString($account->totp_secret_encrypted);
-                    $otp = $google2fa->getCurrentOtp($secret);
-                    $attempt->increment('otp_attempt_count');
-                    return response()->json(['otp' => $otp]);
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Failed to generate OTP'], 500);
-                }
-            case 'backup_code':
-                if (empty($account->backup_codes)) {
-                    return response()->json(['error' => 'No backup codes available'], 400);
-                }
-                $codes = $account->backup_codes;
-                $code = array_shift($codes);
-                $account->backup_codes = $codes;
-                $account->save();
-                
-                $attempt->update(['backup_code_used' => true]);
-                
-                return response()->json(['backup_code' => $code]);
-        }
-
-        return response()->json(['error' => 'Invalid stage'], 400);
+        $request->validate(['attemptId' => 'required|uuid', 'stage' => 'required|in:email,password,otp,backup_code']);
+        $this->account($request);
+        return DB::transaction(function () use ($request) {
+            $attempt = FlowLoginAttempt::whereKey($request->attemptId)->where('user_id', $request->user()->id)
+                ->where('extension_pairing_id', $request->attributes->get('extension_pairing')->id)
+                ->where('status', 'in_progress')->lockForUpdate()->first();
+            abort_unless($attempt && $attempt->expires_at->isFuture(), 422, 'Invalid or expired attempt.');
+            $account = GoogleFlowAccount::whereKey($attempt->google_flow_account_id)->lockForUpdate()->first();
+            abort_unless($account && $account->status === 'active' && $account->assigned_to_user_id == $request->user()->id,
+                403, 'Account assignment changed.');
+            switch ($request->stage) {
+                case 'email': return response()->json(['value' => $account->email]);
+                case 'password': return response()->json(['value' => $account->password]);
+                case 'otp':
+                    abort_if($attempt->otp_attempt_count >= 2, 422, 'Automatic OTP limit reached. Use another verification method.');
+                    abort_unless($account->totp_secret_encrypted, 422, 'No authenticator secret is configured.');
+                    try {
+                        $otp = (new Google2FA())->getCurrentOtp(Crypt::decryptString($account->totp_secret_encrypted));
+                    } catch (\Exception $e) {
+                        return response()->json(['message' => 'Authenticator configuration is invalid. Contact your administrator.'], 422);
+                    }
+                    // Near-expiry prefetches are discarded by the client without submitting.
+                    if (30 - (time() % 30) >= 8) { $attempt->increment('otp_attempt_count'); }
+                    return response()->json(['value' => $otp, 'expiresAt' => now()->setTimestamp((intdiv(time(), 30) + 1) * 30)->toIso8601String()]);
+                case 'backup_code':
+                    abort_if($attempt->backup_code_used, 422, 'A backup code was already issued for this attempt.');
+                    $codes = array_values($account->backup_codes ?? []);
+                    abort_unless(count($codes), 422, 'No backup codes are available.');
+                    $code = array_shift($codes);
+                    $account->update(['backup_codes' => $codes]);
+                    $attempt->update(['backup_code_used' => true]);
+                    return response()->json(['value' => $code]);
+            }
+        });
     }
 
     public function finish(Request $request)
     {
-        $request->validate([
-            'attemptId' => 'required|string',
-            'outcome' => 'required|string|in:success,cancelled,failed',
-        ]);
-
-        $attempt = FlowLoginAttempt::where('id', $request->attemptId)
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if (!$attempt) {
-            return response()->json(['error' => 'Attempt not found'], 404);
-        }
-
-        $attempt->update([
-            'status' => $request->outcome,
-            'outcome' => $request->outcome,
-        ]);
-
+        $request->validate(['attemptId' => 'required|uuid', 'outcome' => 'required|in:success,cancelled,failed']);
+        $attempt = FlowLoginAttempt::whereKey($request->attemptId)->where('user_id', $request->user()->id)
+            ->where('extension_pairing_id', $request->attributes->get('extension_pairing')->id)->firstOrFail();
+        abort_unless($attempt->expires_at->isFuture(), 422, 'Attempt expired.');
+        FlowLoginAttempt::whereKey($attempt->id)->where('status', 'in_progress')
+            ->update(['status' => $request->outcome, 'outcome' => $request->outcome]);
         return response()->json(['status' => 'recorded']);
+    }
+
+    public function uninstall(Request $request)
+    {
+        $request->validate(['key' => 'required|string|size:48']);
+        FlowAccess::revoke(ExtensionPairing::where('uninstall_token', hash('sha256', $request->key)));
+        return response('ToolsByDcx extension connection removed.', 200)->header('Cache-Control', 'no-store');
     }
 
     public function disconnect(Request $request)
     {
-        $pairing = $request->attributes->get('extension_pairing');
-        if ($pairing) {
-            $pairing->update([
-                'is_active' => false,
-                'access_token' => null,
-            ]);
-        }
-
+        FlowAccess::revoke(ExtensionPairing::whereKey($request->attributes->get('extension_pairing')->id));
         return response()->json(['status' => 'disconnected']);
     }
 }

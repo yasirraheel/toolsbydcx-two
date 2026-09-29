@@ -143,3 +143,8 @@ main {
   padding: 8px 10px;
   line-height: 1.4;
 }
+
+[hidden] { display: none !important; }
+#pair-code { box-sizing: border-box; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #7c3aed; border-radius: 8px; background: #161321; color: white; font: inherit; letter-spacing: 4px; }
+a { color: #c4b5fd; }
+#disconnect { margin-bottom: 10px; cursor: pointer; }

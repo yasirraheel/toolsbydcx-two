@@ -50,12 +50,15 @@ function render(result) {
 
   const manifestVersion = chrome.runtime.getManifest?.().version;
   $("version-badge").textContent = `v${manifestVersion || "1.0.0"}`;
+  $("pair-form").hidden = connected || !supported;
+  $("disconnect").hidden = !connected;
+  $("start").hidden = !connected;
   $("start").disabled = !supported || !connected || working;
   $("status").textContent = !supported
     ? "Use desktop Microsoft Edge."
     : connected
     ? "Your plan is ready."
-    : "Open ToolsByDcx in this browser and activate your plan.";
+    : (result?.message || "Enter a connection code from your dashboard or administrator.");
 }
 
 async function refresh() {
@@ -79,7 +82,25 @@ $("start").addEventListener("click", async () => {
     await refresh().catch(() => {});
   } finally {
     working = false;
+    await refresh().catch(() => {});
   }
+});
+
+$("pair-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (working) return;
+  working = true;
+  $("connect").disabled = true;
+  $("error").hidden = true;
+  try { await send("PAIR", { code: $("pair-code").value.trim() }); }
+  catch (error) { $("error").textContent = error.message; $("error").hidden = false; }
+  finally { working = false; $("connect").disabled = false; await refresh().catch(() => {}); }
+});
+$("disconnect").addEventListener("click", async () => {
+  $("disconnect").disabled = true;
+  try { await send("DISCONNECT"); await refresh(); }
+  catch (error) { $("error").textContent = error.message; $("error").hidden = false; }
+  finally { $("disconnect").disabled = false; }
 });
 
 refresh().catch(error => {

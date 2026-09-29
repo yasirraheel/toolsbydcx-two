@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         using:function(){
+            Route::middleware('api')->prefix('api')->group(base_path('routes/api.php'));
             Route::namespace('App\Http\Controllers')->middleware([VugiChugi::mdNm()])->group(function(){
                 Route::middleware(['web'])
                     ->namespace('Admin')
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'dcx.extension.auth' => \App\Http\Middleware\DcxExtensionAuthMiddleware::class,
             'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
             'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
             'can' => \Illuminate\Auth\Middleware\Authorize::class,
@@ -93,6 +95,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
         $exceptions->respond(function (Response $response) {
+            if (request()->is('api/dcx-flow/*')) { return $response; }
             if ($response->getStatusCode() === 401) {
                 if (request()->is('api/*')) {
                     $notify[] = 'Unauthorized request';
@@ -100,7 +103,7 @@ return Application::configure(basePath: dirname(__DIR__))
                         'remark' => 'unauthenticated',
                         'status' => 'error',
                         'message' => ['error' => $notify]
-                    ]);
+                    ], 401);
                 }
             }
 

@@ -1,13 +1,14 @@
-// ToolsByDcx Flow — Privacy-only Google cosmetics.
-// Hides sign-out buttons and low-credits banners on Google/Flow pages.
-// Never clicks, removes, or navigates account controls.
+// Privacy-only Google cosmetics. This deliberately has no browser-support
+// handshake: account controls and credit notices must not flash while the
+// normal automation scripts are starting. It never clicks, removes, or
+// navigates an account control.
 (() => {
   "use strict";
-  if (globalThis.__dcxPrivacyOnlyLoaded) {
-    globalThis.__dcxPrivacyOnlyRescan?.();
+  if (globalThis.__bfPrivacyOnlyLoaded) {
+    globalThis.__bfPrivacyOnlyRescan?.();
     return;
   }
-  globalThis.__dcxPrivacyOnlyLoaded = true;
+  globalThis.__bfPrivacyOnlyLoaded = true;
   const FLOW = location.hostname === "flow.google.com";
   const topLevel = window.top === window;
   const FLOW_LANDING = "https://flow.google.com/about";
@@ -20,15 +21,17 @@
   ]);
   const root = document.documentElement;
   const styleText = `
-    [data-dcx-credit-banner-hidden], [data-dcx-signout-hidden] {
+    [data-bf-credit-banner-hidden], [data-bf-signout-hidden] {
       display:none !important; visibility:hidden !important;
       pointer-events:none !important;
     }
   `;
   function installStyle(host) {
-    if (!host?.querySelector || host.querySelector("#dcx-privacy-only-style")) return;
+    if (!host?.querySelector || host.querySelector("#bf-privacy-only-style")) return;
     const style = document.createElement("style");
-    style.id = "dcx-privacy-only-style";
+    style.id = "bf-privacy-only-style";
+  // Attribute markers are applied by JS, while this style is installed before
+  // the first paint and therefore also covers recycled SPA nodes.
     style.textContent = styleText;
     host.appendChild(style);
   }
@@ -40,6 +43,8 @@
     return location.pathname === "/" || location.pathname === "/index.html";
   }
   if (isGoogleHome()) {
+    // The destination is not a Google homepage, so this cannot loop. Assign
+    // only in the top frame; embedded Google widgets remain untouched.
     location.replace(FLOW_LANDING);
     return;
   }
@@ -60,6 +65,8 @@
   }
   function hide(el, marker) {
     if (!el || typeof el.setAttribute !== "function") return;
+    // Keep the account picker/menu itself intact: only the matching action is
+    // hidden, including when a translated label is supplied via aria-label.
     el.setAttribute(marker, "");
   }
   function safeCreditRow(el) {
@@ -77,11 +84,16 @@
     const actions = [...rootNode.querySelectorAll("*")].filter(action =>
       action.matches?.(controls) && addCreditsText.test(subtreeText(action)));
     for (const action of actions) {
+      // The live Flow row does not expose a stable role/class. Start at the
+      // exact Add AI credits control and hide only the nearest ancestor that
+      // also contains the exact low/reset notice. Never climb into app shells.
       for (let candidate = action.parentElement; candidate; candidate = candidate.parentElement) {
         if (candidate === document.documentElement || candidate === document.body) break;
+        // Banner containers may expose a generic aria-label. Match the actual
+        // rendered descendant copy instead of letting that label mask it.
         const wording = subtreeText(candidate);
         if (lowCreditsText.test(wording) && creditsResetText.test(wording)) {
-          if (safeCreditRow(candidate)) hide(candidate, "data-dcx-credit-banner-hidden");
+          if (safeCreditRow(candidate)) hide(candidate, "data-bf-credit-banner-hidden");
           break;
         }
       }
@@ -94,7 +106,7 @@
       if (el.matches?.(controls)) {
         const href = el.getAttribute("href") || "";
         if (signOutHref.test(href) || signOutText.test(textOf(el))) {
-          hide(el, "data-dcx-signout-hidden");
+          hide(el, "data-bf-signout-hidden");
         }
       }
       if (el.shadowRoot) {
@@ -113,5 +125,7 @@
     scan(rootNode);
   }
   observe(document);
-  globalThis.__dcxPrivacyOnlyRescan = () => scan(document);
+  globalThis.__bfPrivacyOnlyRescan = () => scan(document);
+  // Shadow roots attached after this script starts are discovered by the
+  // document observer's scan; attachShadow wrapping is intentionally avoided.
 })();

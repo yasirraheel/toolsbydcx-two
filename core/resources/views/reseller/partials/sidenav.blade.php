@@ -5,6 +5,7 @@
         <span>@lang('Dashboard')</span>
     </a>
 
+    <a class="nav-link" href="{{ route('reseller.flow-extensions') }}"><i class="las la-plug"></i><span>Flow Extensions</span></a>
     {{-- Client Users --}}
     <a class="nav-link {{ request()->routeIs('reseller.users.index', 'reseller.users.edit') ? 'active' : '' }}" href="{{ route('reseller.users.index') }}">
         <i class="las la-users fs-5"></i>

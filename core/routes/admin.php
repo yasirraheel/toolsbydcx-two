@@ -432,6 +432,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/edit/{id}', 'edit')->name('edit');
         Route::post('/update/{id}', 'update')->name('update');
         Route::post('/delete/{id}', 'delete')->name('delete');
+        Route::post('/assign/{id}', 'assignAccount')->name('assign');
         Route::post('/generate-pairing', 'generatePairingCode')->name('generate-pairing-code');
         Route::post('/revoke-extension/{id}', 'revokeExtension')->name('revoke-extension');
         Route::get('/pairings', 'pairings')->name('pairings');

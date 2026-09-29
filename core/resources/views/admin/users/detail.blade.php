@@ -1,6 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('panel')
+    @include('admin.google_flow.user_pairing_section')
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
 

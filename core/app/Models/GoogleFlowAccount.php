@@ -29,6 +29,20 @@ class GoogleFlowAccount extends Model
         'backup_codes' => 'array',
     ];
 
+    public function setBackupCodesAttribute($codes)
+    {
+        $this->attributes['backup_codes'] = $codes === null ? null : json_encode(array_map(
+            fn($code) => 'enc:'.Crypt::encryptString((string) $code), array_values($codes)
+        ));
+    }
+
+    public function getBackupCodesAttribute($value)
+    {
+        if (!$value) return [];
+        return array_map(fn($code) => str_starts_with((string) $code, 'enc:')
+            ? Crypt::decryptString(substr($code, 4)) : (string) $code, json_decode($value, true) ?: []);
+    }
+
     public function getPasswordAttribute()
     {
         return $this->password_encrypted ? Crypt::decryptString($this->password_encrypted) : null;

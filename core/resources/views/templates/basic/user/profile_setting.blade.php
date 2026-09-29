@@ -66,9 +66,19 @@
                                         $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
                                             ->whereIn('id', (array)($user->account_ids ?? []))
                                             ->get();
+                                        $flowAccount = \App\Models\GoogleFlowAccount::active()
+                                            ->where('assigned_to_user_id', $user->id)
+                                            ->first();
                                     @endphp
-                                    @if($assignedAccounts->isNotEmpty())
+                                    @if($assignedAccounts->isNotEmpty() || $flowAccount)
                                         <div class="d-flex flex-wrap gap-2">
+                                            @if($flowAccount)
+                                                <span class="badge border p-2 d-inline-flex align-items-center gap-1" style="background-color: hsl(var(--white)/0.08); color: hsl(var(--white)/0.9); font-size: 13px; border-color: hsl(var(--white)/0.15) !important;">
+                                                    <i class="las la-bolt text--primary"></i>
+                                                    <strong>@lang('Google Flow')</strong>
+                                                    <span class="text-muted" style="color: hsl(var(--white)/0.6) !important;">({{ $flowAccount->label ?: $flowAccount->email }})</span>
+                                                </span>
+                                            @endif
                                             @foreach($assignedAccounts as $acc)
                                                 <span class="badge border p-2 d-inline-flex align-items-center gap-1" style="background-color: hsl(var(--white)/0.08); color: hsl(var(--white)/0.9); font-size: 13px; border-color: hsl(var(--white)/0.15) !important;">
                                                     <i class="las la-check-circle text--success"></i>

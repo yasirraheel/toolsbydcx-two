@@ -5,6 +5,7 @@
         <span>@lang('Dashboard')</span>
     </a>
 
+    <a href="{{ route('user.flow-extension') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.flow-extension*') }}"><i class="las la-plug fs-5"></i><span>Flow Extension</span></a>
     {{-- Subscription Plans --}}
     <a href="{{ route('plans') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('plans*') }}">
         <i class="las la-crown fs-5"></i>

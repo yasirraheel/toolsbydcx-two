@@ -1,43 +1,34 @@
-// ToolsByDcx Flow — Site Bridge
-// Communicates with the ToolsByDcx website and syncs sign-in/sign-out state.
+// Only relay explicitly allowed messages from the same ToolsByDcx page.
 (() => {
-  "use strict";
-  if (globalThis.__dcxSiteBridgeVersion === "1.0.0") return;
+  if (window.top !== window || !["https://toolsbydcx.com", "https://www.toolsbydcx.com"].includes(location.origin)) return;
+  if (globalThis.__dcxSiteBridgeVersion === "1.0.1") return;
   globalThis.__dcxSiteBridgeCleanup?.();
-  globalThis.__dcxSiteBridgeVersion = "1.0.0";
-
-  let disposed = false;
-  function cleanup() { disposed = true; delete globalThis.__dcxSiteBridgeVersion; delete globalThis.__dcxSiteBridgeCleanup; }
-  globalThis.__dcxSiteBridgeCleanup = cleanup;
-
-  async function send(type, extra = {}) {
-    if (disposed) return null;
-    try {
-      const response = await chrome.runtime.sendMessage({ type, ...extra });
-      return response?.ok ? response.data : null;
-    } catch { return null; }
-  }
-
-  // Listen for messages from the ToolsByDcx website
-  window.addEventListener("message", async event => {
-    if (disposed || event.source !== window || typeof event.data !== "object") return;
+  globalThis.__dcxSiteBridgeVersion = "1.0.1";
+  const types = { DCX_FLOW_STATUS: "SITE_PRESENCE", DCX_FLOW_AUTO_STATUS: "SITE_AUTO_STATUS", DCX_FLOW_PAIR: "SITE_AUTO_PAIR", DCX_FLOW_START: "SITE_AUTO_START", DCX_FLOW_SIGNED_OUT: "SITE_AUTO_SIGNED_OUT" };
+  const listener = async event => {
+    if (event.source !== window || event.origin !== location.origin || !event.data || !types[event.data.type]) return;
     const msg = event.data;
-    if (!msg?.type?.startsWith?.("DCX_FLOW_")) return;
-
-    if (msg.type === "DCX_FLOW_STATUS") {
-      const result = await send("STATUS");
-      window.postMessage({ type: "DCX_FLOW_STATUS_REPLY", data: result, requestId: msg.requestId }, "*");
-    }
-    if (msg.type === "DCX_FLOW_SIGNED_OUT") {
-      const result = await send("SITE_AUTO_SIGNED_OUT");
-      window.postMessage({ type: "DCX_FLOW_SIGNED_OUT_REPLY", data: result }, "*");
-    }
-    if (msg.type === "DCX_FLOW_PAIR") {
-      const result = await send("SITE_AUTO_PAIR", { code: msg.code, installationId: msg.installationId });
-      window.postMessage({ type: "DCX_FLOW_PAIR_REPLY", data: result, requestId: msg.requestId }, "*");
-    }
-  });
-
-  // Signal to the website that the extension is present
-  window.postMessage({ type: "DCX_FLOW_EXTENSION_PRESENT", version: "1.0.0" }, "*");
+    try {
+      const response = await chrome.runtime.sendMessage({ type: types[msg.type], userId: msg.userId, consent: msg.consent === true, ...(msg.type === "DCX_FLOW_PAIR" ? { code: msg.code } : {}) });
+      window.postMessage({ type: `${msg.type}_REPLY`, data: response?.ok ? response.data : null, error: response?.error, requestId: msg.requestId }, location.origin);
+    } catch { window.postMessage({ type: `${msg.type}_REPLY`, error: "Reload the page after installing the extension.", requestId: msg.requestId }, location.origin); }
+  };
+  const ping = (message, sender, respond) => {
+    if (message?.type === "SITE_BRIDGE_PING") respond({ ready: true, version: "1.0.1" });
+  };
+  const logout = async event => {
+    const link = event.target.closest?.('a[href]');
+    if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+    let url;
+    try { url = new URL(link.href); } catch { return; }
+    if (url.origin !== location.origin || url.pathname !== '/user/logout') return;
+    event.preventDefault();
+    try { await chrome.runtime.sendMessage({ type: 'SITE_AUTO_SIGNED_OUT' }); } catch {}
+    location.assign(url.href);
+  };
+  document.addEventListener('click', logout, true);
+  chrome.runtime.onMessage.addListener(ping);
+  window.addEventListener("message", listener);
+  globalThis.__dcxSiteBridgeCleanup = () => { window.removeEventListener("message", listener); chrome.runtime.onMessage.removeListener(ping); document.removeEventListener('click', logout, true); };
+  window.postMessage({ type: "DCX_FLOW_EXTENSION_PRESENT", version: "1.0.1" }, location.origin);
 })();

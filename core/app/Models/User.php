@@ -68,6 +68,16 @@ class User extends Authenticatable
         });
     }
 
+    public function flowPairings()
+    {
+        return $this->hasMany(ExtensionPairing::class);
+    }
+
+    public function assignedGoogleFlowAccount()
+    {
+        return $this->hasOne(GoogleFlowAccount::class, 'assigned_to_user_id');
+    }
+
     public function reseller()
     {
         return $this->belongsTo(User::class, 'reseller_id');

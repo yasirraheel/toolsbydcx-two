@@ -24,7 +24,7 @@ class UserController extends Controller
     public function home()
     {
         $pageTitle = 'Dashboard';
-        $user      = auth()->user()->load('plan');
+        $user      = auth()->user()->load(['plan', 'assignedGoogleFlowAccount']);
 
         if ($user->is_reseller) {
             return redirect()->route('reseller.dashboard');
@@ -69,11 +69,14 @@ class UserController extends Controller
         }
 
         $assignedAccounts = $assignedAccounts->unique('id')->values();
+        $flowAccount = $user->assignedGoogleFlowAccount && $user->assignedGoogleFlowAccount->status === 'active'
+            ? $user->assignedGoogleFlowAccount
+            : null;
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
 
-        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
+        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
     }
 
     public function subscribePlan(Request $request, $id)

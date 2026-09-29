@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class ExtensionPairing extends Model
 {
+    protected $hidden = ['access_token', 'uninstall_token', 'pairing_code'];
     protected $fillable = [
         'user_id',
+        'code_challenge',
         'google_flow_account_id',
         'pairing_code',
         'access_token',

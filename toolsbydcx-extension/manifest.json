@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Opens and prepares Google Flow for your active ToolsByDcx plan.",
   "icons": {
     "16": "icons/icon16.png",
@@ -18,7 +18,10 @@
     "declarativeNetRequest",
     "scripting"
   ],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "incognito": "not_allowed",
   "background": {
     "service_worker": "background.js",
@@ -36,8 +39,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://toolsbydcx.com/*", "https://www.toolsbydcx.com/*"],
-      "js": ["browser-guard.js", "site-bridge.js"],
+      "matches": [
+        "https://toolsbydcx.com/*",
+        "https://www.toolsbydcx.com/*"
+      ],
+      "js": [
+        "browser-guard.js",
+        "site-bridge.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     },
@@ -48,27 +57,51 @@
         "https://*.google.com/*",
         "https://*.google.com.pk/*",
         "https://www.google.com/*",
+        "https://www.google.com.pk/*",
         "https://www.google.co.uk/*",
         "https://www.google.ca/*",
         "https://www.google.com.au/*",
         "https://www.google.co.in/*",
         "https://www.google.de/*",
         "https://www.google.fr/*",
-        "https://www.google.es/*"
+        "https://www.google.es/*",
+        "https://www.google.it/*",
+        "https://www.google.nl/*",
+        "https://www.google.com.br/*",
+        "https://www.google.com.mx/*",
+        "https://www.google.co.jp/*",
+        "https://www.google.co.za/*",
+        "https://www.google.com.tr/*"
       ],
-      "js": ["privacy-only.js"],
+      "js": [
+        "privacy-only.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     },
     {
-      "matches": ["https://flow.google.com/*"],
-      "js": ["browser-guard.js", "login-blocker.js", "flow-privacy.js", "lower-model-prompt.js"],
+      "matches": [
+        "https://flow.google.com/*"
+      ],
+      "js": [
+        "browser-guard.js",
+        "login-blocker.js",
+        "flow-privacy.js",
+        "lower-model-prompt.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     },
     {
-      "matches": ["https://accounts.google.com/*", "https://flow.google.com/*"],
-      "js": ["browser-guard.js", "progress-overlay.js", "automation.js"],
+      "matches": [
+        "https://accounts.google.com/*",
+        "https://flow.google.com/*"
+      ],
+      "js": [
+        "browser-guard.js",
+        "progress-overlay.js",
+        "automation.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }

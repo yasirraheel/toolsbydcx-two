@@ -54,6 +54,9 @@ Route::middleware('auth')->name('user.')->group(function () {
     Route::middleware(['check.status','registration.complete'])->group(function () {
 
         Route::namespace('User')->group(function () {
+            Route::get('flow-extension', 'FlowExtensionController@index')->name('flow-extension');
+            Route::post('flow-extension/pair', 'FlowExtensionController@pair')->middleware('throttle:5,1')->name('flow-extension.pair');
+            Route::post('flow-extension/revoke', 'FlowExtensionController@revoke')->name('flow-extension.revoke');
 
             Route::controller('UserController')->group(function(){
                 Route::get('dashboard', 'home')->name('home');

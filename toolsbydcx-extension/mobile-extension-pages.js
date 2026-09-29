@@ -1,4 +1,6 @@
-// Browser-owned extension managers only.
+// Browser-owned extension managers only. Never match ordinary website text,
+// URLs containing "extensions", or chrome-extension:// pages (including ours).
+// Native Android screens that expose no tab URL cannot be detected here.
 export function isMobileExtensionsPage(value) {
   if (typeof value !== "string") return false;
   if (/^about:extensions(?:[/?#]|$)/i.test(value)) return true;

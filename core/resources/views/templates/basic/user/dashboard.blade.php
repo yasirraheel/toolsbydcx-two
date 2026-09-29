@@ -2,6 +2,10 @@
 
 @section('content')
     <div class="dashboard-section">
+        <div class="card p-3 mb-4 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
+            <div><strong>Flow Extension</strong> <span id="flow-presence" class="badge bg-secondary">Not detected</span><div>Download, connect, and manage your Google Flow extension.</div></div>
+            <a href="{{ route('user.flow-extension') }}" class="btn btn--base">Connect your extension</a>
+        </div>
 
         {{-- Subscription Expiry Calculation --}}
         @php
@@ -30,6 +34,9 @@
             } else {
                 $validityText = 'Expires Today';
             }
+
+            $flowAccount = $flowAccount ?? null;
+            $assignedToolsCount = $assignedAccounts->count() + ($flowAccount ? 1 : 0);
         @endphp
 
         @if($isExpired)
@@ -95,7 +102,7 @@
                         </div>
                     </div>
                     <h3 class="text-white fw-bold mb-1">
-                        {{ count((array)($user->account_ids ?? [])) }} <small class="fs-6 text-muted">@lang('Unlocked')</small>
+                        {{ $assignedToolsCount }} <small class="fs-6 text-muted">@lang('Unlocked')</small>
                     </h3>
                     <div class="mt-auto pt-2 text-muted small">
                         <i class="las la-check-circle text-success"></i> @lang('Active on your account')
@@ -150,10 +157,44 @@
                             <i class="las la-cubes text--primary me-2"></i> @lang('Accessible Tools & Platforms')
                         </h5>
                         <span class="badge bg--primary px-3 py-2 fw-semibold">
-                            <i class="las la-check-circle me-1"></i> {{ count((array)($user->account_ids ?? [])) }} @lang('Tools Unlocked')
+                            <i class="las la-check-circle me-1"></i> {{ $assignedToolsCount }} @lang('Tools Unlocked')
                         </span>
                     </div>
                     <div class="card-body">
+                        @if($flowAccount)
+                            <div class="product-item">
+                                <div class="product-item__wrapper">
+                                    <div class="product-item__thumb">
+                                        <div style="width: 70px; height: 70px; background: rgba(124, 58, 237, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                            <i class="las la-bolt" style="font-size: 3rem; color: #a78bfa;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="product-item__content">
+                                        <h4 class="product-item__title d-flex align-items-center mb-0">
+                                            <span class="text--base">@lang('Google Flow')</span>
+                                        </h4>
+                                        <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
+                                            <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-user-check"></i> @lang('Assigned account')</strong>
+                                            {{ $flowAccount->label ?: $flowAccount->email }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center flex-wrap flex-shrink-0">
+                                    <div class="product-item__button d-flex align-items-center gap-2">
+                                        @if($isExpired)
+                                            <button type="button" class="btn btn--secondary text-nowrap" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                                <i class="las la-ban me-1"></i> <span class="btn-text">@lang('Expired')</span>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('user.flow-extension') }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect Extension')</span>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         @if(@$isAdmin && !empty($adminAccounts) && $adminAccounts->isNotEmpty())
                             <div class="mb-4 p-3 d-flex align-items-center gap-3" style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); border-left: 4px solid #eab308; border-radius: 8px;">
                                 <div style="width: 34px; height: 34px; border-radius: 6px; background: rgba(234, 179, 8, 0.2); display: flex; align-items: center; justify-content: center; color: #facc15; flex-shrink: 0;">
@@ -257,15 +298,17 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-center py-5">
-                                    <div class="card custom--card border-0">
-                                        <div class="card-body py-5">
-                                            <i class="las la-folder-open mb-3" style="font-size: 3rem; color: #888;"></i>
-                                            <h5 class="text-muted">@lang('You currently do not have access to any platforms.')</h5>
-                                            <p class="text-muted">@lang('Please purchase a plan to unlock premium platforms.')</p>
+                                @unless($flowAccount)
+                                    <div class="text-center py-5">
+                                        <div class="card custom--card border-0">
+                                            <div class="card-body py-5">
+                                                <i class="las la-folder-open mb-3" style="font-size: 3rem; color: #888;"></i>
+                                                <h5 class="text-muted">@lang('You currently do not have access to any platforms.')</h5>
+                                                <p class="text-muted">@lang('Please purchase a plan to unlock premium platforms.')</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                @endunless
                             @endforelse
                         @endif
                     </div>
@@ -420,5 +463,20 @@
             });
         });
     })(jQuery);
+</script>
+@endpush
+
+@push('script')
+<script>
+(() => {
+    const userId = @json(auth()->id());
+    const badge = document.getElementById('flow-presence');
+    window.addEventListener('message', event => {
+        if (event.source !== window || event.origin !== location.origin) return;
+        if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT') window.postMessage({type:'DCX_FLOW_STATUS',userId,requestId:'dashboard-flow'},location.origin);
+        if (event.data?.type === 'DCX_FLOW_STATUS_REPLY' && event.data.requestId === 'dashboard-flow') badge.textContent = event.data.data?.connected ? 'Connected' : 'Installed - connect to continue';
+    });
+    window.postMessage({type:'DCX_FLOW_STATUS',userId,requestId:'dashboard-flow'},location.origin);
+})();
 </script>
 @endpush

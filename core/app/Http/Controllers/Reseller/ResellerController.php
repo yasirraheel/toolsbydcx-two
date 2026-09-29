@@ -19,6 +19,27 @@ use Illuminate\Support\Str;
 
 class ResellerController extends Controller
 {
+    public function flowExtensions()
+    {
+        $pageTitle = 'Client Flow Extensions';
+        $users = User::where('reseller_id', auth()->id())->with(['flowPairings' => fn($q) => $q->where('is_active', true)->where('expires_at', '>', now())])->latest()->paginate(getPaginate());
+        return view('reseller.flow_extensions', compact('pageTitle', 'users'));
+    }
+
+    public function flowPair($id)
+    {
+        $user = User::where('reseller_id', auth()->id())->findOrFail($id);
+        $pairing = \App\Services\FlowAccess::issue($user);
+        return back()->with('flow_code', $pairing->pairing_code)->with('flow_user', $user->username);
+    }
+
+    public function flowRevoke($id)
+    {
+        $user = User::where('reseller_id', auth()->id())->findOrFail($id);
+        \App\Services\FlowAccess::revoke(\App\Models\ExtensionPairing::where('user_id', $user->id));
+        return back()->withNotify([['success', 'Client extension access revoked.']]);
+    }
+
     public function dashboard()
     {
         $pageTitle = 'Reseller Dashboard';

@@ -11,6 +11,7 @@ class FlowLoginAttempt extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'extension_pairing_id',
         'id',
         'user_id',
         'google_flow_account_id',

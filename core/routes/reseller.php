@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::namespace('Reseller')->name('reseller.')->middleware(['auth', 'reseller'])->group(function () {
     Route::controller('ResellerController')->group(function () {
+        Route::get('flow-extensions', 'flowExtensions')->name('flow-extensions');
+        Route::post('flow-extensions/{id}/pair', 'flowPair')->middleware('throttle:10,1')->name('flow-extensions.pair');
+        Route::post('flow-extensions/{id}/revoke', 'flowRevoke')->name('flow-extensions.revoke');
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('pricing', 'pricing')->name('pricing');
         Route::get('transactions', 'transactions')->name('transactions');

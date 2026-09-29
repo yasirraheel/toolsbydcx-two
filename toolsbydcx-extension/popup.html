@@ -32,6 +32,13 @@
     </section>
 
     <div id="status" role="status" aria-live="polite">Checking your plan…</div>
+    <form id="pair-form" hidden>
+      <label for="pair-code">Connection code</label>
+      <input id="pair-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>
+      <button id="connect" class="main-action-btn" type="submit">Connect</button>
+      <p><a href="https://toolsbydcx.com/user/flow-extension" target="_blank" rel="noopener">Get a code from your dashboard</a></p>
+    </form>
+    <button id="disconnect" type="button" hidden>Disconnect</button>
     <button id="start" class="main-action-btn" type="button" disabled>Open Flow</button>
     <p id="error" class="error" role="alert" hidden></p>
   </main>
