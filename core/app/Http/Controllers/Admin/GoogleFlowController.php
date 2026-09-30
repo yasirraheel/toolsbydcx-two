@@ -25,8 +25,7 @@ class GoogleFlowController extends Controller
     public function create()
     {
         $pageTitle = 'Add New Google Account';
-        $users = User::active()->get();
-        return view('admin.google_flow.create', compact('pageTitle', 'users'));
+        return view('admin.google_flow.create', compact('pageTitle'));
     }
 
     public function store(Request $request)
@@ -38,7 +37,6 @@ class GoogleFlowController extends Controller
             'totp_secret' => ['nullable', 'string', 'regex:/^[A-Z2-7a-z\s]+$/'],
             'backup_codes' => 'nullable|string',
             'status' => 'required|in:active,disabled,locked',
-            'assigned_to_user_id' => 'nullable|exists:users,id',
             'notes' => 'nullable|string',
         ]);
 
@@ -49,8 +47,7 @@ class GoogleFlowController extends Controller
             foreach ($backupCodes as $code) { if (!preg_match('/^\d{8}$/', $code)) { throw \Illuminate\Validation\ValidationException::withMessages(['backup_codes' => 'Enter unused 8-digit Google backup codes, one per line.']); } }
         }
 
-        DB::transaction(function () use ($request, $backupCodes) {
-        $account = GoogleFlowAccount::create([
+        GoogleFlowAccount::create([
             'label' => $request->label,
             'email' => $request->email,
             'password_encrypted' => Crypt::encryptString($request->password),
@@ -61,18 +58,15 @@ class GoogleFlowController extends Controller
             'notes' => $request->notes,
         ]);
 
-        if ($request->assigned_to_user_id) { FlowAccess::assign(User::findOrFail($request->assigned_to_user_id), $account->id); }
-        });
         $notify[] = ['success', 'Google account added successfully'];
         return redirect()->route('admin.google-flow.index')->withNotify($notify);
     }
 
     public function edit($id)
     {
-        $account = GoogleFlowAccount::findOrFail($id);
+        $account = GoogleFlowAccount::with('user')->findOrFail($id);
         $pageTitle = 'Edit Google Account';
-        $users = User::active()->get();
-        return view('admin.google_flow.edit', compact('pageTitle', 'account', 'users'));
+        return view('admin.google_flow.edit', compact('pageTitle', 'account'));
     }
 
     public function update(Request $request, $id)
@@ -86,7 +80,6 @@ class GoogleFlowController extends Controller
             'totp_secret' => ['nullable', 'string', 'regex:/^[A-Z2-7a-z\s]+$/'],
             'backup_codes' => 'nullable|string',
             'status' => 'required|in:active,disabled,locked',
-            'assigned_to_user_id' => 'nullable|exists:users,id',
             'notes' => 'nullable|string',
         ]);
 
@@ -94,7 +87,6 @@ class GoogleFlowController extends Controller
             'label' => $request->label,
             'email' => $request->email,
             'status' => $request->status,
-            'assigned_to_user_id' => $request->assigned_to_user_id,
             'notes' => $request->notes,
         ];
 
@@ -111,22 +103,16 @@ class GoogleFlowController extends Controller
             if ($request->backup_codes) {
                 $codes = explode("\n", str_replace("\r", "", $request->backup_codes));
                 $backupCodes = array_values(array_filter(array_map(fn($code) => preg_replace('/[\s-]+/', '', $code), $codes)));
-            foreach ($backupCodes as $code) { if (!preg_match('/^\d{8}$/', $code)) { throw \Illuminate\Validation\ValidationException::withMessages(['backup_codes' => 'Enter unused 8-digit Google backup codes, one per line.']); } }
+                foreach ($backupCodes as $code) { if (!preg_match('/^\d{8}$/', $code)) { throw \Illuminate\Validation\ValidationException::withMessages(['backup_codes' => 'Enter unused 8-digit Google backup codes, one per line.']); } }
             }
             $data['backup_codes'] = empty($backupCodes) ? null : $backupCodes;
         }
 
         DB::transaction(function () use ($account, $data) {
-            if ($account->assigned_to_user_id != $data['assigned_to_user_id'] || $data['status'] !== 'active' || isset($data['password_encrypted']) || isset($data['totp_secret_encrypted']) || $account->email !== $data['email']) {
+            if ($data['status'] !== 'active' || isset($data['password_encrypted']) || isset($data['totp_secret_encrypted']) || $account->email !== $data['email']) {
                 FlowAccess::revoke(ExtensionPairing::where('google_flow_account_id', $account->id));
             }
-            $target = $data['assigned_to_user_id'];
-            unset($data['assigned_to_user_id']);
             $account->update($data);
-            if ($account->assigned_to_user_id != $target) {
-                $account->update(['assigned_to_user_id' => null]);
-                if ($target) { FlowAccess::assign(User::findOrFail($target), $account->id); }
-            }
         });
 
         $notify[] = ['success', 'Google account updated successfully'];

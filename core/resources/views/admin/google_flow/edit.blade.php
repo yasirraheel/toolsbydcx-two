@@ -43,13 +43,23 @@
                                 </select>
                             </div>
                             <div class="col-md-6 form-group">
-                                <label>@lang('Assign to User')</label>
-                                <select class="form-control" name="assigned_to_user_id">
-                                    <option value="">@lang('Unassigned')</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}" @selected($account->assigned_to_user_id == $user->id)>{{ $user->fullname }} ({{ $user->email }})</option>
-                                    @endforeach
-                                </select>
+                                <label>@lang('Assigned User')</label>
+                                <div class="form-control d-flex justify-content-between align-items-center" style="height: auto; min-height: 45px; background: rgba(255, 255, 255, 0.05);">
+                                    @if($account->user)
+                                        <div>
+                                            <i class="las la-user-check text-success me-1"></i>
+                                            <strong>{{ $account->user->fullname }}</strong>
+                                            <small class="text-muted">({{ $account->user->email }})</small>
+                                        </div>
+                                        <a href="{{ route('admin.users.detail', $account->user->id) }}" class="btn btn-xs btn-outline--primary">
+                                            <i class="las la-external-link-alt"></i> @lang('Manage in User Details')
+                                        </a>
+                                    @else
+                                        <span class="text-muted">
+                                            <i class="las la-minus-circle me-1"></i> @lang('Unassigned — Assign to a user from their User Details page.')
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="col-md-12 form-group">
                                 <label>@lang('Backup Codes (One per line)')</label>

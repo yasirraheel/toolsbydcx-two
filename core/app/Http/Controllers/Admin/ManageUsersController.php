@@ -256,7 +256,23 @@ class ManageUsersController extends Controller
             ->orderBy('social_media_id', 'asc')
             ->get();
 
-        return view('admin.users.detail', compact('pageTitle', 'user', 'accounts', 'domain'));
+        $googleFlowAccounts = \App\Models\GoogleFlowAccount::active()->with('user')->get();
+        $currentFlowAccount = \App\Models\GoogleFlowAccount::where('assigned_to_user_id', $user->id)->first();
+        $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where('expires_at', '>', now())
+            ->with('googleFlowAccount')
+            ->get();
+
+        return view('admin.users.detail', compact(
+            'pageTitle',
+            'user',
+            'accounts',
+            'domain',
+            'googleFlowAccounts',
+            'currentFlowAccount',
+            'userPairings'
+        ));
     }
 
     public function logout($id)
@@ -350,6 +366,17 @@ class ManageUsersController extends Controller
         if ($request->has('privileges_submitted')) {
             $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
+        }
+
+        if ($request->has('google_flow_account_submitted')) {
+            $flowAccId = $request->filled('google_flow_account_id') ? (int) $request->google_flow_account_id : null;
+            try {
+                \App\Services\FlowAccess::assign($user, $flowAccId);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return back()->withErrors($e->errors())->withInput();
+            } catch (\Throwable $e) {
+                $notify[] = ['error', 'Could not update Google Flow assignment: ' . $e->getMessage()];
+            }
         }
 
         try {

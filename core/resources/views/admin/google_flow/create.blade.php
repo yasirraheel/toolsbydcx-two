@@ -35,13 +35,10 @@
                                 </select>
                             </div>
                             <div class="col-md-6 form-group">
-                                <label>@lang('Assign to User')</label>
-                                <select class="form-control" name="assigned_to_user_id">
-                                    <option value="">@lang('Unassigned')</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->fullname }} ({{ $user->email }})</option>
-                                    @endforeach
-                                </select>
+                                <label>@lang('User Assignment')</label>
+                                <div class="form-control d-flex align-items-center" style="height: auto; min-height: 45px; background: rgba(255, 255, 255, 0.05);">
+                                    <small class="text-muted"><i class="las la-info-circle"></i> @lang('Google Flow accounts are assigned to users from their User Details page.')</small>
+                                </div>
                             </div>
                             <div class="col-md-12 form-group">
                                 <label>@lang('Backup Codes (One per line)')</label>
