@@ -66,9 +66,7 @@
                                         $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
                                             ->whereIn('id', (array)($user->account_ids ?? []))
                                             ->get();
-                                        $flowAccount = \App\Models\GoogleFlowAccount::active()
-                                            ->where('assigned_to_user_id', $user->id)
-                                            ->first();
+                                        $flowAccount = $user->flow_account;
                                     @endphp
                                     @if($assignedAccounts->isNotEmpty() || $flowAccount)
                                         <div class="d-flex flex-wrap gap-2">

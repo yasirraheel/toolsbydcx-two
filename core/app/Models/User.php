@@ -40,6 +40,7 @@ class User extends Authenticatable
         'is_exclusive' => 'integer',
         'is_reseller' => 'integer',
         'reseller_id' => 'integer',
+        'google_flow_account_id' => 'integer',
     ];
 
     protected static function boot()
@@ -315,6 +316,19 @@ class User extends Authenticatable
     public function assignedAccountList()
     {
         return $this->assignedAccountListings();
+    }
+
+    public function googleFlowAccount()
+    {
+        return $this->belongsTo(GoogleFlowAccount::class, 'google_flow_account_id');
+    }
+
+    public function getFlowAccountAttribute()
+    {
+        if ($this->google_flow_account_id) {
+            return GoogleFlowAccount::active()->find($this->google_flow_account_id);
+        }
+        return GoogleFlowAccount::active()->where('assigned_to_user_id', $this->id)->first();
     }
 
 }

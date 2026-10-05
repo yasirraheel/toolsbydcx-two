@@ -79,6 +79,11 @@ class GoogleFlowAccount extends Model
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
+    public function users()
+    {
+        return $this->hasMany(User::class, 'google_flow_account_id');
+    }
+
     public function pairings()
     {
         return $this->hasMany(ExtensionPairing::class);

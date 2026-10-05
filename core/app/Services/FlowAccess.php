@@ -34,7 +34,13 @@ class FlowAccess
             if (!self::eligible($user)) {
                 throw ValidationException::withMessages(['user' => 'An active, verified user plan is required.']);
             }
-            $account = GoogleFlowAccount::active()->where('assigned_to_user_id', $user->id)->lockForUpdate()->first();
+            $account = null;
+            if ($user->google_flow_account_id) {
+                $account = GoogleFlowAccount::active()->whereKey($user->google_flow_account_id)->lockForUpdate()->first();
+            }
+            if (!$account) {
+                $account = GoogleFlowAccount::active()->where('assigned_to_user_id', $user->id)->lockForUpdate()->first();
+            }
             if (!$account) {
                 throw ValidationException::withMessages(['account' => 'Ask an administrator to assign an active Google Flow account first.']);
             }
@@ -52,26 +58,28 @@ class FlowAccess
     public static function assign(User $user, ?int $accountId, bool $force = false): void
     {
         DB::transaction(function () use ($user, $accountId, $force) {
-            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $account = $accountId ? GoogleFlowAccount::whereKey($accountId)->lockForUpdate()->firstOrFail() : null;
             if ($account && $account->status !== 'active') {
                 if ($force) {
                     $account->status = 'active';
                     $account->save();
                 } else {
-                    throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active, unassigned account.']);
+                    throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active account.']);
                 }
             }
-            if ($account && $account->assigned_to_user_id && $account->assigned_to_user_id != $user->id) {
-                if ($force) {
-                    self::revoke(ExtensionPairing::where('user_id', $account->assigned_to_user_id));
-                } else {
-                    throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active, unassigned account.']);
-                }
+
+            // Revoke this user's pairings if changing or removing account
+            if ($user->google_flow_account_id != $accountId) {
+                self::revoke(ExtensionPairing::where('user_id', $user->id));
             }
-            self::revoke(ExtensionPairing::where('user_id', $user->id));
-            GoogleFlowAccount::where('assigned_to_user_id', $user->id)->update(['assigned_to_user_id' => null]);
-            if ($account) {
+
+            // Assign account to user (multiple users can share the same account!)
+            $user->google_flow_account_id = $account ? $account->id : null;
+            $user->save();
+
+            // Maintain assigned_to_user_id on account for legacy fallback if null
+            if ($account && !$account->assigned_to_user_id) {
                 $account->update(['assigned_to_user_id' => $user->id]);
             }
         });

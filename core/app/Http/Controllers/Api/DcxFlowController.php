@@ -38,7 +38,8 @@ class DcxFlowController extends Controller
             }
             $user = $pairing->user;
             $account = $pairing->googleFlowAccount;
-            if (!FlowAccess::eligible($user) || !$account || $account->status !== 'active' || (int) $account->assigned_to_user_id !== (int) $user->id) {
+            $isAssigned = $account && (((int) $user->google_flow_account_id === (int) $account->id) || ((int) $account->assigned_to_user_id === (int) $user->id));
+            if (!FlowAccess::eligible($user) || !$account || $account->status !== 'active' || !$isAssigned) {
                 return response()->json([
                     'message' => 'An active plan and assigned account are required.',
                     'reason' => 'plan_inactive'
@@ -74,7 +75,8 @@ class DcxFlowController extends Controller
     {
         $pairing = $request->attributes->get('extension_pairing');
         $account = $pairing ? $pairing->googleFlowAccount : null;
-        if (!$account || $account->status !== 'active' || (int) $account->assigned_to_user_id !== (int) $request->user()->id) {
+        $isAssigned = $account && (((int) $request->user()->google_flow_account_id === (int) $account->id) || ((int) $account->assigned_to_user_id === (int) $request->user()->id));
+        if (!$account || $account->status !== 'active' || !$isAssigned) {
             abort(response()->json([
                 'message' => 'No active Google account is assigned to this connection.',
                 'reason' => 'account_inactive'

@@ -12,7 +12,7 @@ class FlowExtensionController extends Controller
     public function index(Request $request)
     {
         $pageTitle = 'Flow Extension';
-        $account = GoogleFlowAccount::active()->where('assigned_to_user_id', $request->user()->id)->first();
+        $account = $request->user()->flow_account;
         $pairings = ExtensionPairing::where('user_id', $request->user()->id)->where('is_active', true)->where('expires_at', '>', now())->latest()->get();
         return view('templates.basic.user.flow_extension', compact('pageTitle', 'account', 'pairings'));
     }

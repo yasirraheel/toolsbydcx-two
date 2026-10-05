@@ -18,7 +18,7 @@ class GoogleFlowController extends Controller
     public function index()
     {
         $pageTitle = 'Google Flow Accounts';
-        $accounts = GoogleFlowAccount::with('user')->latest()->paginate(getPaginate());
+        $accounts = GoogleFlowAccount::with(['user', 'users'])->latest()->paginate(getPaginate());
         return view('admin.google_flow.index', compact('pageTitle', 'accounts'));
     }
 

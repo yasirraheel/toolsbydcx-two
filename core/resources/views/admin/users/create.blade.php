@@ -97,21 +97,13 @@
                                     <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
                                         <option value="">@lang('No Google Flow account (Unassigned)')</option>
                                         @foreach($googleFlowAccounts as $flowAcc)
-                                            @php
-                                                $isOtherUser = (bool) $flowAcc->assigned_to_user_id;
-                                            @endphp
                                             <option value="{{ $flowAcc->id }}" @selected(old('google_flow_account_id') == $flowAcc->id)>
                                                 {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
-                                                @if($isOtherUser)
-                                                    — [@lang('Assigned to') {{ @$flowAcc->user->fullname ?: @$flowAcc->user->username }} (@lang('reassign'))]
-                                                @else
-                                                    — [@lang('Available')]
-                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Select an active Google Flow account for extension auto-login.')
+                                        <i class="las la-info-circle"></i> @lang('Select a Google Flow account for extension auto-login.')
                                     </small>
                                 </div>
                             </div>

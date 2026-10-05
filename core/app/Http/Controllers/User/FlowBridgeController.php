@@ -29,9 +29,7 @@ class FlowBridgeController extends Controller
         }
 
         // Verify that an active Google Flow account is assigned to this user
-        $account = GoogleFlowAccount::active()
-            ->where('assigned_to_user_id', $user->id)
-            ->first();
+        $account = $user->flow_account;
 
         if (!$account) {
             return response()->json([

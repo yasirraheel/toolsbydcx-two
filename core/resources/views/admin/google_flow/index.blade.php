@@ -32,9 +32,21 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($account->user)
-                                                {{ $account->user->fullname }} <br>
-                                                <small class="text-muted">{{ $account->user->email }}</small>
+                                            @php
+                                                $assignedUsers = $account->users;
+                                                if ($assignedUsers->isEmpty() && $account->user) {
+                                                    $assignedUsers = collect([$account->user]);
+                                                }
+                                            @endphp
+                                            @if($assignedUsers->isNotEmpty())
+                                                @foreach($assignedUsers->take(3) as $u)
+                                                    <a href="{{ route('admin.users.detail', $u->id) }}" class="fw-bold text--primary d-block">
+                                                        <i class="las la-user"></i> {{ $u->fullname ?: $u->username }}
+                                                    </a>
+                                                @endforeach
+                                                @if($assignedUsers->count() > 3)
+                                                    <small class="text-muted">+{{ $assignedUsers->count() - 3 }} @lang('more')</small>
+                                                @endif
                                             @else
                                                 <span class="badge badge--dark">@lang('Unassigned')</span>
                                             @endif
@@ -42,11 +54,6 @@
                                         <td>{{ $account->active_sessions }}</td>
                                         <td>
                                             <div class="d-flex justify-content-end gap-1 flex-wrap">
-                                                @if($account->user)
-                                                    <a href="{{ route('admin.users.detail', $account->user->id) }}" class="btn btn-outline--info btn-sm">
-                                                        <i class="las la-user"></i>@lang('User')
-                                                    </a>
-                                                @endif
                                                 <a href="{{ route('admin.google-flow.edit', $account->id) }}" class="btn btn-outline--primary btn-sm">
                                                     <i class="las la-pen"></i>@lang('Edit')
                                                 </a>
