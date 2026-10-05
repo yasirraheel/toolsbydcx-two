@@ -49,13 +49,25 @@ class FlowAccess
         });
     }
 
-    public static function assign(User $user, ?int $accountId): void
+    public static function assign(User $user, ?int $accountId, bool $force = false): void
     {
-        DB::transaction(function () use ($user, $accountId) {
+        DB::transaction(function () use ($user, $accountId, $force) {
             User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $account = $accountId ? GoogleFlowAccount::whereKey($accountId)->lockForUpdate()->firstOrFail() : null;
-            if ($account && ($account->status !== 'active' || ($account->assigned_to_user_id && $account->assigned_to_user_id != $user->id))) {
-                throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active, unassigned account.']);
+            if ($account && $account->status !== 'active') {
+                if ($force) {
+                    $account->status = 'active';
+                    $account->save();
+                } else {
+                    throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active, unassigned account.']);
+                }
+            }
+            if ($account && $account->assigned_to_user_id && $account->assigned_to_user_id != $user->id) {
+                if ($force) {
+                    self::revoke(ExtensionPairing::where('user_id', $account->assigned_to_user_id));
+                } else {
+                    throw ValidationException::withMessages(['google_flow_account_id' => 'Choose an active, unassigned account.']);
+                }
             }
             self::revoke(ExtensionPairing::where('user_id', $user->id));
             GoogleFlowAccount::where('assigned_to_user_id', $user->id)->update(['assigned_to_user_id' => null]);

@@ -131,12 +131,12 @@
                                                 $isThisUser = $currentFlowAccount && $currentFlowAccount->id == $flowAcc->id;
                                                 $isOtherUser = $flowAcc->assigned_to_user_id && !$isThisUser;
                                             @endphp
-                                            <option value="{{ $flowAcc->id }}" @selected($isThisUser) @disabled($isOtherUser)>
+                                            <option value="{{ $flowAcc->id }}" @selected($isThisUser)>
                                                 {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
                                                 @if($isThisUser)
-                                                    — [@lang('Currently Assigned to this user')]
+                                                    — [@lang('Assigned to this user')]
                                                 @elseif($isOtherUser)
-                                                    — [@lang('Assigned to') {{ @$flowAcc->user->fullname ?: @$flowAcc->user->username }}]
+                                                    — [@lang('Assigned to') {{ @$flowAcc->user->fullname ?: @$flowAcc->user->username }} (@lang('reassign'))]
                                                 @else
                                                     — [@lang('Available')]
                                                 @endif
@@ -145,9 +145,9 @@
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         @if($currentFlowAccount)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Assigned'): {{ $currentFlowAccount->email }}</span>
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $currentFlowAccount->email }}</span>
                                         @else
-                                            <i class="las la-info-circle"></i> @lang('Select an active Google Flow account for extension.')
+                                            <i class="las la-info-circle"></i> @lang('Select an active Google Flow account for extension auto-login.')
                                         @endif
                                     </small>
                                 </div>

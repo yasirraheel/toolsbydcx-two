@@ -65,24 +65,53 @@
                             </div>
 
                             {{-- Assign Available Accounts --}}
-                            <div class="col-12">
+                            <div class="col-lg-6 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
                                     </label>
                                     <select name="account_ids[]" class="form-control select2" multiple="multiple" id="account-selector" data-placeholder="@lang('Select Available Active Accounts')">
                                         @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}">
+                                            <option value="{{ $account->id }}" @selected(in_array($account->id, (array) old('account_ids', [])))>
                                                 {{ __(@$account->socialMedia->name) }} — {{ __($account->title) }}
                                             </option>
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         @if($accounts->count() > 0)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('active platform accounts currently available with valid cookies.')</span>
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('active platform accounts currently available.')</span>
                                         @else
-                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No active accounts with valid cookies available right now.')</span>
+                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No active accounts available right now.')</span>
                                         @endif
+                                    </small>
+                                </div>
+                            </div>
+
+                            {{-- Assign Google Flow Account (Extension) --}}
+                            <div class="col-lg-6 col-12">
+                                <input type="hidden" name="google_flow_account_submitted" value="1">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold mb-2">
+                                        <i class="las la-robot text--primary"></i> @lang('Assign Google Flow Account (Extension)')
+                                    </label>
+                                    <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
+                                        <option value="">@lang('No Google Flow account (Unassigned)')</option>
+                                        @foreach($googleFlowAccounts as $flowAcc)
+                                            @php
+                                                $isOtherUser = (bool) $flowAcc->assigned_to_user_id;
+                                            @endphp
+                                            <option value="{{ $flowAcc->id }}" @selected(old('google_flow_account_id') == $flowAcc->id)>
+                                                {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
+                                                @if($isOtherUser)
+                                                    — [@lang('Assigned to') {{ @$flowAcc->user->fullname ?: @$flowAcc->user->username }} (@lang('reassign'))]
+                                                @else
+                                                    — [@lang('Available')]
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
+                                        <i class="las la-info-circle"></i> @lang('Select an active Google Flow account for extension auto-login.')
                                     </small>
                                 </div>
                             </div>

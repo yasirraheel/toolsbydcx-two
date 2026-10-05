@@ -159,7 +159,8 @@ class ManageUsersController extends Controller
             ->where('cookie_status', '!=', 0)
             ->orderBy('social_media_id', 'asc')
             ->get();
-        return view('admin.users.create', compact('pageTitle', 'accounts', 'domain'));
+        $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
+        return view('admin.users.create', compact('pageTitle', 'accounts', 'domain', 'googleFlowAccounts'));
     }
 
     public function store(Request $request)
@@ -170,6 +171,7 @@ class ManageUsersController extends Controller
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'google_flow_account_id' => 'nullable|integer|exists:google_flow_accounts,id',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -233,6 +235,15 @@ class ManageUsersController extends Controller
 
             $user->save();
 
+            if ($request->filled('google_flow_account_id')) {
+                try {
+                    \App\Services\FlowAccess::assign($user, (int) $request->google_flow_account_id, true);
+                } catch (\Throwable $e) {
+                    $notify[] = ['warning', 'User created, but Google Flow assignment failed: ' . $e->getMessage()];
+                    return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
+                }
+            }
+
             $notify[] = ['success', 'User ' . $user->username . ' created successfully'];
             return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
@@ -256,7 +267,7 @@ class ManageUsersController extends Controller
             ->orderBy('social_media_id', 'asc')
             ->get();
 
-        $googleFlowAccounts = \App\Models\GoogleFlowAccount::active()->with('user')->get();
+        $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
         $currentFlowAccount = \App\Models\GoogleFlowAccount::where('assigned_to_user_id', $user->id)->first();
         $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
             ->where('is_active', true)
@@ -371,11 +382,14 @@ class ManageUsersController extends Controller
         if ($request->has('google_flow_account_submitted')) {
             $flowAccId = $request->filled('google_flow_account_id') ? (int) $request->google_flow_account_id : null;
             try {
-                \App\Services\FlowAccess::assign($user, $flowAccId);
+                \App\Services\FlowAccess::assign($user, $flowAccId, true);
             } catch (\Illuminate\Validation\ValidationException $e) {
-                return back()->withErrors($e->errors())->withInput();
+                $errorMsg = collect($e->errors())->flatten()->first() ?: 'Invalid Google Flow account selected.';
+                $notify[] = ['error', $errorMsg];
+                return back()->withNotify($notify)->withInput();
             } catch (\Throwable $e) {
                 $notify[] = ['error', 'Could not update Google Flow assignment: ' . $e->getMessage()];
+                return back()->withNotify($notify)->withInput();
             }
         }
 
