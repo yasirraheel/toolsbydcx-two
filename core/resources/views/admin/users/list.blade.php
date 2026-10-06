@@ -124,6 +124,13 @@
                                         <a href="{{ route('admin.users.detail', $user->id) }}" class="btn btn-sm btn-outline--primary w-100 text-center">
                                             <i class="las la-desktop"></i> @lang('Details')
                                         </a>
+                                        <button type="button" class="btn btn-sm btn-outline--dark w-100 text-center btn-copy-user-details" 
+                                                data-username="{{ $user->username }}" 
+                                                data-email="{{ $user->email }}" 
+                                                data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
+                                                title="@lang('Copy Welcome Details')">
+                                            <i class="las la-copy"></i> @lang('Copy')
+                                        </button>
                                         @if (request()->routeIs('admin.users.kyc.pending'))
                                         <a href="{{ route('admin.users.kyc.details', $user->id) }}" target="_blank" class="btn btn-sm btn-outline--dark w-100 text-center">
                                             <i class="las la-user-check"></i>@lang('KYC')
@@ -248,6 +255,29 @@
 
             modal.find('.bulk-count-display').text(selected.length);
             modal.modal('show');
+        });
+
+        // Copy User Welcome Details
+        $(document).on('click', '.btn-copy-user-details', function() {
+            let username = $(this).data('username');
+            let email = $(this).data('email');
+            let expiry = $(this).data('expiry');
+            let platformLink = '{{ url('/') }}';
+            let platformName = '{{ __(gs('site_name')) }}';
+
+            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: (password as provided)\nPlatform Link: ${platformLink}\nExpiry: ${expiry}\n\nEnjoy your access! If you need any help, contact support.`;
+
+            navigator.clipboard.writeText(msg).then(function() {
+                notify('success', 'User details copied to clipboard!');
+            }).catch(function() {
+                let tempArea = document.createElement("textarea");
+                tempArea.value = msg;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                notify('success', 'User details copied to clipboard!');
+            });
         });
     })(jQuery);
 </script>

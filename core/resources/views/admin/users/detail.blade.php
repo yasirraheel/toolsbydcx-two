@@ -21,6 +21,9 @@
                         <i class="las la-undo"></i> @lang('Unban User')
                     </button>
                 @endif
+                <button type="button" class="btn btn-sm btn-outline--dark flex-sm-fill" id="copyWelcomeDetailsBtn">
+                    <i class="las la-copy"></i> @lang('Copy Details')
+                </button>
                 <button type="button" class="btn btn-sm btn-outline--danger flex-sm-fill" data-bs-toggle="modal" data-bs-target="#userLogoutModal">
                     <i class="las la-sign-out-alt"></i> @lang('Logout Remotely')
                 </button>
@@ -138,40 +141,6 @@
                                         @else
                                             <i class="las la-info-circle"></i> @lang('Select a Google Flow account for extension auto-login.')
                                         @endif
-                                    </small>
-                                </div>
-                            </div>
-
-                            {{-- User Privileges & Access Controls --}}
-                            <input type="hidden" name="privileges_submitted" value="1">
-                            <div class="col-md-6 col-12">
-                                <div class="card p-3 h-100" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-bold">
-                                            <i class="las la-vial text-warning me-1"></i> @lang('Tester User Mode')
-                                        </span>
-                                        <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input" type="checkbox" name="is_tester" value="1" id="isTesterSwitch" @checked(old('is_tester', $user->is_tester)) style="cursor: pointer; width: 42px; height: 22px;">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted" style="font-size: 12px; line-height: 1.4;">
-                                        @lang('Enables Tester Mode. User sees developer controls and gets access to all active accounts.')
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 col-12">
-                                <div class="card p-3 h-100" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-bold">
-                                            <i class="las la-cookie-bite text-info me-1"></i> @lang('Cookie Access (Copy Cookie)')
-                                        </span>
-                                        <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input" type="checkbox" name="is_exclusive" value="1" id="isExclusiveSwitch" @checked(old('is_exclusive', $user->is_exclusive)) style="cursor: pointer; width: 42px; height: 22px;">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted" style="font-size: 12px; line-height: 1.4;">
-                                        @lang('Allows user to view & copy platform cookies in JSON format via the "Copy Cookie" button on dashboard.')
                                     </small>
                                 </div>
                             </div>
@@ -378,6 +347,31 @@
             document.execCommand("copy");
             copyText.type = originalType;
             notify('success', 'Password copied to clipboard!');
+        });
+
+        // Copy Welcome Details
+        $('#copyWelcomeDetailsBtn').on('click', function () {
+            let username = '{{ $user->username }}';
+            let email = '{{ $user->email }}';
+            let password = $('#passwordField').val();
+            let platformLink = '{{ url('/') }}';
+            let platformName = '{{ __(gs('site_name')) }}';
+            let expiryDate = '{{ $user->expires_at ? showDateTime($user->expires_at, "d M Y") : "N/A" }}';
+
+            let pwdText = password ? password : '(kept current password)';
+            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
+
+            navigator.clipboard.writeText(msg).then(function() {
+                notify('success', 'User details copied to clipboard!');
+            }).catch(function() {
+                let tempArea = document.createElement("textarea");
+                tempArea.value = msg;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                notify('success', 'User details copied to clipboard!');
+            });
         });
 
     })(jQuery);

@@ -4,13 +4,18 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="text-white mb-0">
                     <i class="las la-user-edit text-primary me-2"></i> @lang('Edit Client User') — @ {{ $user->username }}
                 </h5>
-                <a href="{{ route('reseller.users.index') }}" class="btn btn-sm btn-outline-secondary text-white">
-                    <i class="las la-arrow-left me-1"></i> @lang('Back to Clients')
-                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-primary fw-semibold" id="copyWelcomeDetailsBtn">
+                        <i class="las la-copy me-1"></i> @lang('Copy Details')
+                    </button>
+                    <a href="{{ route('reseller.users.index') }}" class="btn btn-sm btn-outline-secondary text-white">
+                        <i class="las la-arrow-left me-1"></i> @lang('Back to Clients')
+                    </a>
+                </div>
             </div>
             <div class="card-body p-4">
                 <form action="{{ route('reseller.users.update', $user->id) }}" method="POST">
@@ -160,6 +165,31 @@
             document.execCommand("copy");
             copyText.type = originalType;
             notify('success', 'Password copied to clipboard!');
+        });
+
+        // Copy Welcome Details
+        $('#copyWelcomeDetailsBtn').on('click', function () {
+            let username = '{{ $user->username }}';
+            let email = '{{ $user->email }}';
+            let password = $('#passwordField').val();
+            let platformLink = '{{ url('/') }}';
+            let platformName = '{{ __(gs('site_name')) }}';
+            let expiryDate = '{{ $user->expires_at ? showDateTime($user->expires_at, "d M Y") : "N/A" }}';
+
+            let pwdText = password ? password : '(kept current password)';
+            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
+
+            navigator.clipboard.writeText(msg).then(function() {
+                notify('success', 'Client details copied to clipboard!');
+            }).catch(function() {
+                let tempArea = document.createElement("textarea");
+                tempArea.value = msg;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                notify('success', 'Client details copied to clipboard!');
+            });
         });
 
         $(document).on('change', '.account-checkbox', function() {

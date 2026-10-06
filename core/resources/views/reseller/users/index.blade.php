@@ -120,6 +120,15 @@
                                         <i class="las la-edit"></i>
                                     </a>
 
+                                    {{-- Copy Details Button --}}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary text-white btn-copy-client-details" 
+                                            data-username="{{ $user->username }}" 
+                                            data-email="{{ $user->email }}" 
+                                            data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
+                                            title="@lang('Copy Welcome Details')">
+                                        <i class="las la-copy"></i>
+                                    </button>
+
                                     {{-- Status / Ban Toggle Button --}}
                                     <button type="button" class="btn btn-sm @if($user->status == \App\Constants\Status::USER_ACTIVE) btn-outline-warning @else btn-outline-success @endif confirmationBtn" 
                                             data-action="{{ route('reseller.users.status', $user->id) }}" 
@@ -303,6 +312,29 @@
         });
 
         $('#extendDurationSelect').on('change', calculateExtendCost);
+
+        // Copy Client Welcome Details
+        $(document).on('click', '.btn-copy-client-details', function() {
+            let username = $(this).data('username');
+            let email = $(this).data('email');
+            let expiry = $(this).data('expiry');
+            let platformLink = '{{ url('/') }}';
+            let platformName = '{{ __(gs('site_name')) }}';
+
+            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: (password as provided)\nPlatform Link: ${platformLink}\nExpiry: ${expiry}\n\nEnjoy your access! If you need any help, contact support.`;
+
+            navigator.clipboard.writeText(msg).then(function() {
+                notify('success', 'Client details copied to clipboard!');
+            }).catch(function() {
+                let tempArea = document.createElement("textarea");
+                tempArea.value = msg;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                notify('success', 'Client details copied to clipboard!');
+            });
+        });
 
     })(jQuery);
 </script>

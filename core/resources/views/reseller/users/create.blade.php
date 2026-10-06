@@ -5,11 +5,16 @@
     {{-- Left: User Details & Account Selection --}}
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="text-white mb-0"><i class="las la-user-plus text-primary me-2"></i> @lang('Create New Client User')</h5>
-                <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="quickGenBtn">
-                    <i class="las la-magic me-1"></i> @lang('Quick Generate')
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="quickGenBtn">
+                        <i class="las la-magic me-1"></i> @lang('Quick Generate')
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary fw-semibold" id="copyWelcomeDetailsBtn">
+                        <i class="las la-copy me-1"></i> @lang('Copy Details')
+                    </button>
+                </div>
             </div>
             <div class="card-body p-4">
                 <form id="createClientForm" action="{{ route('reseller.users.store') }}" method="POST">
@@ -277,6 +282,37 @@
             document.execCommand("copy");
             copyText.type = originalType;
             notify('success', 'Password copied to clipboard!');
+        });
+
+        // Copy Welcome Details
+        $('#copyWelcomeDetailsBtn').on('click', function () {
+            let prefix = $('#prefixInput').val().trim();
+            let suffix = $('#suffixInput').val().trim();
+            let email = prefix && suffix ? (prefix + '@' + suffix) : prefix;
+            let username = prefix;
+            let password = $('#passwordField').val();
+            let platformLink = '{{ url('/') }}';
+            let platformName = '{{ __(gs('site_name')) }}';
+            let duration = $('input[name="duration_days"]:checked').val() || 30;
+
+            if (!username) {
+                notify('warning', 'Please enter a name or username first!');
+                return;
+            }
+
+            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${password || '(not set)'}\nPlatform Link: ${platformLink}\nExpiry: ${duration} Days\n\nEnjoy your access! If you need any help, contact support.`;
+
+            navigator.clipboard.writeText(msg).then(function() {
+                notify('success', 'Client details copied to clipboard!');
+            }).catch(function() {
+                let tempArea = document.createElement("textarea");
+                tempArea.value = msg;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                notify('success', 'Client details copied to clipboard!');
+            });
         });
 
         // Quick Generate helper
