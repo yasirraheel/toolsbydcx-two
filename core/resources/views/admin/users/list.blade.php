@@ -127,6 +127,7 @@
                                         <button type="button" class="btn btn-sm btn--success text-white w-100 text-center btn-copy-user-details" 
                                                 data-username="{{ $user->username }}" 
                                                 data-email="{{ $user->email }}" 
+                                                data-password="{{ $user->display_password }}"
                                                 data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
                                                 title="@lang('Copy Welcome Details')">
                                             <i class="las la-clipboard-check"></i> @lang('Copy Details')
@@ -261,11 +262,12 @@
         $(document).on('click', '.btn-copy-user-details', function() {
             let username = $(this).data('username');
             let email = $(this).data('email');
+            let password = $(this).data('password');
             let expiry = $(this).data('expiry');
             let platformLink = '{{ url('/') }}';
             let platformName = '{{ __(gs('site_name')) }}';
 
-            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: (password as provided)\nPlatform Link: ${platformLink}\nExpiry: ${expiry}\n\nEnjoy your access! If you need any help, contact support.`;
+            let msg = `✨ Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nPlatform Link: ${platformLink}\nExpiry: ${expiry}\n\nEnjoy your access! If you need any help, contact support.`;
 
             navigator.clipboard.writeText(msg).then(function() {
                 notify('success', 'User details copied to clipboard!');

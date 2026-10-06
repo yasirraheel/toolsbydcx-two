@@ -212,6 +212,7 @@ class ManageUsersController extends Controller
             $user->email = $email;
             $user->username = $username;
             $user->password = \Illuminate\Support\Facades\Hash::make($password);
+            $user->plain_password = $password;
             $user->country_name = 'United States';
             $user->country_code = 'US';
             $user->dial_code = '1';
@@ -368,6 +369,7 @@ class ManageUsersController extends Controller
 
         if ($request->filled('password')) {
             $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+            $user->plain_password = $request->password;
         }
 
         if ($request->has('account_ids_submitted')) {

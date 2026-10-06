@@ -253,6 +253,7 @@ class ResellerController extends Controller
             $user->email = $email;
             $user->username = $username;
             $user->password = Hash::make($request->password);
+            $user->plain_password = $request->password;
             $user->country_name = 'United States';
             $user->country_code = 'US';
             $user->dial_code = '1';
@@ -325,6 +326,7 @@ class ResellerController extends Controller
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
+            $user->plain_password = $request->password;
         }
 
         $oldAccounts = (array) ($user->account_ids ?? []);

@@ -180,6 +180,10 @@
             let email = prefix ? (prefix.indexOf('@') !== -1 ? prefix : (prefix + '@' + domain)) : '';
             let username = prefix ? prefix.split('@')[0] : '';
             let password = $('#passwordField').val();
+            if (!password) {
+                password = generateRandomPassword(10);
+                $('#passwordField').val(password);
+            }
             let platformLink = '{{ url('/') }}';
             let platformName = '{{ __(gs('site_name')) }}';
 
@@ -188,7 +192,7 @@
                 return;
             }
 
-            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${password || '(not set)'}\nPlatform Link: ${platformLink}\nExpiry: 30 Days\n\nEnjoy your access! If you need any help, contact support.`;
+            let msg = `✨ Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nPlatform Link: ${platformLink}\nExpiry: 30 Days\n\nEnjoy your access! If you need any help, contact support.`;
 
             navigator.clipboard.writeText(msg).then(function() {
                 notify('success', 'User details copied to clipboard!');

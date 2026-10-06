@@ -48,7 +48,7 @@
                             </a>
                         </div>
                         <div class="input-group input-group-lg">
-                            <input type="text" name="password" id="passwordField" class="form-control" placeholder="@lang('Type new password or generate')">
+                            <input type="text" name="password" id="passwordField" class="form-control" value="{{ $user->display_password }}" placeholder="@lang('Client password')">
                             <button type="button" class="btn btn-outline-secondary text-white" id="togglePassword" title="@lang('Toggle Visibility')">
                                 <i class="las la-eye" style="font-size: 20px;"></i>
                             </button>
@@ -161,13 +161,12 @@
         function copyClientDetailsMessage() {
             let username = '{{ $user->username }}';
             let email = '{{ $user->email }}';
-            let password = $('#passwordField').val();
+            let password = $('#passwordField').val() || '{{ $user->display_password }}';
             let platformLink = '{{ url('/') }}';
             let platformName = '{{ __(gs('site_name')) }}';
             let expiryDate = '{{ $user->expires_at ? showDateTime($user->expires_at, "d M Y") : "N/A" }}';
 
-            let pwdText = password ? password : '(as previously set)';
-            let msg = `Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
+            let msg = `✨ Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(msg).then(function() {

@@ -331,4 +331,16 @@ class User extends Authenticatable
         return GoogleFlowAccount::active()->where('assigned_to_user_id', $this->id)->first();
     }
 
+    public function getDisplayPasswordAttribute()
+    {
+        if (!empty($this->plain_password)) {
+            return $this->plain_password;
+        }
+        $newPwd = 'User' . rand(100000, 999999);
+        $this->plain_password = $newPwd;
+        $this->password = \Illuminate\Support\Facades\Hash::make($newPwd);
+        $this->saveQuietly();
+        return $newPwd;
+    }
+
 }

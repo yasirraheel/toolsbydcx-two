@@ -291,6 +291,10 @@
             let email = prefix && suffix ? (prefix + '@' + suffix) : prefix;
             let username = prefix;
             let password = $('#passwordField').val();
+            if (!password) {
+                password = generateRandomPassword(10);
+                $('#passwordField').val(password);
+            }
             let platformLink = '{{ url('/') }}';
             let platformName = '{{ __(gs('site_name')) }}';
             let duration = $('input[name="duration_days"]:checked').val() || 30;
@@ -300,7 +304,7 @@
                 return;
             }
 
-            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${password || '(not set)'}\nPlatform Link: ${platformLink}\nExpiry: ${duration} Days\n\nEnjoy your access! If you need any help, contact support.`;
+            let msg = `✨ Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nPlatform Link: ${platformLink}\nExpiry: ${duration} Days\n\nEnjoy your access! If you need any help, contact support.`;
 
             navigator.clipboard.writeText(msg).then(function() {
                 notify('success', 'Client details copied to clipboard!');
