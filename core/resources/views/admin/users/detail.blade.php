@@ -5,26 +5,26 @@
         <div class="col-12">
 
             {{-- Quick Action Buttons --}}
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <a href="{{ route('admin.report.login.history') }}?search={{ $user->username }}" class="btn btn-sm btn-outline--primary flex-sm-fill">
+            <div class="d-flex align-items-center gap-1 gap-md-2 mb-3 overflow-x-auto flex-nowrap py-1">
+                <a href="{{ route('admin.report.login.history') }}?search={{ $user->username }}" class="btn btn-sm btn-outline--primary text-nowrap px-2 px-xl-3 py-1">
                     <i class="las la-list-alt"></i> @lang('Login History')
                 </a>
-                <a href="{{ route('admin.users.notification.log', $user->id) }}" class="btn btn-sm btn-outline--info flex-sm-fill">
+                <a href="{{ route('admin.users.notification.log', $user->id) }}" class="btn btn-sm btn-outline--info text-nowrap px-2 px-xl-3 py-1">
                     <i class="las la-bell"></i> @lang('Notifications')
                 </a>
                 @if($user->status == Status::USER_ACTIVE)
-                    <button type="button" class="btn btn-sm btn-outline--warning flex-sm-fill" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                    <button type="button" class="btn btn-sm btn-outline--warning text-nowrap px-2 px-xl-3 py-1" data-bs-toggle="modal" data-bs-target="#userStatusModal">
                         <i class="las la-ban"></i> @lang('Ban User')
                     </button>
                 @else
-                    <button type="button" class="btn btn-sm btn-outline--success flex-sm-fill" data-bs-toggle="modal" data-bs-target="#userStatusModal">
+                    <button type="button" class="btn btn-sm btn-outline--success text-nowrap px-2 px-xl-3 py-1" data-bs-toggle="modal" data-bs-target="#userStatusModal">
                         <i class="las la-undo"></i> @lang('Unban User')
                     </button>
                 @endif
-                <button type="button" class="btn btn-sm btn-outline--dark flex-sm-fill" id="copyWelcomeDetailsBtn">
+                <button type="button" class="btn btn-sm btn-outline--dark text-nowrap px-2 px-xl-3 py-1" id="copyWelcomeDetailsBtn">
                     <i class="las la-copy"></i> @lang('Copy Details')
                 </button>
-                <button type="button" class="btn btn-sm btn-outline--danger flex-sm-fill" data-bs-toggle="modal" data-bs-target="#userLogoutModal">
+                <button type="button" class="btn btn-sm btn-outline--danger text-nowrap px-2 px-xl-3 py-1" data-bs-toggle="modal" data-bs-target="#userLogoutModal">
                     <i class="las la-sign-out-alt"></i> @lang('Logout Remotely')
                 </button>
             </div>
@@ -130,14 +130,17 @@
                                     <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
                                         <option value="">@lang('No Google Flow account (Unassigned)')</option>
                                         @foreach($googleFlowAccounts as $flowAcc)
-                                            <option value="{{ $flowAcc->id }}" @selected($currentFlowAccount && $currentFlowAccount->id == $flowAcc->id)>
+                                            <option value="{{ $flowAcc->id }}" @selected(($currentFlowAccount && $currentFlowAccount->id == $flowAcc->id) || $user->google_flow_account_id == $flowAcc->id)>
                                                 {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
                                             </option>
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        @if($currentFlowAccount)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $currentFlowAccount->email }}</span>
+                                        @php
+                                            $activeAssignedFlow = $currentFlowAccount ?? ($user->google_flow_account_id ? $googleFlowAccounts->firstWhere('id', $user->google_flow_account_id) : null);
+                                        @endphp
+                                        @if($activeAssignedFlow)
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $activeAssignedFlow->email }}</span>
                                         @else
                                             <i class="las la-info-circle"></i> @lang('Select a Google Flow account for extension auto-login.')
                                         @endif

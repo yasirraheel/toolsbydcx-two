@@ -268,7 +268,7 @@ class ManageUsersController extends Controller
             ->get();
 
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
-        $currentFlowAccount = \App\Models\GoogleFlowAccount::where('assigned_to_user_id', $user->id)->first();
+        $currentFlowAccount = $user->flow_account;
         $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
             ->where('is_active', true)
             ->where('expires_at', '>', now())
@@ -383,6 +383,7 @@ class ManageUsersController extends Controller
             $flowAccId = $request->filled('google_flow_account_id') ? (int) $request->google_flow_account_id : null;
             try {
                 \App\Services\FlowAccess::assign($user, $flowAccId, true);
+                $user->google_flow_account_id = $flowAccId;
             } catch (\Illuminate\Validation\ValidationException $e) {
                 $errorMsg = collect($e->errors())->flatten()->first() ?: 'Invalid Google Flow account selected.';
                 $notify[] = ['error', $errorMsg];
