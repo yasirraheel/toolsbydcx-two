@@ -9,8 +9,8 @@
                     <i class="las la-user-edit text-primary me-2"></i> @lang('Edit Client User') — @ {{ $user->username }}
                 </h5>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-primary fw-semibold" id="copyWelcomeDetailsBtn">
-                        <i class="las la-copy me-1"></i> @lang('Copy Details')
+                    <button type="button" class="btn btn-sm btn-success text-white fw-semibold copyWelcomeDetailsTrigger" id="copyWelcomeDetailsBtn">
+                        <i class="las la-clipboard-check me-1"></i> @lang('Copy Details')
                     </button>
                     <a href="{{ route('reseller.users.index') }}" class="btn btn-sm btn-outline-secondary text-white">
                         <i class="las la-arrow-left me-1"></i> @lang('Back to Clients')
@@ -52,8 +52,8 @@
                             <button type="button" class="btn btn-outline-secondary text-white" id="togglePassword" title="@lang('Toggle Visibility')">
                                 <i class="las la-eye" style="font-size: 20px;"></i>
                             </button>
-                            <button type="button" class="btn btn-outline-secondary text-white copy-btn" title="@lang('Copy Password')">
-                                <i class="las la-copy" style="font-size: 20px;"></i>
+                            <button type="button" class="btn btn-success text-white copyWelcomeDetailsTrigger" title="@lang('Copy Details')">
+                                <i class="las la-clipboard-check" style="font-size: 20px;"></i>
                             </button>
                         </div>
                     </div>
@@ -157,18 +157,8 @@
             }
         });
 
-        $('.copy-btn').on('click', function () {
-            let copyText = document.getElementById("passwordField");
-            let originalType = copyText.type;
-            copyText.type = "text";
-            copyText.select();
-            document.execCommand("copy");
-            copyText.type = originalType;
-            notify('success', 'Password copied to clipboard!');
-        });
-
-        // Copy Welcome Details
-        $('#copyWelcomeDetailsBtn').on('click', function () {
+        // Copy Client Details Message
+        function copyClientDetailsMessage() {
             let username = '{{ $user->username }}';
             let email = '{{ $user->email }}';
             let password = $('#passwordField').val();
@@ -176,20 +166,40 @@
             let platformName = '{{ __(gs('site_name')) }}';
             let expiryDate = '{{ $user->expires_at ? showDateTime($user->expires_at, "d M Y") : "N/A" }}';
 
-            let pwdText = password ? password : '(kept current password)';
-            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
+            let pwdText = password ? password : '(as previously set)';
+            let msg = `Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
 
-            navigator.clipboard.writeText(msg).then(function() {
-                notify('success', 'Client details copied to clipboard!');
-            }).catch(function() {
-                let tempArea = document.createElement("textarea");
-                tempArea.value = msg;
-                document.body.appendChild(tempArea);
-                tempArea.select();
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(msg).then(function() {
+                    notify('success', 'Client details copied to clipboard!');
+                }).catch(function() {
+                    fallbackCopyClient(msg);
+                });
+            } else {
+                fallbackCopyClient(msg);
+            }
+        }
+
+        function fallbackCopyClient(text) {
+            let tempArea = document.createElement("textarea");
+            tempArea.value = text;
+            tempArea.style.position = "fixed";
+            tempArea.style.left = "-9999px";
+            document.body.appendChild(tempArea);
+            tempArea.focus();
+            tempArea.select();
+            try {
                 document.execCommand("copy");
-                document.body.removeChild(tempArea);
                 notify('success', 'Client details copied to clipboard!');
-            });
+            } catch (err) {
+                notify('error', 'Failed to copy to clipboard.');
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        $(document).on('click', '.copyWelcomeDetailsTrigger, #copyWelcomeDetailsBtn, .copy-btn', function (e) {
+            e.preventDefault();
+            copyClientDetailsMessage();
         });
 
         $(document).on('change', '.account-checkbox', function() {

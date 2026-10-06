@@ -21,8 +21,8 @@
                         <i class="las la-undo"></i> @lang('Unban User')
                     </button>
                 @endif
-                <button type="button" class="btn btn-sm btn-outline--dark text-nowrap px-2 px-xl-3 py-1" id="copyWelcomeDetailsBtn">
-                    <i class="las la-copy"></i> @lang('Copy Details')
+                <button type="button" class="btn btn-sm btn--success text-white text-nowrap px-2 px-xl-3 py-1 shadow-sm copyWelcomeDetailsTrigger" id="copyWelcomeDetailsBtn" title="@lang('Copy User Details')">
+                    <i class="las la-clipboard-check"></i> @lang('Copy Details')
                 </button>
                 <button type="button" class="btn btn-sm btn-outline--danger text-nowrap px-2 px-xl-3 py-1" data-bs-toggle="modal" data-bs-target="#userLogoutModal">
                     <i class="las la-sign-out-alt"></i> @lang('Logout Remotely')
@@ -34,7 +34,10 @@
                     <h5 class="card-title text-white mb-0">
                         <i class="las la-user-edit me-1"></i> @lang('Edit User') — {{ $user->fullname ?: $user->username }}
                     </h5>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn--success text-white fw-bold shadow-sm copyWelcomeDetailsTrigger">
+                            <i class="las la-clipboard-check me-1"></i> @lang('Copy Details')
+                        </button>
                         @if($user->status == Status::USER_ACTIVE)
                             <span class="badge badge--success">@lang('Active')</span>
                         @else
@@ -87,7 +90,7 @@
                                         <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer;">
                                             <i class="las la-eye" style="font-size: 18px; color: #fff;"></i>
                                         </button>
-                                        <button type="button" class="btn btn--dark px-3 d-flex align-items-center justify-content-center copy-btn" title="@lang('Copy Password')" style="cursor:pointer;">
+                                        <button type="button" class="btn btn--success text-white px-3 d-flex align-items-center justify-content-center copyWelcomeDetailsTrigger" title="@lang('Copy User Details')" style="cursor:pointer;">
                                             <i class="las la-copy" style="font-size: 18px; color: #fff;"></i>
                                         </button>
                                     </div>
@@ -148,10 +151,13 @@
                                 </div>
                             </div>
 
-                            {{-- Save Changes Button --}}
-                            <div class="col-12 mt-3">
-                                <button type="submit" class="btn btn--primary btn-lg w-100 h-45 shadow-sm fw-bold">
+                            {{-- Save Changes & Copy Details Buttons --}}
+                            <div class="col-12 mt-3 d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn--primary btn-lg flex-grow-1 h-45 shadow-sm fw-bold">
                                     <i class="las la-save me-1"></i> @lang('Save Changes')
+                                </button>
+                                <button type="button" class="btn btn--success btn-lg h-45 shadow-sm fw-bold text-nowrap text-white px-4 copyWelcomeDetailsTrigger">
+                                    <i class="las la-clipboard-check me-1"></i> @lang('Copy Details')
                                 </button>
                             </div>
                         </div>
@@ -337,23 +343,8 @@
             }
         });
 
-        // Copy Password
-        $('.copy-btn').on('click', function () {
-            let copyText = document.getElementById("passwordField");
-            if (!copyText.value) {
-                notify('warning', 'Password field is empty!');
-                return;
-            }
-            let originalType = copyText.type;
-            copyText.type = "text";
-            copyText.select();
-            document.execCommand("copy");
-            copyText.type = originalType;
-            notify('success', 'Password copied to clipboard!');
-        });
-
-        // Copy Welcome Details
-        $('#copyWelcomeDetailsBtn').on('click', function () {
+        // Copy User Details Message Handler
+        function copyUserDetailsMessage() {
             let username = '{{ $user->username }}';
             let email = '{{ $user->email }}';
             let password = $('#passwordField').val();
@@ -361,20 +352,41 @@
             let platformName = '{{ __(gs('site_name')) }}';
             let expiryDate = '{{ $user->expires_at ? showDateTime($user->expires_at, "d M Y") : "N/A" }}';
 
-            let pwdText = password ? password : '(kept current password)';
-            let msg = `Welcome to ${platformName}!\nHere are your access details:\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
+            let pwdText = password ? password : '(as previously set)';
+            let msg = `Welcome to ${platformName}!\n\nHere are your access details:\nUsername: ${username}\nEmail: ${email}\nPassword: ${pwdText}\nPlatform Link: ${platformLink}\nExpiry: ${expiryDate}\n\nEnjoy your access! If you need any help, contact support.`;
 
-            navigator.clipboard.writeText(msg).then(function() {
-                notify('success', 'User details copied to clipboard!');
-            }).catch(function() {
-                let tempArea = document.createElement("textarea");
-                tempArea.value = msg;
-                document.body.appendChild(tempArea);
-                tempArea.select();
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(msg).then(function() {
+                    notify('success', 'User details copied to clipboard!');
+                }).catch(function() {
+                    fallbackCopy(msg);
+                });
+            } else {
+                fallbackCopy(msg);
+            }
+        }
+
+        function fallbackCopy(text) {
+            let tempArea = document.createElement("textarea");
+            tempArea.value = text;
+            tempArea.style.position = "fixed";
+            tempArea.style.left = "-9999px";
+            document.body.appendChild(tempArea);
+            tempArea.focus();
+            tempArea.select();
+            try {
                 document.execCommand("copy");
-                document.body.removeChild(tempArea);
                 notify('success', 'User details copied to clipboard!');
-            });
+            } catch (err) {
+                notify('error', 'Failed to copy to clipboard.');
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        // Attach click handler to all Copy Details buttons and icons
+        $(document).on('click', '.copyWelcomeDetailsTrigger, #copyWelcomeDetailsBtn, .copy-btn', function (e) {
+            e.preventDefault();
+            copyUserDetailsMessage();
         });
 
     })(jQuery);

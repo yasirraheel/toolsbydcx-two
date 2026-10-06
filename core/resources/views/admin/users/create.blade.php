@@ -10,8 +10,8 @@
                         <button type="button" class="btn btn-sm btn-light text--primary fw-bold" id="generateUserBtn">
                             <i class="las la-magic"></i> @lang('Quick Generate')
                         </button>
-                        <button type="button" class="btn btn-sm btn-dark text-white fw-bold" id="copyWelcomeDetailsBtn">
-                            <i class="las la-copy"></i> @lang('Copy Details')
+                        <button type="button" class="btn btn-sm btn-success text-white fw-bold" id="copyWelcomeDetailsBtn">
+                            <i class="las la-clipboard-check"></i> @lang('Copy Details')
                         </button>
                     </div>
                 </div>

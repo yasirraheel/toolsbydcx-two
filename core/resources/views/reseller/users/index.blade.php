@@ -121,12 +121,12 @@
                                     </a>
 
                                     {{-- Copy Details Button --}}
-                                    <button type="button" class="btn btn-sm btn-outline-secondary text-white btn-copy-client-details" 
+                                    <button type="button" class="btn btn-sm btn-success text-white btn-copy-client-details" 
                                             data-username="{{ $user->username }}" 
                                             data-email="{{ $user->email }}" 
                                             data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
                                             title="@lang('Copy Welcome Details')">
-                                        <i class="las la-copy"></i>
+                                        <i class="las la-clipboard-check"></i>
                                     </button>
 
                                     {{-- Status / Ban Toggle Button --}}

@@ -11,8 +11,8 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="quickGenBtn">
                         <i class="las la-magic me-1"></i> @lang('Quick Generate')
                     </button>
-                    <button type="button" class="btn btn-sm btn-primary fw-semibold" id="copyWelcomeDetailsBtn">
-                        <i class="las la-copy me-1"></i> @lang('Copy Details')
+                    <button type="button" class="btn btn-sm btn-success text-white fw-semibold" id="copyWelcomeDetailsBtn">
+                        <i class="las la-clipboard-check me-1"></i> @lang('Copy Details')
                     </button>
                 </div>
             </div>

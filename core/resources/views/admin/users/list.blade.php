@@ -124,12 +124,12 @@
                                         <a href="{{ route('admin.users.detail', $user->id) }}" class="btn btn-sm btn-outline--primary w-100 text-center">
                                             <i class="las la-desktop"></i> @lang('Details')
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-outline--dark w-100 text-center btn-copy-user-details" 
+                                        <button type="button" class="btn btn-sm btn--success text-white w-100 text-center btn-copy-user-details" 
                                                 data-username="{{ $user->username }}" 
                                                 data-email="{{ $user->email }}" 
                                                 data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
                                                 title="@lang('Copy Welcome Details')">
-                                            <i class="las la-copy"></i> @lang('Copy')
+                                            <i class="las la-clipboard-check"></i> @lang('Copy Details')
                                         </button>
                                         @if (request()->routeIs('admin.users.kyc.pending'))
                                         <a href="{{ route('admin.users.kyc.details', $user->id) }}" target="_blank" class="btn btn-sm btn-outline--dark w-100 text-center">
