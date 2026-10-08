@@ -73,8 +73,8 @@ class ResellerController extends Controller
             ->get();
 
         $accounts = AccountListing::with('socialMedia')
-            ->active()
             ->orderBy('social_media_id', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('reseller.dashboard', compact(
@@ -112,7 +112,7 @@ class ResellerController extends Controller
         }
 
         $users = $query->orderBy('id', 'desc')->paginate(getPaginate());
-        $accounts = AccountListing::with('socialMedia')->active()->get()->keyBy('id');
+        $accounts = AccountListing::with('socialMedia')->get()->keyBy('id');
 
         return view('reseller.users.index', compact('pageTitle', 'users', 'accounts', 'reseller'));
     }
@@ -124,9 +124,8 @@ class ResellerController extends Controller
         $domain = $reseller->email_suffix ?: (parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost());
 
         $accounts = AccountListing::with('socialMedia')
-            ->active()
-            ->where('cookie_status', '!=', 0)
             ->orderBy('social_media_id', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('reseller.users.create', compact('pageTitle', 'reseller', 'domain', 'accounts'));
@@ -299,9 +298,8 @@ class ResellerController extends Controller
         $pageTitle = 'Edit Client User - @' . $user->username;
 
         $accounts = AccountListing::with('socialMedia')
-            ->active()
-            ->where('cookie_status', '!=', 0)
             ->orderBy('social_media_id', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('reseller.users.edit', compact('pageTitle', 'reseller', 'user', 'accounts'));

@@ -155,9 +155,8 @@ class ManageUsersController extends Controller
         $pageTitle = 'Add New User';
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
         $accounts = \App\Models\AccountListing::with('socialMedia')
-            ->active()
-            ->where('cookie_status', '!=', 0)
             ->orderBy('social_media_id', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
         return view('admin.users.create', compact('pageTitle', 'accounts', 'domain', 'googleFlowAccounts'));
@@ -263,9 +262,8 @@ class ManageUsersController extends Controller
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
 
         $accounts = \App\Models\AccountListing::with('socialMedia')
-            ->active()
-            ->where('cookie_status', '!=', 0)
             ->orderBy('social_media_id', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();

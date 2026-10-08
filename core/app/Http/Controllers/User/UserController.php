@@ -59,8 +59,6 @@ class UserController extends Controller
         if (!empty($user->account_ids)) {
             $specificAccounts = \App\Models\AccountListing::with('socialMedia')
                 ->whereIn('id', $user->account_ids)
-                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
-                ->where('cookie_status', '!=', 0)
                 ->whereHas('socialMedia', function($q) {
                     $q->where('status', \App\Constants\Status::ENABLE);
                 })

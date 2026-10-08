@@ -75,18 +75,19 @@
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
                                     </label>
-                                    <select name="account_ids[]" class="form-control select2" multiple="multiple" id="account-selector" data-placeholder="@lang('Select Available Active Accounts')">
+                                    <select name="account_ids[]" class="form-control select2" multiple="multiple" id="account-selector" data-placeholder="@lang('Select Accounts to Assign')">
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" @selected(in_array($account->id, (array) old('account_ids', [])))>
-                                                {{ __(@$account->socialMedia->name) }} — {{ __($account->title) }}
+                                                {{ __(@$account->socialMedia->name ?: 'General') }} — {{ __($account->title) }}
+                                                @if($account->status != \App\Constants\Status::LISTING_ACTIVE) (@lang('Disabled')) @endif
                                             </option>
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         @if($accounts->count() > 0)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('active platform accounts currently available.')</span>
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('platform accounts available for assignment.')</span>
                                         @else
-                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No active accounts available right now.')</span>
+                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No accounts found in Accounts Manager.')</span>
                                         @endif
                                     </small>
                                 </div>

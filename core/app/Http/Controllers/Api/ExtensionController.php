@@ -251,19 +251,25 @@ class ExtensionController extends Controller
             return response()->json(['success' => false, 'message' => 'Your subscription is expired. Please contact administrator.'], 403);
         }
 
-        $query = AccountListing::where('status', Status::LISTING_ACTIVE)->with('socialMedia');
+        $query = AccountListing::with('socialMedia');
 
         $targetAccountId = $accountId ?: $request->account_id;
 
         if ($targetAccountId) {
             $query->where('id', $targetAccountId);
+            if (!$isAdmin) {
+                $allowedIds = (array) ($user->account_ids ?? []);
+                if (!in_array((int)$targetAccountId, array_map('intval', $allowedIds))) {
+                    $query->where('status', Status::LISTING_ACTIVE);
+                }
+            }
         } else {
             $query->where('social_media_id', $platformId);
             if (!$isAdmin) {
                 $allowedIds = (array) ($user->account_ids ?? []);
                 $query->where(function($q) use ($user, $allowedIds) {
                     if ($user->plan_id) {
-                        $q->where('plan_id', $user->plan_id);
+                        $q->where('plan_id', $user->plan_id)->where('status', Status::LISTING_ACTIVE);
                     }
                     if (!empty($allowedIds)) {
                         $q->orWhereIn('id', $allowedIds);
