@@ -695,22 +695,16 @@
                 @endpush
             @endif
 
-            {{-- Extension Update Modal on Web Panel --}}
-            <div class="modal fade custom--modal" id="panelExtensionUpdateModal" tabindex="-1" role="dialog" aria-labelledby="panelExtensionUpdateTitle" aria-hidden="true" @if($forceExtUpdate) data-bs-backdrop="static" data-bs-keyboard="false" @endif>
+            {{-- Extension Update Modal on Web Panel (Only active when Force Update is toggled ON) --}}
+            @if($forceExtUpdate)
+            <div class="modal fade custom--modal" id="panelExtensionUpdateModal" tabindex="-1" role="dialog" aria-labelledby="panelExtensionUpdateTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content" style="background: #111827 !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #fff;">
                         <div class="modal-header border-0 pb-0">
                             <h5 class="modal-title d-flex align-items-center text-warning" id="panelExtensionUpdateTitle">
                                 <i class="las la-exclamation-triangle me-2 fs-4"></i>
-                                @if($forceExtUpdate)
-                                    @lang('Action Required: Extension Update')
-                                @else
-                                    @lang('Extension Update Available')
-                                @endif
+                                @lang('Action Required: Extension Update')
                             </h5>
-                            @if(!$forceExtUpdate)
-                                <button type="button" class="btn-close modal-icon" data-bs-dismiss="modal" aria-label="Close"></button>
-                            @endif
                         </div>
                         <div class="modal-body text-center py-4">
                             <div class="mb-3">
@@ -718,29 +712,19 @@
                                     @lang('Required Version'): <strong>v{{ $minExtVersion }}</strong>
                                 </span>
                             </div>
-                            @if($forceExtUpdate)
-                                <p class="text-white fs-15 mb-0">
-                                    @lang('Your browser extension is outdated. The administrator has required an update to continue accessing your assigned accounts seamlessly.')
-                                </p>
-                            @else
-                                <p class="text-white fs-15 mb-0">
-                                    @lang('A new version of the') {{ __(gs('site_name')) }} @lang('Extension (v')<strong>{{ $minExtVersion }}</strong>@lang(') is available. Please update to enjoy the latest features.')
-                                </p>
-                            @endif
+                            <p class="text-white fs-15 mb-0">
+                                @lang('Your browser extension is outdated. An update is required to continue accessing your assigned accounts seamlessly.')
+                            </p>
                         </div>
                         <div class="modal-footer border-0 pt-0 d-flex gap-2">
                             <a href="{{ $extDownloadUrl }}" target="_blank" id="panelUpdateDownloadBtn" class="btn btn--primary flex-grow-1">
                                 <i class="las la-download me-1"></i> @lang('Download Extension Update')
                             </a>
-                            @if(!$forceExtUpdate)
-                                <button type="button" class="btn btn--secondary flex-grow-1" id="panelUpdateSnoozeBtn" data-bs-dismiss="modal">
-                                    @lang('Snooze (6 Hours)')
-                                </button>
-                            @endif
                         </div>
                     </div>
                 </div>
             </div>
+            @endif
         @endif
     @endauth
 
@@ -761,14 +745,16 @@
         (function($) {
             "use strict";
 
-            var requiredVer = "{{ $minExtVersion ?? '1.9.6' }}";
+            var requiredVer = "{{ $minExtVersion ?? '1.0.0' }}";
             var isStrictForce = {{ ($forceExtUpdate ?? false) ? 'true' : 'false' }};
-            var SNOOZE_MS = 6 * 60 * 60 * 1000;
+
+            // Never show extension popup unless force update is toggled ON
+            if (!isStrictForce) return;
 
             function isOutdated(installed, required) {
                 if (!required) return false;
-                var p1 = installed.split('.').map(Number);
-                var p2 = required.split('.').map(Number);
+                var p1 = String(installed || '').split('.').map(Number);
+                var p2 = String(required || '').split('.').map(Number);
                 for (var i = 0; i < Math.max(p1.length, p2.length); i++) {
                     var n1 = p1[i] || 0;
                     var n2 = p2[i] || 0;
@@ -796,21 +782,9 @@
 
                 if (!extInstalledMeta || isOutdated(installedVer, requiredVer)) {
                     var modal = $('#panelExtensionUpdateModal');
-                    if (!modal.length) return;
-
-                    if (isStrictForce) {
+                    if (modal.length) {
                         modal.modal('show');
-                    } else {
-                        var lastSnooze = localStorage.getItem('panel_update_snooze') || 0;
-                        var now = new Date().getTime();
-                        if (now - parseInt(lastSnooze) > SNOOZE_MS) {
-                            modal.modal('show');
-                        }
                     }
-
-                    $('#panelUpdateSnoozeBtn').on('click', function() {
-                        localStorage.setItem('panel_update_snooze', new Date().getTime());
-                    });
                 }
             }
 
