@@ -158,7 +158,7 @@ class ExtensionUploadController extends Controller
                 ]);
             } catch (\Throwable $e) {}
 
-            $notifyMsg = 'ToolsByDcx Social (Cookie) Extension v' . $cleanVersion . ' uploaded successfully!';
+            $notifyMsg = 'ToolsByDcx Social Extension v' . $cleanVersion . ' uploaded successfully!';
         } else {
             // Google Flow Extension
             $finalFilename = 'toolsbydcx-flow-v' . $cleanVersion . '.zip';
