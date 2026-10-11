@@ -210,6 +210,64 @@
         return send("SITE_PRESENCE", { userId: currentSiteUserId }).then(reply).catch(fail);
       }).catch(fail);
     });
+    // Announce presence on page load for immediate dashboard detection
+    window.postMessage({ type: "DCX_FLOW_EXTENSION_PRESENT", version: BRIDGE_VERSION, alive: true }, location.origin);
+
+    // Also support DCX_FLOW_* messaging protocol from website dashboard/pages
+    listen(window, "message", async event => {
+      if (event.source !== window || event.origin !== location.origin) return;
+      const type = event.data?.type;
+      const requestId = event.data?.requestId;
+
+      if (type === "DCX_FLOW_STATUS") {
+        const reqId = requestId || "dashboard-flow";
+        const requestedUserId = Number(event.data.userId);
+        const userId = Number.isSafeInteger(requestedUserId) && requestedUserId > 0 ? requestedUserId : currentUserId;
+        try {
+          const status = await send("SITE_PRESENCE", { userId });
+          window.postMessage({
+            type: "DCX_FLOW_STATUS_REPLY",
+            requestId: reqId,
+            data: { connected: status?.connected === true, alive: status?.alive === true, userId: status?.userId || null }
+          }, location.origin);
+        } catch {
+          window.postMessage({
+            type: "DCX_FLOW_STATUS_REPLY",
+            requestId: reqId,
+            data: { connected: false, alive: true, userId: null }
+          }, location.origin);
+        }
+      }
+
+      if (type === "DCX_FLOW_AUTO_STATUS") {
+        const requestedUserId = Number(event.data.userId) || currentUserId;
+        try {
+          const res = await send("SITE_AUTO_STATUS", { userId: requestedUserId });
+          window.postMessage({ type: "DCX_FLOW_AUTO_STATUS_REPLY", requestId, data: res }, location.origin);
+        } catch (err) {
+          window.postMessage({ type: "DCX_FLOW_AUTO_STATUS_REPLY", requestId, error: err.message }, location.origin);
+        }
+      }
+
+      if (type === "DCX_FLOW_PAIR") {
+        const requestedUserId = Number(event.data.userId) || currentUserId;
+        try {
+          const res = await send("SITE_AUTO_PAIR", { userId: requestedUserId, code: event.data.code });
+          window.postMessage({ type: "DCX_FLOW_PAIR_REPLY", requestId, data: res }, location.origin);
+        } catch (err) {
+          window.postMessage({ type: "DCX_FLOW_PAIR_REPLY", requestId, error: err.message }, location.origin);
+        }
+      }
+
+      if (type === "DCX_FLOW_START") {
+        try {
+          const res = await send("START", { consent: event.data.consent });
+          window.postMessage({ type: "DCX_FLOW_START_REPLY", requestId, data: res }, location.origin);
+        } catch (err) {
+          window.postMessage({ type: "DCX_FLOW_START_REPLY", requestId, error: err.message }, location.origin);
+        }
+      }
+    });
     listen(document, "visibilitychange", () => { if (!document.hidden) schedule(); });
     // Only an explicit ToolsByDcx sign-out triggers Google sign-out
     async function notifySignedOut(attempt = 0) {

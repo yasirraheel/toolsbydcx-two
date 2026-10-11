@@ -74,7 +74,13 @@ class UserController extends Controller
         $totalDeposit     = Deposit::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
 
-        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
+        $isExtensionPaired = \App\Models\ExtensionPairing::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where('expires_at', '>', now())
+            ->whereNotNull('access_token')
+            ->exists();
+
+        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'isExtensionPaired', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
     }
 
     public function subscribePlan(Request $request, $id)

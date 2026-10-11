@@ -3,8 +3,17 @@
 @section('content')
     <div class="dashboard-section">
         <div class="card p-3 mb-4 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
-            <div><strong>Flow Extension</strong> <span id="flow-presence" class="badge bg-secondary">Not detected</span><div>Download, connect, and manage your Google Flow extension.</div></div>
-            <a href="{{ route('user.flow-extension') }}" class="btn btn--base">Connect your extension</a>
+            <div>
+                <strong>Flow Extension</strong> <span id="flow-presence" class="badge {{ !empty($isExtensionPaired) ? 'bg-success' : 'bg-secondary' }}">{{ !empty($isExtensionPaired) ? 'Connected' : 'Not detected' }}</span>
+                <div id="flow-subtext" class="text-muted" style="font-size: 13px;">{{ !empty($isExtensionPaired) ? 'Extension connected to your assigned Google Flow workspace.' : 'Download, connect, and manage your Google Flow extension.' }}</div>
+            </div>
+            <a href="{{ route('user.flow-extension') }}" class="btn {{ !empty($isExtensionPaired) ? 'btn--success' : 'btn--base' }}" id="flow-action-btn">
+                @if(!empty($isExtensionPaired))
+                    <i class="las la-check-circle me-1"></i> Connected
+                @else
+                    Connect your extension
+                @endif
+            </a>
         </div>
 
         {{-- Subscription Expiry Calculation --}}
@@ -470,13 +479,94 @@
 <script>
 (() => {
     const userId = @json(auth()->id());
+    const isServerPaired = @json(!empty($isExtensionPaired));
     const badge = document.getElementById('flow-presence');
+    const subtext = document.getElementById('flow-subtext');
+    const actionBtn = document.getElementById('flow-action-btn');
+
+    let detected = false;
+
+    function setConnected() {
+        if (!badge) return;
+        detected = true;
+        badge.className = 'badge bg-success';
+        badge.textContent = 'Connected';
+        if (subtext) subtext.textContent = 'Extension connected to your assigned Google Flow workspace.';
+        if (actionBtn) {
+            actionBtn.className = 'btn btn--success';
+            actionBtn.innerHTML = '<i class="las la-check-circle me-1"></i> Connected';
+        }
+    }
+
+    function setInstalled(needsConnect = true) {
+        if (!badge || detected) return;
+        badge.className = 'badge bg-warning text-dark';
+        badge.textContent = needsConnect ? 'Installed - Connect this browser' : 'Installed';
+        if (subtext) subtext.textContent = 'Extension detected. Click below to connect this browser profile.';
+        if (actionBtn) {
+            actionBtn.className = 'btn btn--base';
+            actionBtn.textContent = 'Connect your extension';
+        }
+    }
+
+    function checkDom() {
+        const hasAttr = document.documentElement.getAttribute('data-dcx-ext-bridge') === '1' ||
+                        document.documentElement.getAttribute('data-bf-ext-bridge') === '1' ||
+                        !!document.querySelector('meta[name="toolsbydcx-extension-installed"]');
+        if (hasAttr) {
+            if (isServerPaired) {
+                setConnected();
+            } else {
+                setInstalled();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function ping() {
+        window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'dashboard-flow' }, location.origin);
+        window.postMessage({ type: 'DCX_FLOW_STATUS', userId, requestId: 'dashboard-flow' }, location.origin);
+    }
+
     window.addEventListener('message', event => {
         if (event.source !== window || event.origin !== location.origin) return;
-        if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT') window.postMessage({type:'DCX_FLOW_STATUS',userId,requestId:'dashboard-flow'},location.origin);
-        if (event.data?.type === 'DCX_FLOW_STATUS_REPLY' && event.data.requestId === 'dashboard-flow') badge.textContent = event.data.data?.connected ? 'Connected' : 'Installed - connect to continue';
+
+        // Pong from site-bridge (__dcx_ext_pong__)
+        if (event.data?.type === '__dcx_ext_pong__') {
+            if (event.data.connected || isServerPaired) {
+                setConnected();
+            } else if (event.data.alive) {
+                setInstalled();
+            }
+        }
+
+        // Reply from DCX_FLOW_STATUS
+        if (event.data?.type === 'DCX_FLOW_STATUS_REPLY' && event.data.requestId === 'dashboard-flow') {
+            if (event.data.data?.connected || isServerPaired) {
+                setConnected();
+            } else {
+                setInstalled();
+            }
+        }
+
+        if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT') {
+            if (isServerPaired) {
+                setConnected();
+            } else {
+                setInstalled();
+            }
+        }
     });
-    window.postMessage({type:'DCX_FLOW_STATUS',userId,requestId:'dashboard-flow'},location.origin);
+
+    // Check immediately and on DOM updates
+    checkDom();
+    ping();
+
+    // Check again after short delays to catch content script execution at document_idle
+    setTimeout(() => { checkDom(); ping(); }, 200);
+    setTimeout(() => { checkDom(); ping(); }, 600);
+    setTimeout(() => { checkDom(); ping(); }, 1500);
 })();
 </script>
 @endpush

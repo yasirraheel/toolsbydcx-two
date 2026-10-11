@@ -57,15 +57,41 @@
             window.postMessage({ type, userId, requestId, ...extra }, location.origin);
         });
     }
+    function showButtons(connected = false) {
+        if (auto) auto.hidden = false;
+        if (connected && start) {
+            start.hidden = false;
+            if (message) message.textContent = 'Extension connected to this browser. Click "Open Flow" to launch your workspace.';
+        }
+    }
+
+    function checkDom() {
+        const hasAttr = document.documentElement.getAttribute('data-dcx-ext-bridge') === '1' ||
+                        document.documentElement.getAttribute('data-bf-ext-bridge') === '1' ||
+                        !!document.querySelector('meta[name="toolsbydcx-extension-installed"]');
+        if (hasAttr) {
+            showButtons(@json(!empty($pairings) && $pairings->count() > 0));
+            return true;
+        }
+        return false;
+    }
+
     window.addEventListener('message', event => {
         if (event.source !== window || event.origin !== location.origin) return;
-        if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT' || event.data?.type === 'DCX_FLOW_STATUS_REPLY') auto.hidden = false;
+        if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT' || event.data?.type === 'DCX_FLOW_STATUS_REPLY' || event.data?.type === '__dcx_ext_pong__') {
+            const isConnected = !!(event.data?.data?.connected || event.data?.connected || @json(!empty($pairings) && $pairings->count() > 0));
+            showButtons(isConnected);
+        }
         const item = pending.get(event.data?.requestId);
         if (!item || !event.data?.type?.endsWith('_REPLY')) return;
         clearTimeout(item.timer); pending.delete(event.data.requestId);
         if (event.data.error) item.reject(new Error(event.data.error)); else item.resolve(event.data.data);
     });
     window.postMessage({ type: 'DCX_FLOW_STATUS', userId, requestId: 'flow-detect' }, location.origin);
+    window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'flow-detect' }, location.origin);
+    checkDom();
+    setTimeout(() => { checkDom(); window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'flow-detect' }, location.origin); }, 200);
+    setTimeout(() => { checkDom(); window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'flow-detect' }, location.origin); }, 600);
     async function issue(codeChallenge = null) {
         const response = await fetch(@json(route('user.flow-extension.pair')), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) }, body: JSON.stringify({ codeChallenge }) });
         const result = await response.json();
