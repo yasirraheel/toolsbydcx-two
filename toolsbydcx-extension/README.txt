@@ -1,4 +1,4 @@
-ToolsByDcx Flow 1.0.2
+ToolsByDcx Flow 1.0.3
 
 1. Extract this ZIP to a folder.
 2. In Microsoft Edge, open edge://extensions and enable Developer mode.

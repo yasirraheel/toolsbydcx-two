@@ -176,9 +176,69 @@
     }
   }
 
+  const securityPromptPattern = /did you request help signing in|request to help you sign in|review the request and cancel|help signing in\?/i;
+
+  function dismissSecurityHelpBanners(rootNode = document) {
+    if (!rootNode || !rootNode.querySelectorAll) return;
+    const candidates = rootNode.querySelectorAll("div, section, aside, [role='alert'], [role='dialog'], [role='region'], [role='status'], p, h1, h2, h3, h4");
+    for (const el of candidates) {
+      if (el === document.documentElement || el === document.body) continue;
+      if (el.hasAttribute("data-dcx-security-banner-hidden")) continue;
+
+      const text = el.textContent || "";
+      if (securityPromptPattern.test(text)) {
+        let banner = el;
+        while (
+          banner.parentElement &&
+          banner.parentElement !== document.body &&
+          banner.parentElement !== document.documentElement &&
+          !/^(?:flow-projects-page|flow-app|main|body)$/i.test(banner.parentElement.tagName)
+        ) {
+          const parentText = (banner.parentElement.textContent || "").trim();
+          const currText = (banner.textContent || "").trim();
+          if (parentText.length > currText.length + 150) {
+            break;
+          }
+          banner = banner.parentElement;
+        }
+
+        try {
+          const actionButtons = banner.querySelectorAll("button, [role='button'], a");
+          for (const btn of actionButtons) {
+            const btnText = (btn.textContent || "").trim();
+            const btnLabel = (btn.getAttribute("aria-label") || btn.getAttribute("title") || "").toLowerCase();
+            if (/review/i.test(btnText) || btnLabel.includes("review")) continue;
+
+            if (
+              btnLabel.includes("close") ||
+              btnLabel.includes("dismiss") ||
+              btnLabel.includes("cancel") ||
+              btn.querySelector("svg") ||
+              /^[✕✖x×]$/i.test(btnText)
+            ) {
+              btn.click();
+              break;
+            }
+          }
+        } catch (_) {}
+
+        banner.setAttribute("data-dcx-security-banner-hidden", "");
+        banner.style.setProperty("display", "none", "important");
+        banner.style.setProperty("visibility", "hidden", "important");
+        banner.style.setProperty("pointer-events", "none", "important");
+        banner.style.setProperty("opacity", "0", "important");
+        try {
+          banner.remove();
+        } catch (_) {}
+      }
+    }
+  }
+
   function collectLockedControls() {
+    dismissSecurityHelpBanners(document);
     const controls = new Set();
     for (const element of document.querySelectorAll(accountSelector)) {
+      if (element.closest("[data-dcx-security-banner-hidden]")) continue;
       addAccountControl(controls, element);
     }
     for (const avatar of document.querySelectorAll(avatarSelector)) {
@@ -277,9 +337,11 @@
     queued = false;
     frame = null;
     if (destroyed || !managed || !document.documentElement) return;
+    dismissSecurityHelpBanners(document);
     if (!style?.isConnected) {
       style = document.createElement("style");
-      style.textContent = `html[${rootMarker}] [${marker}] {
+      style.textContent = `html[${rootMarker}] [${marker}],
+        html[${rootMarker}] [data-dcx-security-banner-hidden] {
           display: none !important; visibility: hidden !important; pointer-events: none !important;
         }
         html[${rootMarker}] :is(${accountSelector}),
@@ -372,6 +434,7 @@
 
   function onInteraction(event) {
     if (destroyed || !managed || !(event.target instanceof Element)) return;
+    if (event.target.closest?.("[data-dcx-security-banner-hidden]")) return;
     const path = typeof event.composedPath === "function" ?
       event.composedPath() : [event.target];
     const blockedPath = path.some(node => {
