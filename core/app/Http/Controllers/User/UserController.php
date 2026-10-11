@@ -67,9 +67,9 @@ class UserController extends Controller
         }
 
         $assignedAccounts = $assignedAccounts->unique('id')->values();
-        $flowAccount = $user->assignedGoogleFlowAccount && $user->assignedGoogleFlowAccount->status === 'active'
+        $flowAccount = ($user->assignedGoogleFlowAccount && $user->assignedGoogleFlowAccount->status === 'active')
             ? $user->assignedGoogleFlowAccount
-            : null;
+            : $user->flow_account;
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');

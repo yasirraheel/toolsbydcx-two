@@ -138,7 +138,7 @@ class GoogleFlowController extends Controller
 
         $user = User::findOrFail($request->user_id);
         $account = GoogleFlowAccount::findOrFail($request->google_flow_account_id);
-        if ($account->assigned_to_user_id != $user->id) {
+        if ($user->google_flow_account_id != $account->id) {
             FlowAccess::assign($user, $account->id);
         }
         $pairing = FlowAccess::issue($user);

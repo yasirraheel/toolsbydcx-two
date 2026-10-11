@@ -174,7 +174,6 @@ class ExtensionController extends Controller
             $accountIds = (array) $user->account_ids;
             $specificAccounts = AccountListing::with('socialMedia')
                 ->whereIn('id', $accountIds)
-                ->where('status', Status::LISTING_ACTIVE)
                 ->whereHas('socialMedia', function($q) {
                     $q->active();
                 })

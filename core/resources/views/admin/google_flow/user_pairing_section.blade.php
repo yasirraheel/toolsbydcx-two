@@ -12,8 +12,8 @@
             <div class="input-group">
                 <select id="flow-account" name="google_flow_account_id" class="form-control">
                     <option value="">No account (remove assignment)</option>
-                    @foreach(\App\Models\GoogleFlowAccount::active()->where(fn($q) => $q->whereNull('assigned_to_user_id')->orWhere('assigned_to_user_id', $user->id))->get() as $acc)
-                        <option value="{{ $acc->id }}" @selected($acc->assigned_to_user_id == $user->id)>{{ $acc->label ?: $acc->email }}</option>
+                    @foreach(\App\Models\GoogleFlowAccount::active()->get() as $acc)
+                        <option value="{{ $acc->id }}" @selected(($user->flow_account && $user->flow_account->id == $acc->id) || $user->google_flow_account_id == $acc->id)>{{ $acc->label ?: $acc->email }}</option>
                     @endforeach
                 </select>
                 <button class="btn btn--primary" type="submit">@lang('Save Assignment')</button>

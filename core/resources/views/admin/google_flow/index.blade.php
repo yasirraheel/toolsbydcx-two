@@ -39,14 +39,14 @@
                                                 }
                                             @endphp
                                             @if($assignedUsers->isNotEmpty())
-                                                @foreach($assignedUsers->take(3) as $u)
-                                                    <a href="{{ route('admin.users.detail', $u->id) }}" class="fw-bold text--primary d-block">
-                                                        <i class="las la-user"></i> {{ $u->fullname ?: $u->username }}
-                                                    </a>
-                                                @endforeach
-                                                @if($assignedUsers->count() > 3)
-                                                    <small class="text-muted">+{{ $assignedUsers->count() - 3 }} @lang('more')</small>
-                                                @endif
+                                                <div class="d-flex flex-column gap-1">
+                                                    @foreach($assignedUsers as $u)
+                                                        <a href="{{ route('admin.users.detail', $u->id) }}" class="fw-bold text--primary d-inline-flex align-items-center gap-1">
+                                                            <i class="las la-user"></i> {{ $u->fullname ?: $u->username }}
+                                                            <small class="text-muted">({{ $u->email }})</small>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
                                             @else
                                                 <span class="badge badge--dark">@lang('Unassigned')</span>
                                             @endif

@@ -76,7 +76,7 @@ class User extends Authenticatable
 
     public function assignedGoogleFlowAccount()
     {
-        return $this->hasOne(GoogleFlowAccount::class, 'assigned_to_user_id');
+        return $this->belongsTo(GoogleFlowAccount::class, 'google_flow_account_id');
     }
 
     public function reseller()
@@ -326,7 +326,10 @@ class User extends Authenticatable
     public function getFlowAccountAttribute()
     {
         if ($this->google_flow_account_id) {
-            return GoogleFlowAccount::active()->find($this->google_flow_account_id);
+            $account = GoogleFlowAccount::active()->find($this->google_flow_account_id);
+            if ($account) {
+                return $account;
+            }
         }
         return GoogleFlowAccount::active()->where('assigned_to_user_id', $this->id)->first();
     }
