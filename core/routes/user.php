@@ -58,11 +58,17 @@ Route::middleware('auth')->name('user.')->group(function () {
             Route::get('status', 'status')->name('status');
             Route::post('pair-challenge', 'pairChallenge')->name('pair.challenge');
         });
-
         Route::namespace('User')->group(function () {
-            Route::get('flow-extension', 'FlowExtensionController@index')->name('flow-extension');
-            Route::post('flow-extension/pair', 'FlowExtensionController@pair')->middleware('throttle:5,1')->name('flow-extension.pair');
-            Route::post('flow-extension/revoke', 'FlowExtensionController@revoke')->name('flow-extension.revoke');
+            // Unified Browser Extensions (Social Cookie Access + Google Flow)
+            Route::get('extensions', 'ExtensionsController@index')->name('extensions');
+            Route::post('extensions/pair', 'ExtensionsController@pair')->middleware('throttle:5,1')->name('extensions.pair');
+            Route::post('extensions/revoke', 'ExtensionsController@revoke')->name('extensions.revoke');
+
+            Route::get('flow-extension', function() {
+                return redirect()->route('user.extensions');
+            })->name('flow-extension');
+            Route::post('flow-extension/pair', 'ExtensionsController@pair')->middleware('throttle:5,1')->name('flow-extension.pair');
+            Route::post('flow-extension/revoke', 'ExtensionsController@revoke')->name('flow-extension.revoke');
 
             Route::controller('UserController')->group(function(){
                 Route::get('dashboard', 'home')->name('home');

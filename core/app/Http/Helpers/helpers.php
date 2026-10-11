@@ -555,23 +555,10 @@ function userNotifyPermission($user, $act)
     return $user->notifyPermission ? $user->notifyPermission->$act : null;
 }
 
-function getExtensionDownloadUrl()
+function getExtensionDownloadUrl($type = 'social')
 {
-    $directory = storage_path('app/public/extension');
-    $filename = 'toolsbydcx-ext.zip';
-    if (is_dir($directory)) {
-        $files = scandir($directory);
-        $latestMtime = 0;
-        foreach ($files as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
-                $filePath = $directory . '/' . $file;
-                $mtime = filemtime($filePath);
-                if ($mtime > $latestMtime) {
-                    $latestMtime = $mtime;
-                    $filename = $file;
-                }
-            }
-        }
+    if ($type === 'flow') {
+        return route('extension.download', ['filename' => 'toolsbydcx-flow.zip']);
     }
-    return route('extension.download', ['filename' => $filename]);
+    return route('extension.download', ['filename' => 'toolsbydcx-ext.zip']);
 }

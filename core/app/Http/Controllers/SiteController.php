@@ -24,11 +24,48 @@ class SiteController extends Controller
     {
         $directory = storage_path('app/public/extension');
         $filePath = null;
-        $ver = gs('min_extension_version') ?: '1.0.2';
-        $cleanVer = preg_replace('/[^0-9.]/', '', $ver) ?: '1.0.2';
-        $downloadName = 'toolsbydcx-flow-v' . $cleanVer . '.zip';
+        $downloadName = null;
 
-        if ($filename) {
+        $type = request()->query('type');
+        $lowerName = strtolower((string) $filename);
+
+        $isSocial = $type === 'social' || str_contains($lowerName, 'social') || str_contains($lowerName, 'toolsbydcx-ext') || $lowerName === 'ext';
+        $isFlow = $type === 'flow' || str_contains($lowerName, 'flow');
+
+        if ($isSocial) {
+            $history = \App\Models\ExtensionHistory::where('type', 'social')->where('is_current', true)->first()
+                     ?: \App\Models\ExtensionHistory::where('type', 'social')->orderByDesc('id')->first();
+            if ($history && file_exists($directory . '/' . $history->filename)) {
+                $filePath = $directory . '/' . $history->filename;
+                $downloadName = $history->filename;
+            } elseif (file_exists($directory . '/toolsbydcx-ext.zip')) {
+                $filePath = $directory . '/toolsbydcx-ext.zip';
+                $downloadName = 'toolsbydcx-ext.zip';
+            } elseif (file_exists($directory . '/toolsbydcx-ext-v2.3.3.zip')) {
+                $filePath = $directory . '/toolsbydcx-ext-v2.3.3.zip';
+                $downloadName = 'toolsbydcx-ext.zip';
+            } else {
+                $candidates = glob($directory . '/toolsbydcx-ext*.zip');
+                if (!empty($candidates)) {
+                    usort($candidates, fn($a, $b) => filemtime($b) - filemtime($a));
+                    $filePath = $candidates[0];
+                    $downloadName = 'toolsbydcx-ext.zip';
+                }
+            }
+        } elseif ($isFlow) {
+            $history = \App\Models\ExtensionHistory::where('type', 'flow')->where('is_current', true)->first()
+                     ?: \App\Models\ExtensionHistory::where('type', 'flow')->orderByDesc('id')->first();
+            if ($history && file_exists($directory . '/' . $history->filename)) {
+                $filePath = $directory . '/' . $history->filename;
+                $downloadName = $history->filename;
+            } elseif (file_exists($directory . '/toolsbydcx-flow-v1.0.3.zip')) {
+                $filePath = $directory . '/toolsbydcx-flow-v1.0.3.zip';
+                $downloadName = 'toolsbydcx-flow-v1.0.3.zip';
+            } elseif (file_exists(public_path('toolsbydcx-extension.zip'))) {
+                $filePath = public_path('toolsbydcx-extension.zip');
+                $downloadName = 'toolsbydcx-flow.zip';
+            }
+        } elseif ($filename) {
             $candidate = $directory . '/' . basename($filename);
             if (file_exists($candidate)) {
                 $filePath = $candidate;
@@ -36,15 +73,14 @@ class SiteController extends Controller
             }
         }
 
+        // Generic fallback if not resolved yet
         if (!$filePath) {
-            try {
-                $history = \App\Models\ExtensionHistory::where('is_current', true)->first()
-                         ?: \App\Models\ExtensionHistory::orderByDesc('id')->first();
-                if ($history && file_exists($directory . '/' . $history->filename)) {
-                    $filePath = $directory . '/' . $history->filename;
-                    $downloadName = $history->filename;
-                }
-            } catch (\Throwable $e) {}
+            $history = \App\Models\ExtensionHistory::where('is_current', true)->first()
+                     ?: \App\Models\ExtensionHistory::orderByDesc('id')->first();
+            if ($history && file_exists($directory . '/' . $history->filename)) {
+                $filePath = $directory . '/' . $history->filename;
+                $downloadName = $history->filename;
+            }
         }
 
         if (!$filePath && is_dir($directory)) {
@@ -67,14 +103,12 @@ class SiteController extends Controller
             $publicFallback = public_path('download/extension.zip');
             if (file_exists($publicFallback)) {
                 $filePath = $publicFallback;
+                $downloadName = 'extension.zip';
             }
         }
 
         if ($filePath && file_exists($filePath)) {
-            if ($downloadName === 'extension.zip' || $downloadName === 'toolsbydcx-ext.zip' || $downloadName === 'toolsbydcx-extension.zip') {
-                $downloadName = 'toolsbydcx-flow-v' . $cleanVer . '.zip';
-            }
-
+            $downloadName = $downloadName ?: basename($filePath);
             return response()->download($filePath, $downloadName, [
                 'Cache-Control' => 'no-cache, no-store, must-revalidate',
                 'Pragma'        => 'no-cache',
