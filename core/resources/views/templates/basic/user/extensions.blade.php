@@ -1,5 +1,40 @@
 @extends($activeTemplate . 'layouts.master')
 
+@push('style')
+<style>
+    .product-item__button .btn--primary {
+        background-color: #4634ff !important;
+        border: 1px solid #4634ff !important;
+        color: #ffffff !important;
+    }
+    .product-item__button .btn--primary:hover {
+        background-color: #3724e6 !important;
+        border-color: #3724e6 !important;
+        color: #ffffff !important;
+    }
+    .product-item__button .btn-outline--primary {
+        background-color: transparent !important;
+        border: 1px solid #4634ff !important;
+        color: #818cf8 !important;
+    }
+    .product-item__button .btn-outline--primary:hover {
+        background-color: #4634ff !important;
+        border-color: #4634ff !important;
+        color: #ffffff !important;
+    }
+    .product-item__button .btn-outline--secondary {
+        background-color: transparent !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: #94a3b8 !important;
+    }
+    .product-item__button .btn-outline--secondary:hover {
+        background-color: rgba(239, 68, 68, 0.15) !important;
+        border-color: rgba(239, 68, 68, 0.4) !important;
+        color: #f87171 !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="dashboard-section">
     <div class="row">
@@ -25,14 +60,14 @@
                             <div class="product-item__content">
                                 <h4 class="product-item__title d-flex align-items-center mb-0">
                                     <span class="text--base">@lang('ToolsByDcx Social')</span>
-                                    <span class="badge badge--dark ms-2" style="font-size: 11px; padding: 4px 8px;">v{{ $socialVersion }}</span>
+                                    <span class="badge badge--dark ms-2">v{{ $socialVersion }}</span>
                                 </h4>
                                 <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
                                     <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-info-circle"></i> @lang('Access Extension')</strong>
                                     @lang('Required extension to access your unlocked tools directly from your dashboard.')
                                 </div>
                                 <div class="mt-2">
-                                    <span id="social-status-badge" class="badge badge--secondary" style="font-size: 11px; padding: 4px 8px;">
+                                    <span id="social-status-badge" class="badge badge--secondary">
                                         <i class="las la-circle"></i> @lang('Checking browser...')
                                     </span>
                                 </div>
@@ -40,7 +75,7 @@
                         </div>
                         <div class="d-flex align-items-center flex-wrap flex-shrink-0">
                             <div class="product-item__button d-flex align-items-center gap-2">
-                                <a href="{{ $socialDownloadUrl }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                <a href="{{ $socialDownloadUrl }}" class="btn btn--primary d-inline-flex align-items-center justify-content-center text-nowrap">
                                     <i class="las la-download me-1"></i> <span class="btn-text">@lang('Download')</span>
                                 </a>
                             </div>
@@ -58,13 +93,13 @@
                             <div class="product-item__content">
                                 <h4 class="product-item__title d-flex align-items-center mb-0">
                                     <span class="text--base">@lang('ToolsByDcx Flow')</span>
-                                    <span class="badge badge--dark ms-2" style="font-size: 11px; padding: 4px 8px;">v{{ $flowVersion }}</span>
+                                    <span class="badge badge--dark ms-2">v{{ $flowVersion }}</span>
                                 </h4>
                                 <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
                                     @if($flowAccount)
                                         <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-user-check"></i> @lang('Assigned account')</strong>
                                         {{ $flowAccount->label ?: $flowAccount->email }}
-                                        <span class="badge badge--success ms-1" style="font-size: 10px; padding: 3px 6px;">@lang('Ready')</span>
+                                        <span class="badge badge--success ms-1">@lang('Ready')</span>
                                     @else
                                         <strong class="d-block mb-1 text-warning"><i class="las la-info-circle"></i> @lang('Workspace Extension')</strong>
                                         @lang('Automated Google Flow workspace launcher for Microsoft Edge.')
@@ -75,19 +110,19 @@
                         </div>
                         <div class="d-flex align-items-center flex-wrap flex-shrink-0">
                             <div class="product-item__button d-flex align-items-center gap-2">
-                                <a href="{{ $flowDownloadUrl }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                <a href="{{ $flowDownloadUrl }}" class="btn btn--primary d-inline-flex align-items-center justify-content-center text-nowrap">
                                     <i class="las la-download me-1"></i> <span class="btn-text">@lang('Download')</span>
                                 </a>
-                                <button id="flow-auto-connect" type="button" class="btn btn--info d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
+                                <button id="flow-auto-connect" type="button" class="btn btn-outline--primary d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
                                     <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect')</span>
                                 </button>
-                                <button id="flow-start" type="button" class="btn btn--success d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
+                                <button id="flow-start" type="button" class="btn btn--primary d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
                                     <i class="las la-rocket me-1"></i> <span class="btn-text">@lang('Open Flow')</span>
                                 </button>
                                 @if(!empty($pairings) && $pairings->count() > 0)
                                     <form method="POST" action="{{ route('user.extensions.revoke') }}" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center text-nowrap" onclick="return confirm('@lang('Disconnect extension?')')" title="@lang('Disconnect')">
+                                        <button type="submit" class="btn btn-outline--secondary d-inline-flex align-items-center justify-content-center text-nowrap" onclick="return confirm('@lang('Disconnect extension?')')" title="@lang('Disconnect')">
                                             <i class="las la-times me-1"></i> <span class="btn-text">@lang('Disconnect')</span>
                                         </button>
                                     </form>
