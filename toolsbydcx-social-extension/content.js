@@ -56,10 +56,17 @@ function injectExtensionMetaTags() {
     const target = document.head || document.documentElement;
     if (!target) return;
 
+    try {
+        document.documentElement.setAttribute('data-dcx-social-installed', '1');
+        document.documentElement.setAttribute('data-dcx-social-version', extVersion);
+    } catch (e) {}
+
     const metaTags = [
         { name: 'extension-version', content: extVersion },
         { name: 'wemate-extension-version', content: extVersion },
         { name: 'toolsbydcx-extension-version', content: extVersion },
+        { name: 'toolsbydcx-social-extension-version', content: extVersion },
+        { name: 'toolsbydcx-social-extension-installed', content: 'true' },
         { name: 'shahabtech-extension-installed', content: 'true' },
         { name: 'wemate-extension-installed', content: 'true' },
         { name: 'toolsbydcx-extension-installed', content: 'true' }
@@ -79,4 +86,11 @@ injectExtensionMetaTags();
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', injectExtensionMetaTags);
 }
+
+window.addEventListener('message', (event) => {
+    if (event.data?.type === '__dcx_social_ping__') {
+        injectExtensionMetaTags();
+        window.postMessage({ type: '__dcx_social_pong__', version: extVersion }, location.origin);
+    }
+});
 

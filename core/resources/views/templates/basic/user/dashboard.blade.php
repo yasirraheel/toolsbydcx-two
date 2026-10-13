@@ -180,9 +180,12 @@
                                                 <i class="las la-ban me-1"></i> <span class="btn-text">@lang('Expired')</span>
                                             </button>
                                         @else
-                                            <a href="{{ route('user.extensions') }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
-                                                <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect Extension')</span>
+                                            <a href="{{ route('user.extensions') }}" class="btn btn-outline--base flow-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
                                             </a>
+                                            <button type="button" class="btn btn--base flow-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;">
+                                                <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
+                                            </button>
                                         @endif
                                     </div>
                                 </div>
@@ -223,7 +226,10 @@
                                     </div>
                                     <div class="d-flex align-items-center flex-wrap flex-shrink-0">
                                         <div class="product-item__button d-flex align-items-center gap-2">
-                                            <button type="button" class="btn btn--base btn-inject-access d-inline-flex align-items-center justify-content-center text-nowrap" data-platform-id="{{ $acc->social_media_id }}" data-account-id="{{ $acc->id }}">
+                                            <a href="{{ route('user.extensions') }}" class="btn btn-outline--base social-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
+                                            </a>
+                                            <button type="button" class="btn btn--base btn-inject-access social-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;" data-platform-id="{{ $acc->social_media_id }}" data-account-id="{{ $acc->id }}">
                                                 <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
                                             </button>
                                             <button type="button" class="btn btn--info btn-copy-cookie d-inline-flex align-items-center justify-content-center text-nowrap" data-platform-id="{{ $acc->social_media_id }}" data-account-id="{{ $acc->id }}">
@@ -277,7 +283,10 @@
                                                     <i class="las la-ban me-1"></i> <span class="btn-text">@lang('Expired')</span>
                                                 </button>
                                             @else
-                                                <button type="button" class="btn btn--base btn-inject-access d-inline-flex align-items-center justify-content-center text-nowrap" data-platform-id="{{ $acc->social_media_id }}" data-account-id="{{ $acc->id }}">
+                                                <a href="{{ route('user.extensions') }}" class="btn btn-outline--base social-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                    <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
+                                                </a>
+                                                <button type="button" class="btn btn--base btn-inject-access social-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;" data-platform-id="{{ $acc->social_media_id }}" data-account-id="{{ $acc->id }}">
                                                     <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
                                                 </button>
                                                 @if($isExclusive)
@@ -391,6 +400,72 @@
             });
         });
 
+        // 1. Social Extension Detection & Toggle
+        function checkSocialDashboard() {
+            var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                    $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+            if (isSocialInstalled) {
+                $('.social-visit-platform-btn').attr('style', 'display: inline-flex !important;');
+                $('.social-ext-missing-btn').attr('style', 'display: none !important;');
+                return true;
+            }
+            return false;
+        }
+
+        // 2. Flow Extension Detection & Toggle
+        function checkFlowDashboard() {
+            var isFlowInstalled = document.documentElement.getAttribute('data-dcx-ext-bridge') === '1' ||
+                                  document.documentElement.getAttribute('data-bf-ext-bridge') === '1' ||
+                                  document.documentElement.getAttribute('data-dcx-flow-installed') === '1' ||
+                                  $('meta[name="toolsbydcx-flow-extension-installed"]').length > 0;
+            if (isFlowInstalled) {
+                $('.flow-visit-platform-btn').attr('style', 'display: inline-flex !important;');
+                $('.flow-ext-missing-btn').attr('style', 'display: none !important;');
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('message', function(event) {
+            if (event.source !== window || event.origin !== location.origin) return;
+            if (event.data?.type === '__dcx_social_pong__') {
+                checkSocialDashboard();
+            }
+            if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT' || event.data?.type === 'DCX_FLOW_STATUS_REPLY' || event.data?.type === '__dcx_ext_pong__') {
+                checkFlowDashboard();
+            }
+        });
+
+        // Run checks
+        checkSocialDashboard();
+        checkFlowDashboard();
+        window.postMessage({ type: '__dcx_social_ping__' }, location.origin);
+        window.postMessage({ type: '__dcx_ext_ping__', requestId: 'dash-detect' }, location.origin);
+        setTimeout(function() { checkSocialDashboard(); checkFlowDashboard(); }, 300);
+        setTimeout(function() { checkSocialDashboard(); checkFlowDashboard(); }, 800);
+        setTimeout(function() { checkSocialDashboard(); checkFlowDashboard(); }, 1500);
+
+        // Flow Visit Platform Click Handler
+        $(document).on('click', '.flow-visit-platform-btn', function(e) {
+            e.preventDefault();
+            var btn = $(this);
+            btn.prop('disabled', true);
+            var originalHtml = btn.html();
+            btn.html('<i class="las la-spinner la-spin me-1"></i> <span class="btn-text">Opening Flow...</span>');
+
+            window.postMessage({
+                type: 'DCX_FLOW_START',
+                userId: @json(auth()->id()),
+                requestId: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'flow-' + Date.now(),
+                consent: true
+            }, location.origin);
+
+            setTimeout(function() {
+                btn.prop('disabled', false);
+                btn.html(originalHtml);
+            }, 3500);
+        });
+
         $('.btn-inject-access').on('click', function(e) {
             e.preventDefault();
             let btn = $(this);
@@ -399,12 +474,11 @@
             let platformId = btn.data('platform-id');
             let accountId = btn.data('account-id');
             
-            // Check if extension is installed by looking for the meta tag injected by content.js
-            if ($('meta[name="toolsbydcx-extension-installed"]').length === 0 &&
-                $('meta[name="wemate-extension-installed"]').length === 0 &&
-                $('meta[name="shahabtech-extension-installed"]').length === 0 && 
-                $('meta[name="extension-installed"]').length === 0) {
-                notify('error', '{{ __(gs("site_name")) }} Access Extension is not installed or enabled.');
+            // Check if Social extension is installed
+            var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                    $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+            if (!isSocialInstalled) {
+                notify('error', 'ToolsByDcx Social Extension is not installed or enabled.');
                 return;
             }
 

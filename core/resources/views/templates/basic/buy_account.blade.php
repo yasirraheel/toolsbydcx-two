@@ -53,7 +53,10 @@
                                             $userHasAccess = auth()->user()->plan_id || (!empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->exists());
                                         @endphp
                                         @if($userHasAccess)
-                                            <button type="button" class="btn btn--base btn-inject-access d-inline-flex align-items-center justify-content-center text-nowrap" data-platform-id="{{ $platform->id }}">
+                                            <a href="{{ route('user.extensions') }}" class="btn btn-outline--base social-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
+                                            </a>
+                                            <button type="button" class="btn btn--base btn-inject-access social-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;" data-platform-id="{{ $platform->id }}">
                                                 <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
                                             </button>
                                         @else
@@ -101,6 +104,29 @@
     <script>
         (function($){
             "use strict";
+
+            function checkSocialBuy() {
+                var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                        $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+                if (isSocialInstalled) {
+                    $('.social-visit-platform-btn').attr('style', 'display: inline-flex !important;');
+                    $('.social-ext-missing-btn').attr('style', 'display: none !important;');
+                    return true;
+                }
+                return false;
+            }
+
+            window.addEventListener('message', function(event) {
+                if (event.source !== window || event.origin !== location.origin) return;
+                if (event.data?.type === '__dcx_social_pong__') checkSocialBuy();
+            });
+
+            checkSocialBuy();
+            window.postMessage({ type: '__dcx_social_ping__' }, location.origin);
+            setTimeout(checkSocialBuy, 300);
+            setTimeout(checkSocialBuy, 800);
+            setTimeout(checkSocialBuy, 1500);
+
             $('.btn-inject-access').on('click', function(e) {
                 e.preventDefault();
                 let btn = $(this);
@@ -108,9 +134,11 @@
                 let originalText = btnText.text();
                 let platformId = btn.data('platform-id');
                 
-                // Check if extension is installed
-                if ($('meta[name="shahabtech-extension-installed"]').length === 0 && $('meta[name="extension-installed"]').length === 0) {
-                    notify('error', '{{ __(gs("site_name")) }} Access Extension is not installed or enabled.');
+                // Check if Social extension is installed
+                var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                        $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+                if (!isSocialInstalled) {
+                    notify('error', 'ToolsByDcx Social Extension is not installed or enabled.');
                     return;
                 }
 

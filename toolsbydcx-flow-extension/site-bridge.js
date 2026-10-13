@@ -22,22 +22,23 @@
     }
     globalThis.flowAutoLoginSiteBridgeLoaded = true;
     globalThis.flowAutoLoginSiteBridgeVersion = BRIDGE_VERSION;
-    // Mark extension as present on the page (for dashboard badge and version detection)
+    // Mark Flow extension as present on the page (for dashboard badge and version detection)
     document.documentElement?.setAttribute?.("data-dcx-ext-bridge", "1");
     document.documentElement?.setAttribute?.("data-bf-ext-bridge", "1");
+    document.documentElement?.setAttribute?.("data-dcx-flow-installed", "1");
     document.documentElement?.setAttribute?.("data-dcx-flow-version", BRIDGE_VERSION);
     try {
-      let meta = document.querySelector('meta[name="toolsbydcx-extension-installed"]');
+      let meta = document.querySelector('meta[name="toolsbydcx-flow-extension-installed"]');
       if (!meta) {
         meta = document.createElement("meta");
-        meta.name = "toolsbydcx-extension-installed";
+        meta.name = "toolsbydcx-flow-extension-installed";
         meta.content = "1";
         document.head?.appendChild(meta);
       }
-      let verMeta = document.querySelector('meta[name="toolsbydcx-extension-version"]');
+      let verMeta = document.querySelector('meta[name="toolsbydcx-flow-extension-version"]');
       if (!verMeta) {
         verMeta = document.createElement("meta");
-        verMeta.name = "toolsbydcx-extension-version";
+        verMeta.name = "toolsbydcx-flow-extension-version";
         verMeta.content = BRIDGE_VERSION;
         document.head?.appendChild(verMeta);
       } else {

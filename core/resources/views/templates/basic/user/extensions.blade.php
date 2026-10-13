@@ -123,16 +123,12 @@
 (() => {
     // 1. Social Extension Detection
     const socialBadge = document.getElementById('social-status-badge');
-    function checkSocial() {
-        if (!socialBadge) return;
-        const isInstalled = !!document.querySelector('meta[name="toolsbydcx-extension-installed"]') ||
-                            !!document.querySelector('meta[name="wemate-extension-installed"]') ||
-                            !!document.querySelector('meta[name="shahabtech-extension-installed"]') ||
-                            !!document.querySelector('meta[name="extension-installed"]') ||
-                            document.documentElement.getAttribute('data-toolsbydcx-installed') === '1' ||
-                            window.__toolsbydcx_extension_installed === true;
+    let socialDetected = false;
 
-        if (isInstalled) {
+    function setSocialDetected(detected) {
+        socialDetected = detected;
+        if (!socialBadge) return;
+        if (detected) {
             socialBadge.className = 'badge badge--success';
             socialBadge.innerHTML = '<i class="las la-check-circle me-1"></i> @lang("Installed & Active")';
         } else {
@@ -140,10 +136,33 @@
             socialBadge.innerHTML = '<i class="las la-times-circle me-1"></i> @lang("Not Detected")';
         }
     }
-    checkSocial();
-    setTimeout(checkSocial, 300);
-    setTimeout(checkSocial, 800);
-    setTimeout(checkSocial, 1500);
+
+    function checkSocial() {
+        if (socialDetected) return true;
+        const isInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                            !!document.querySelector('meta[name="toolsbydcx-social-extension-installed"]');
+
+        if (isInstalled) {
+            setSocialDetected(true);
+            return true;
+        }
+        return false;
+    }
+
+    window.addEventListener('message', event => {
+        if (event.source !== window || event.origin !== location.origin) return;
+        if (event.data?.type === '__dcx_social_pong__') {
+            setSocialDetected(true);
+        }
+    });
+
+    if (!checkSocial()) {
+        setSocialDetected(false);
+    }
+    window.postMessage({ type: '__dcx_social_ping__' }, location.origin);
+    setTimeout(() => { if (!checkSocial()) setSocialDetected(false); }, 300);
+    setTimeout(() => { if (!checkSocial()) setSocialDetected(false); }, 800);
+    setTimeout(() => { if (!checkSocial()) setSocialDetected(false); }, 1500);
 
     // 2. Flow Extension Detection & Connect
     const flowBadge = document.getElementById('flow-status-badge');

@@ -63,7 +63,10 @@
                                             $userHasAccess = auth()->user()->plan_id || (!empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->exists());
                                         @endphp
                                         @if($userHasAccess)
-                                            <button type="button" class="btn btn--base btn-inject-access d-inline-flex align-items-center justify-content-center text-nowrap" data-platform-id="{{ $platform->id }}">
+                                            <a href="{{ route('user.extensions') }}" class="btn btn-outline--base social-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
+                                                <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
+                                            </a>
+                                            <button type="button" class="btn btn--base btn-inject-access social-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;" data-platform-id="{{ $platform->id }}">
                                                 <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
                                             </button>
                                         @else
@@ -96,8 +99,29 @@
 <script>
     (function($){
         "use strict";
-        // The script logic is identical to dashboard and buy_account. We only need one global listener in the theme, but since we are injecting it in the sections, it's safer to avoid duplicating listeners.
-        // We'll use .off('click').on('click') to prevent multiple bindings if multiple views are loaded.
+
+        function checkSocialTop() {
+            var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                    $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+            if (isSocialInstalled) {
+                $('.social-visit-platform-btn').attr('style', 'display: inline-flex !important;');
+                $('.social-ext-missing-btn').attr('style', 'display: none !important;');
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('message', function(event) {
+            if (event.source !== window || event.origin !== location.origin) return;
+            if (event.data?.type === '__dcx_social_pong__') checkSocialTop();
+        });
+
+        checkSocialTop();
+        window.postMessage({ type: '__dcx_social_ping__' }, location.origin);
+        setTimeout(checkSocialTop, 300);
+        setTimeout(checkSocialTop, 800);
+        setTimeout(checkSocialTop, 1500);
+
         $('.btn-inject-access').off('click').on('click', function(e) {
             e.preventDefault();
             let btn = $(this);
@@ -105,8 +129,10 @@
             let originalText = btnText.text();
             let platformId = btn.data('platform-id');
             
-            if ($('meta[name="shahabtech-extension-installed"]').length === 0 && $('meta[name="extension-installed"]').length === 0) {
-                notify('error', '{{ __(gs("site_name")) }} Access Extension is not installed or enabled.');
+            var isSocialInstalled = document.documentElement.getAttribute('data-dcx-social-installed') === '1' ||
+                                    $('meta[name="toolsbydcx-social-extension-installed"]').length > 0;
+            if (!isSocialInstalled) {
+                notify('error', 'ToolsByDcx Social Extension is not installed or enabled.');
                 return;
             }
 
