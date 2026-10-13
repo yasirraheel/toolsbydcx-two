@@ -158,19 +158,18 @@
                     <div class="card-body">
                         @if($flowAccount)
                             <div class="product-item">
-                                <div class="product-item__wrapper">
-                                    <div class="product-item__thumb">
+                                <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                                    <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
                                         <div style="width: 70px; height: 70px; background: rgba(124, 58, 237, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                                            <i class="las la-bolt" style="font-size: 3rem; color: #a78bfa;"></i>
+                                            <i class="las la-bolt" style="font-size: 2.8rem; color: #a78bfa;"></i>
                                         </div>
                                     </div>
-                                    <div class="product-item__content">
+                                    <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                         <h4 class="product-item__title d-flex align-items-center mb-0">
                                             <span class="text--base">@lang('Google Flow')</span>
                                         </h4>
-                                        <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
-                                            <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-user-check"></i> @lang('Assigned account')</strong>
-                                            {{ $flowAccount->label ?: $flowAccount->email }}
+                                        <div class="mt-1 d-flex align-items-center flex-wrap gap-2 text-muted small" style="line-height: 1.4;">
+                                            <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
                                         </div>
                                     </div>
                                 </div>
@@ -181,7 +180,7 @@
                                                 <i class="las la-ban me-1"></i> <span class="btn-text">@lang('Expired')</span>
                                             </button>
                                         @else
-                                            <a href="{{ route('user.flow-extension') }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                            <a href="{{ route('user.extensions') }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
                                                 <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect Extension')</span>
                                             </a>
                                         @endif
@@ -205,20 +204,19 @@
                                     $instructions = $platformObj->instructions ?: $acc->instructions;
                                 @endphp
                                 <div class="product-item">
-                                    <div class="product-item__wrapper">
-                                        <div class="product-item__thumb">
+                                    <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                                        <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
                                             <div style="width: 70px; height: 70px; background: rgba(108, 99, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                                                <i class="las la-globe" style="font-size: 3rem; color: var(--base-color, #6c63ff);"></i>
+                                                <i class="las la-globe" style="font-size: 2.8rem; color: var(--base-color, #6c63ff);"></i>
                                             </div>
                                         </div>
-                                        <div class="product-item__content">
+                                        <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                             <h4 class="product-item__title d-flex align-items-center mb-0">
                                                 <span class="text--base">{{ __($platformObj->name) }} ({{ __($acc->title) }})</span>
                                             </h4>
                                             @if($instructions)
-                                                <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
-                                                    <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-info-circle"></i> @lang('Instructions')</strong>
-                                                    {{ $instructions }}
+                                                <div class="mt-1 text-muted small" style="line-height: 1.4;">
+                                                    <i class="las la-info-circle text--base me-1"></i>{{ $instructions }}
                                                 </div>
                                             @endif
                                         </div>
@@ -251,13 +249,13 @@
                                     $accIndexNumber = $platformCounters[$pId];
                                 @endphp
                                 <div class="product-item">
-                                    <div class="product-item__wrapper">
-                                        <div class="product-item__thumb">
+                                    <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                                        <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
                                             <div style="width: 70px; height: 70px; background: rgba(108, 99, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                                                <i class="las la-globe" style="font-size: 3rem; color: var(--base-color, #6c63ff);"></i>
+                                                <i class="las la-globe" style="font-size: 2.8rem; color: var(--base-color, #6c63ff);"></i>
                                             </div>
                                         </div>
-                                        <div class="product-item__content">
+                                        <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                             <h4 class="product-item__title d-flex align-items-center mb-0">
                                                 @if($platformAccCount > 1)
                                                     <span class="text--base">{{ __($platform->name) }} #{{ $accIndexNumber }}</span>
@@ -266,9 +264,8 @@
                                                 @endif
                                             </h4>
                                             @if($instructions)
-                                                <div class="mt-2" style="font-size: 0.85rem; line-height: 1.4; color: #b3b3b3; max-width: 85%;">
-                                                    <strong class="d-block mb-1" style="color: var(--base-color, #6c63ff);"><i class="las la-info-circle"></i> @lang('Instructions')</strong>
-                                                    {{ $instructions }}
+                                                <div class="mt-1 text-muted small" style="line-height: 1.4;">
+                                                    <i class="las la-info-circle text--base me-1"></i>{{ $instructions }}
                                                 </div>
                                             @endif
                                         </div>
