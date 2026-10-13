@@ -57,28 +57,25 @@
                             <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                 <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
                                     <span class="text--base">@lang('ToolsByDcx Flow')</span>
-                                    <span class="badge badge--dark">v{{ $flowVersion }}</span>
-                                    @if(empty($isFlowSupportedBrowser))
-                                        <span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="las la-exclamation-triangle me-1"></i> @lang('Edge & Kiwi Only')</span>
-                                    @endif
+                                    <span class="badge badge--dark ms-2">v{{ $flowVersion }}</span>
                                 </h4>
                                 <div class="mt-1 text-muted small" style="line-height: 1.4;">
                                     @if($flowAccount)
                                         <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Assigned account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
                                     @else
-                                        <span class="text-warning"><i class="las la-info-circle me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser.')</span>
-                                    @endif
-                                    @if(empty($isFlowSupportedBrowser))
-                                        <div class="alert alert-warning py-1.5 px-3 mt-2 mb-0 d-inline-flex align-items-center gap-2 rounded-3" style="font-size: 12px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24;">
-                                            <i class="las la-info-circle fs-6"></i>
-                                            @lang('Flow workspace is exclusively supported on Microsoft Edge and Kiwi Browser. Please open this page in Edge or Kiwi to launch Flow.')
-                                        </div>
+                                        <i class="las la-info-circle text--base me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser.')
                                     @endif
                                 </div>
-                                <div class="mt-2">
-                                    <span id="flow-status-badge" class="badge badge--secondary">
-                                        <i class="las la-circle"></i> @lang('Checking browser...')
-                                    </span>
+                                <div class="mt-1">
+                                    @if(empty($isFlowSupportedBrowser))
+                                        <span id="flow-status-badge" class="badge bg-warning text-dark">
+                                            <i class="las la-exclamation-triangle me-1"></i> @lang('Edge & Kiwi Browser Required')
+                                        </span>
+                                    @else
+                                        <span id="flow-status-badge" class="badge badge--secondary">
+                                            <i class="las la-circle"></i> @lang('Checking browser...')
+                                        </span>
+                                    @endif
                                 </div>
                                 <div id="flow-status-text" class="mt-1 small" style="color: #94a3b8;"></div>
                             </div>
@@ -104,7 +101,7 @@
                                         </form>
                                     @endif
                                 @else
-                                    <button type="button" class="btn btn-outline-warning d-inline-flex align-items-center justify-content-center text-nowrap fw-semibold" style="cursor: not-allowed; border-color: rgba(245, 158, 11, 0.45); color: #fbbf24; background: rgba(245, 158, 11, 0.08);" onclick="notify('error', '@lang('ToolsByDcx Flow is exclusively supported on Microsoft Edge and Kiwi Browser. Please switch to Edge or Kiwi to launch Flow.')')" title="@lang('Microsoft Edge or Kiwi Browser required')">
+                                    <button type="button" class="btn btn--warning d-inline-flex align-items-center justify-content-center text-nowrap" onclick="notify('error', '@lang('ToolsByDcx Flow is exclusively supported on Microsoft Edge and Kiwi Browser. Please switch to Edge or Kiwi to launch Flow.')')" title="@lang('Microsoft Edge or Kiwi Browser required')">
                                         <i class="las la-lock me-1"></i> <span class="btn-text">@lang('Edge / Kiwi Required')</span>
                                     </button>
                                 @endif
@@ -177,7 +174,7 @@
     if (!isFlowAllowed) {
         if (flowBadge) {
             flowBadge.className = 'badge bg-warning text-dark';
-            flowBadge.innerHTML = '<i class="las la-exclamation-triangle me-1"></i> @lang("Edge & Kiwi Only")';
+            flowBadge.innerHTML = '<i class="las la-exclamation-triangle me-1"></i> @lang("Edge & Kiwi Browser Required")';
         }
         return;
     }
