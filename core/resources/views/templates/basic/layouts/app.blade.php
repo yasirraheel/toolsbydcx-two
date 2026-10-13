@@ -96,6 +96,7 @@
                     })(jQuery);
                 </script>
                 @endpush
+            @endif
         @endif
     @endauth
 
