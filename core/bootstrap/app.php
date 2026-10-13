@@ -41,8 +41,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->prefix('reseller')
                     ->group(base_path('routes/reseller.php'));
 
-                Route::middleware(['web','maintenance','edge.only'])->prefix('user')->group(base_path('routes/user.php'));
-                Route::middleware(['web','maintenance','edge.only'])->group(base_path('routes/web.php'));
+                Route::middleware(['web','maintenance'])->prefix('user')->group(base_path('routes/user.php'));
+                Route::middleware(['web','maintenance'])->group(base_path('routes/web.php'));
 
             });
         }

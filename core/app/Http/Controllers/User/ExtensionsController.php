@@ -45,6 +45,20 @@ class ExtensionsController extends Controller
             ->get();
         $isExtensionPaired = $pairings->isNotEmpty();
 
+        // 3. Browser compatibility check for Google Flow (Edge & Kiwi only)
+        $userAgent = $request->header('User-Agent', '');
+        $secChUa = $request->header('sec-ch-ua', '');
+        $isEdge = str_contains($userAgent, 'Edg/')
+            || str_contains($userAgent, 'Edge/')
+            || str_contains($userAgent, 'EdgA/')
+            || str_contains($userAgent, 'EdgiOS/')
+            || stripos($secChUa, 'Microsoft Edge') !== false;
+        $isKiwi = stripos($userAgent, 'Kiwi') !== false
+            || stripos($secChUa, 'Kiwi') !== false
+            || $request->cookie('is_kiwi') === '1'
+            || session()->get('is_kiwi') === true;
+        $isFlowSupportedBrowser = $isEdge || $isKiwi;
+
         return view('templates.basic.user.extensions', compact(
             'pageTitle',
             'socialVersion',
@@ -55,12 +69,31 @@ class ExtensionsController extends Controller
             'flowExists',
             'flowAccount',
             'pairings',
-            'isExtensionPaired'
+            'isExtensionPaired',
+            'isFlowSupportedBrowser'
         ));
     }
 
     public function pair(Request $request)
     {
+        $userAgent = $request->header('User-Agent', '');
+        $secChUa = $request->header('sec-ch-ua', '');
+        $isEdge = str_contains($userAgent, 'Edg/')
+            || str_contains($userAgent, 'Edge/')
+            || str_contains($userAgent, 'EdgA/')
+            || str_contains($userAgent, 'EdgiOS/')
+            || stripos($secChUa, 'Microsoft Edge') !== false;
+        $isKiwi = stripos($userAgent, 'Kiwi') !== false
+            || stripos($secChUa, 'Kiwi') !== false
+            || $request->cookie('is_kiwi') === '1'
+            || session()->get('is_kiwi') === true;
+
+        if (!$isEdge && !$isKiwi) {
+            return response()->json([
+                'message' => 'ToolsByDcx Flow can only be connected in Microsoft Edge or Kiwi Browser.'
+            ], 403);
+        }
+
         $request->validate(['codeChallenge' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/']]);
         $pairing = FlowAccess::issue($request->user(), $request->input('codeChallenge'));
         return response()->json([

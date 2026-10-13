@@ -9,6 +9,16 @@
 (() => {
   "use strict";
 
+  const isAllowedBrowser = (() => {
+    const ua = navigator.userAgent || '';
+    const brands = Array.isArray(navigator?.userAgentData?.brands) ? navigator.userAgentData.brands : [];
+    const isEdge = brands.some(entry => /Microsoft Edge/i.test(entry?.brand || '')) || /\bEdg\/\d+/i.test(ua);
+    const isKiwi = /Kiwi/i.test(ua) || /kiwibrowser/i.test(ua) || (document.cookie.indexOf('is_kiwi=1') !== -1);
+    return isEdge || isKiwi;
+  })();
+
+  if (!isAllowedBrowser) return;
+
   const DCX_EXT_SOURCE = "DCX_FLOW_EXTENSION";
   const DCX_SITE_SOURCE = "DCX_FLOW_WEBSITE";
 

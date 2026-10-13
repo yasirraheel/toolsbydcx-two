@@ -59,6 +59,18 @@ class FlowBridgeController extends Controller
             return response()->json(['state' => 'login_required'], 401);
         }
 
+        $userAgent = $request->header('User-Agent', '');
+        $secChUa = $request->header('sec-ch-ua', '');
+        $isEdge = str_contains($userAgent, 'Edg/') || str_contains($userAgent, 'Edge/') || str_contains($userAgent, 'EdgA/') || str_contains($userAgent, 'EdgiOS/') || stripos($secChUa, 'Microsoft Edge') !== false;
+        $isKiwi = stripos($userAgent, 'Kiwi') !== false || stripos($secChUa, 'Kiwi') !== false || $request->cookie('is_kiwi') === '1' || session()->get('is_kiwi') === true;
+
+        if (!$isEdge && !$isKiwi) {
+            return response()->json([
+                'state'   => 'unsupported_browser',
+                'message' => 'ToolsByDcx Flow is exclusively supported on Microsoft Edge and Kiwi Browser.',
+            ], 403);
+        }
+
         try {
             // FlowAccess::issue generates the code, binds the challenge, and revokes pending unpaired codes
             $pairing = FlowAccess::issue($user, $request->codeChallenge);

@@ -15,8 +15,32 @@ use PragmaRX\Google2FA\Google2FA;
 
 class DcxFlowController extends Controller
 {
+    private function assertFlowBrowser(Request $request): void
+    {
+        $userAgent = $request->header('User-Agent', '');
+        $secChUa = $request->header('sec-ch-ua', '');
+        $isEdge = str_contains($userAgent, 'Edg/')
+            || str_contains($userAgent, 'Edge/')
+            || str_contains($userAgent, 'EdgA/')
+            || str_contains($userAgent, 'EdgiOS/')
+            || stripos($secChUa, 'Microsoft Edge') !== false;
+        $isKiwi = stripos($userAgent, 'Kiwi') !== false
+            || stripos($secChUa, 'Kiwi') !== false
+            || $request->cookie('is_kiwi') === '1'
+            || session()->get('is_kiwi') === true;
+
+        if (!$isEdge && !$isKiwi) {
+            abort(response()->json([
+                'message' => 'ToolsByDcx Flow is available only in Microsoft Edge or Kiwi Browser.',
+                'reason' => 'unsupported_browser'
+            ], 403));
+        }
+    }
+
     public function pair(Request $request)
     {
+        $this->assertFlowBrowser($request);
+
         if (!$request->isJson()) {
             $payload = json_decode($request->getContent(), true);
             if (is_array($payload)) {
@@ -87,6 +111,7 @@ class DcxFlowController extends Controller
 
     public function start(Request $request)
     {
+        $this->assertFlowBrowser($request);
         $account = $this->account($request);
         return DB::transaction(function () use ($request, $account) {
             $pairing = ExtensionPairing::whereKey($request->attributes->get('extension_pairing')->id)->lockForUpdate()->firstOrFail();
@@ -104,6 +129,7 @@ class DcxFlowController extends Controller
 
     public function step(Request $request)
     {
+        $this->assertFlowBrowser($request);
         $request->validate(['attemptId' => 'required|uuid', 'stage' => 'required|in:email,password,otp,backup_code']);
         $this->account($request);
         return DB::transaction(function () use ($request) {
