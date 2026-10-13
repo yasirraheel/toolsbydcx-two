@@ -6,7 +6,7 @@
         @include($activeTemplate . 'partials.header')
     @endif
 
-    @if (!request()->routeIs(['user.login', 'user.register', 'home', 'ticket*', 'get.started', 'user.data', 'user.authorization']))
+    @if (!request()->routeIs(['user.login', 'user.register', 'home', 'ticket*', 'get.started', 'user.data', 'user.authorization', 'edge.only']))
         @include($activeTemplate . 'partials.breadcrumb')
     @endif
 

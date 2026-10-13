@@ -346,7 +346,7 @@ class SiteController extends Controller
 
     public function edgeOnly()
     {
-        $pageTitle = 'Microsoft Edge Required';
+        $pageTitle = 'Microsoft Edge or Kiwi Browser Required';
         return view('Template::edge_only', compact('pageTitle'));
     }
 

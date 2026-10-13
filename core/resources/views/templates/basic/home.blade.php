@@ -60,8 +60,8 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="d-flex align-items-center justify-content-center gap-2 text-white-50">
-                            <i class="las la-chrome text-info fs-4"></i>
-                            <span class="small fw-semibold text-white">@lang('Chrome, Edge & Brave')</span>
+                            <i class="las la-globe text-info fs-4"></i>
+                            <span class="small fw-semibold text-white">@lang('Edge & Kiwi Browser')</span>
                         </div>
                     </div>
                 </div>
@@ -345,7 +345,7 @@
                         </h2>
                         <div id="faqCollapseThree" class="accordion-collapse collapse" data-bs-parent="#landingFaqAccordion">
                             <div class="accordion-body">
-                                @lang('The ToolsByDcx extension is fully compatible with Google Chrome, Microsoft Edge, Brave, and all Chromium-based desktop browsers.')
+                                @lang('The ToolsByDcx extension is fully compatible with Microsoft Edge on Desktop (Windows and Mac) and Kiwi Browser on Android Mobile.')
                             </div>
                         </div>
                     </div>

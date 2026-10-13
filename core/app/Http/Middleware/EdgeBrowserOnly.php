@@ -54,7 +54,7 @@ class EdgeBrowserOnly
             return $next($request);
         }
 
-        // 4. Detect Microsoft Edge browser
+        // 4. Detect Microsoft Edge or Kiwi Browser
         $userAgent = $request->header('User-Agent', '');
         $secChUa = $request->header('sec-ch-ua', '');
 
@@ -66,15 +66,28 @@ class EdgeBrowserOnly
             || stripos($secChUa, '"Edge"') !== false
             || stripos($secChUa, 'Edge;') !== false;
 
+        $isKiwi = stripos($userAgent, 'Kiwi') !== false
+            || stripos($secChUa, 'Kiwi') !== false
+            || $request->cookie('is_kiwi') === '1'
+            || session()->get('is_kiwi') === true;
+
+        if ($request->query('browser') === 'kiwi' || $request->query('kiwi') === '1') {
+            cookie()->queue('is_kiwi', '1', 60 * 24 * 365);
+            session()->put('is_kiwi', true);
+            $isKiwi = true;
+        }
+
+        $isAllowed = $isEdge || $isKiwi;
+
         $isEdgeOnlyPage = $request->is('edge-only') || $request->routeIs('edge.only');
 
-        // If user is on Edge and navigates to the block page, send them to homepage
-        if ($isEdge && $isEdgeOnlyPage) {
+        // If user is on an allowed browser and navigates to the block page, send them to homepage
+        if ($isAllowed && $isEdgeOnlyPage) {
             return redirect()->route('home');
         }
 
-        // If user is NOT on Edge and tries to visit any regular user/public page, redirect to the block page
-        if (!$isEdge) {
+        // If user is NOT on an allowed browser and tries to visit any regular user/public page, redirect to the block page
+        if (!$isAllowed) {
             if ($isEdgeOnlyPage) {
                 return $next($request);
             }
