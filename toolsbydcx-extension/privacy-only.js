@@ -21,10 +21,9 @@
   ]);
   const root = document.documentElement;
   const styleText = `
-    [data-bf-credit-banner-hidden], [data-bf-signout-hidden], [data-dcx-security-banner-hidden] {
+    [data-bf-credit-banner-hidden], [data-bf-signout-hidden] {
       display:none !important; visibility:hidden !important;
-      pointer-events:none !important; opacity:0 !important;
-      max-height:0 !important; overflow:hidden !important;
+      pointer-events:none !important;
     }
   `;
   function installStyle(host) {
@@ -81,64 +80,6 @@
     const rect = el.getBoundingClientRect?.();
     return !rect || !Number.isFinite(rect.height) || rect.height <= 180;
   }
-  const securityPromptPattern = /did you request help signing in|request to help you sign in|review the request and cancel|help signing in\?/i;
-
-  function dismissSecurityHelpBanners(rootNode) {
-    if (!rootNode || !rootNode.querySelectorAll) return;
-    const candidates = rootNode.querySelectorAll("div, section, aside, [role='alert'], [role='dialog'], [role='region'], [role='status'], p, h1, h2, h3, h4");
-    for (const el of candidates) {
-      if (el === document.documentElement || el === document.body) continue;
-      if (el.hasAttribute("data-dcx-security-banner-hidden")) continue;
-
-      const text = el.textContent || "";
-      if (securityPromptPattern.test(text)) {
-        let banner = el;
-        while (
-          banner.parentElement &&
-          banner.parentElement !== document.body &&
-          banner.parentElement !== document.documentElement &&
-          !/^(?:flow-projects-page|flow-app|main|body)$/i.test(banner.parentElement.tagName)
-        ) {
-          const parentText = (banner.parentElement.textContent || "").trim();
-          const currText = (banner.textContent || "").trim();
-          if (parentText.length > currText.length + 150) {
-            break;
-          }
-          banner = banner.parentElement;
-        }
-
-        try {
-          const actionButtons = banner.querySelectorAll("button, [role='button'], a");
-          for (const btn of actionButtons) {
-            const btnText = (btn.textContent || "").trim();
-            const btnLabel = (btn.getAttribute("aria-label") || btn.getAttribute("title") || "").toLowerCase();
-            if (/review/i.test(btnText) || btnLabel.includes("review")) continue;
-
-            if (
-              btnLabel.includes("close") ||
-              btnLabel.includes("dismiss") ||
-              btnLabel.includes("cancel") ||
-              btn.querySelector("svg") ||
-              /^[✕✖x×]$/i.test(btnText)
-            ) {
-              btn.click();
-              break;
-            }
-          }
-        } catch (_) {}
-
-        banner.setAttribute("data-dcx-security-banner-hidden", "");
-        banner.style.setProperty("display", "none", "important");
-        banner.style.setProperty("visibility", "hidden", "important");
-        banner.style.setProperty("pointer-events", "none", "important");
-        banner.style.setProperty("opacity", "0", "important");
-        try {
-          banner.remove();
-        } catch (_) {}
-      }
-    }
-  }
-
   function hideCreditBanner(rootNode) {
     const actions = [...rootNode.querySelectorAll("*")].filter(action =>
       action.matches?.(controls) && addCreditsText.test(subtreeText(action)));
@@ -160,7 +101,6 @@
   }
   function scan(rootNode) {
     if (!rootNode || !rootNode.querySelectorAll) return;
-    dismissSecurityHelpBanners(rootNode);
     const all = rootNode.querySelectorAll("*");
     for (const el of all) {
       if (el.matches?.(controls)) {
@@ -186,9 +126,6 @@
   }
   observe(document);
   globalThis.__bfPrivacyOnlyRescan = () => scan(document);
-  setInterval(() => {
-    try { dismissSecurityHelpBanners(document); } catch (_) {}
-  }, 600);
   // Shadow roots attached after this script starts are discovered by the
   // document observer's scan; attachShadow wrapping is intentionally avoided.
 })();

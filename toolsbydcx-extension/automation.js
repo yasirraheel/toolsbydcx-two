@@ -13,9 +13,9 @@
       return;
     }
     if (window.top !== window) return;
-    if (globalThis.flowAutoLoginAutomationVersion === "1.0.3") return;
+    if (globalThis.flowAutoLoginAutomationVersion === "1.0.2") return;
     globalThis.flowAutoLoginAutomationCleanup?.();
-    globalThis.flowAutoLoginAutomationVersion = "1.0.3";
+    globalThis.flowAutoLoginAutomationVersion = "1.0.2";
     let busy = false;
     let paused = false;
     let resumeInFlight = false;
@@ -322,16 +322,6 @@
     function fill(input, value) {
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
     if (!setter) throw new Error("This sign-in field is not supported.");
-    if (input.type === "password" || input.getAttribute("name") === "Passwd") {
-      input.setAttribute("autocomplete", "off");
-      input.setAttribute("data-lpignore", "true");
-      input.setAttribute("data-form-type", "other");
-      input.setAttribute("data-bwignore", "true");
-      input.setAttribute("data-1p-ignore", "true");
-      if (input.form) {
-        input.form.setAttribute("autocomplete", "off");
-      }
-    }
     input.focus();
     setter.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1031,22 +1021,6 @@
     if (stage === "backup_code" && !/^\d{8}$/.test(String(result?.value ?? "").trim())) {
       throw new Error("The backup code is unavailable.");
     }
-    if (stage === "password") {
-      void send("DISABLE_PASSWORD_SAVING").catch(() => {});
-      input.setAttribute("autocomplete", "off");
-      input.setAttribute("data-lpignore", "true");
-      input.setAttribute("data-form-type", "other");
-      input.setAttribute("data-bwignore", "true");
-      input.setAttribute("data-1p-ignore", "true");
-      if (input.form) {
-        input.form.setAttribute("autocomplete", "off");
-      }
-      const cleanInput = () => {
-        try { if (input?.isConnected) input.value = ""; } catch (_) {}
-      };
-      window.addEventListener("pagehide", cleanInput, { once: true });
-      window.addEventListener("beforeunload", cleanInput, { once: true });
-    }
     // No Google credential is stored in extension storage, logs, URLs, or messages
     // to any unrelated page. Google receives it only through its own input.
     fill(input, String(result.value));
@@ -1086,72 +1060,11 @@
       }
       return otpConfirmedRejections.includes(expiresAt);
     }
-
-    const securityPromptPattern = /did you request help signing in|request to help you sign in|review the request and cancel|help signing in\?/i;
-
-    function dismissSecurityHelpBanners() {
-      try {
-        const candidates = document.querySelectorAll("div, section, aside, [role='alert'], [role='dialog'], [role='region'], [role='status'], p, h1, h2, h3, h4");
-        for (const el of candidates) {
-          if (el === document.documentElement || el === document.body) continue;
-          if (el.hasAttribute("data-dcx-security-banner-hidden")) continue;
-
-          const text = el.textContent || "";
-          if (securityPromptPattern.test(text)) {
-            let banner = el;
-            while (
-              banner.parentElement &&
-              banner.parentElement !== document.body &&
-              banner.parentElement !== document.documentElement &&
-              !/^(?:flow-projects-page|flow-app|main|body)$/i.test(banner.parentElement.tagName)
-            ) {
-              const parentText = (banner.parentElement.textContent || "").trim();
-              const currText = (banner.textContent || "").trim();
-              if (parentText.length > currText.length + 150) {
-                break;
-              }
-              banner = banner.parentElement;
-            }
-
-            try {
-              const actionButtons = banner.querySelectorAll("button, [role='button'], a");
-              for (const btn of actionButtons) {
-                const btnText = (btn.textContent || "").trim();
-                const btnLabel = (btn.getAttribute("aria-label") || btn.getAttribute("title") || "").toLowerCase();
-                if (/review/i.test(btnText) || btnLabel.includes("review")) continue;
-
-                if (
-                  btnLabel.includes("close") ||
-                  btnLabel.includes("dismiss") ||
-                  btnLabel.includes("cancel") ||
-                  btn.querySelector("svg") ||
-                  /^[✕✖x×]$/i.test(btnText)
-                ) {
-                  btn.click();
-                  break;
-                }
-              }
-            } catch (_) {}
-
-            banner.setAttribute("data-dcx-security-banner-hidden", "");
-            banner.style.setProperty("display", "none", "important");
-            banner.style.setProperty("visibility", "hidden", "important");
-            banner.style.setProperty("pointer-events", "none", "important");
-            banner.style.setProperty("opacity", "0", "important");
-            try {
-              banner.remove();
-            } catch (_) {}
-          }
-        }
-      } catch (_) {}
-    }
-
     async function inspect(epoch = lifecycleEpoch) {
     if (busy || resumeInFlight || document.hidden || Date.now() - lastActionAt < 1800) return;
     if (!isCurrent(epoch)) return;
     busy = true;
     try {
-      dismissSecurityHelpBanners();
       // Readiness is independent of the old login phase. A worker restart or
       // a stale manual/error state must not leave a genuinely loaded Flow
       // workspace covered indefinitely.
@@ -1800,7 +1713,7 @@
     const onResume = (message, sender, respond) => {
     if (sender.id !== chrome.runtime.id) return;
     if (message?.type === "AUTOMATION_PING") {
-      respond?.({ ready: true, version: "1.0.3" });
+      respond?.({ ready: true, version: "1.0.2" });
       return;
     }
     if (message?.type !== "RESUME") return;

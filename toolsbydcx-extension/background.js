@@ -6,8 +6,8 @@ import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
 const supportedBrowser = globalThis.flowAutoLoginIsEdge === true;
 const EDGE_REQUIRED = "ToolsByDcx Flow is available only in desktop Microsoft Edge or Android Kiwi Browser.";
-const AUTOMATION_VERSION = "1.0.3";
-const SITE_BRIDGE_VERSION = "1.0.3";
+const AUTOMATION_VERSION = "1.0.2";
+const SITE_BRIDGE_VERSION = "1.0.2";
 
 let operationBusy = false;
 let mobileLogoutActive = false;
@@ -245,7 +245,7 @@ async function api(path, body, anonymous = false) {
         "X-Requested-With": "XMLHttpRequest",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         "X-DCX-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
-        "X-DCX-Flow-Version": "1.0.3",
+        "X-DCX-Flow-Version": "1.0.2",
         ...(!anonymous ? { Authorization: `Bearer ${saved.accessToken}` } : {})
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -325,28 +325,7 @@ async function updateUninstallURL(token) {
   } catch {}
 }
 
-function enforceDisablePasswordSaving() {
-  try {
-    if (chrome.privacy?.services?.passwordSavingEnabled) {
-      chrome.privacy.services.passwordSavingEnabled.get({}, details => {
-        if (chrome.runtime?.lastError) return;
-        if (details?.levelOfControl === "controllable_by_this_extension" || 
-            details?.levelOfControl === "controlled_by_this_extension") {
-          chrome.privacy.services.passwordSavingEnabled.set({ value: false }, () => {
-            if (!chrome.runtime?.lastError) {
-              console.log("[ToolsByDcx] Browser password saving offer strictly disabled.");
-            }
-          });
-        }
-      });
-    }
-  } catch (err) {
-    console.error("[ToolsByDcx] Could not disable password saving:", err);
-  }
-}
-
 async function startLogin(preferredWindowId, forceFresh = false) {
-  enforceDisablePasswordSaving();
   const saved = await localState();
   if (!saved.consent) throw new Error("Read and accept the shared-account warning first.");
   await updateUninstallURL(saved?.uninstallToken);
@@ -657,9 +636,6 @@ async function messageHandler(message, sender) {
     if (!loginInProgress(state) || state.phase !== "login") return err("No active sign-in attempt.");
     const stage = message.stage;
     if (!["email", "password", "otp", "backup_code"].includes(stage)) return err("Invalid stage.");
-    if (stage === "password") {
-      enforceDisablePasswordSaving();
-    }
     if (stage === "backup_code") {
       if (state.backupCodeAttempted) return err(BACKUP_CODE_MANUAL_DETAIL);
       if (backupCodeRequestsInFlight.has(state.attemptId)) return err(BACKUP_CODE_MANUAL_DETAIL);
@@ -741,11 +717,6 @@ async function messageHandler(message, sender) {
     return ok({});
   }
 
-  if (message?.type === "DISABLE_PASSWORD_SAVING") {
-    enforceDisablePasswordSaving();
-    return ok({ disabled: true });
-  }
-
   return err("Unknown message type.");
 }
 
@@ -771,24 +742,18 @@ async function sweepBlockedPages() {
   } catch {}
 }
 
-enforceDisablePasswordSaving();
 void sweepBlockedPages();
 for (const delay of [150, 500, 1200, 2500]) {
-  setTimeout(() => {
-    enforceDisablePasswordSaving();
-    void sweepBlockedPages();
-  }, delay);
+  setTimeout(() => void sweepBlockedPages(), delay);
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
-  enforceDisablePasswordSaving();
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
   await sweepBlockedPages();
 });
 chrome.runtime.onStartup.addListener(async () => {
-  enforceDisablePasswordSaving();
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
