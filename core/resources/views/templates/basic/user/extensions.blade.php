@@ -65,7 +65,6 @@
                                 <div class="mt-1 text-muted small" style="line-height: 1.4;">
                                     @if($flowAccount)
                                         <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Assigned account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
-                                        <span class="badge badge--success ms-2">@lang('Ready')</span>
                                     @else
                                         <span class="text-warning"><i class="las la-info-circle me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser.')</span>
                                     @endif
@@ -75,6 +74,11 @@
                                             @lang('Flow workspace is exclusively supported on Microsoft Edge and Kiwi Browser. Please open this page in Edge or Kiwi to launch Flow.')
                                         </div>
                                     @endif
+                                </div>
+                                <div class="mt-2">
+                                    <span id="flow-status-badge" class="badge badge--secondary">
+                                        <i class="las la-circle"></i> @lang('Checking browser...')
+                                    </span>
                                 </div>
                                 <div id="flow-status-text" class="mt-1 small" style="color: #94a3b8;"></div>
                             </div>
@@ -142,6 +146,7 @@
     setTimeout(checkSocial, 1500);
 
     // 2. Flow Extension Detection & Connect
+    const flowBadge = document.getElementById('flow-status-badge');
     const isFlowAllowed = @json(!empty($isFlowSupportedBrowser)) && (() => {
         const ua = navigator.userAgent || '';
         const brands = Array.isArray(navigator?.userAgentData?.brands) ? navigator.userAgentData.brands : [];
@@ -151,6 +156,10 @@
     })();
 
     if (!isFlowAllowed) {
+        if (flowBadge) {
+            flowBadge.className = 'badge bg-warning text-dark';
+            flowBadge.innerHTML = '<i class="las la-exclamation-triangle me-1"></i> @lang("Edge & Kiwi Only")';
+        }
         return;
     }
 
@@ -160,6 +169,7 @@
     const autoBtn = document.getElementById('flow-auto-connect');
     const startBtn = document.getElementById('flow-start');
     const pending = new Map();
+    let flowDetected = false;
 
     function relay(type, extra = {}) {
         return new Promise((resolve, reject) => {
@@ -173,13 +183,27 @@
         });
     }
 
-    function showButtons(connected = false) {
-        if (autoBtn) autoBtn.hidden = false;
-        if (connected && startBtn) {
-            startBtn.hidden = false;
-            if (flowText) flowText.innerHTML = '<span class="text-success"><i class="las la-check-circle me-1"></i>@lang("Connected")</span>';
-        } else if (!connected && flowText) {
-            flowText.innerHTML = '<span class="text-info"><i class="las la-info-circle me-1"></i>@lang("Detected - Click Connect")</span>';
+    function setFlowDetected(detected, connected = false) {
+        flowDetected = detected;
+        if (!flowBadge) return;
+        if (detected) {
+            flowBadge.className = 'badge badge--success';
+            flowBadge.innerHTML = '<i class="las la-check-circle me-1"></i> @lang("Installed & Active")';
+            if (connected) {
+                if (autoBtn) autoBtn.hidden = true;
+                if (startBtn) startBtn.hidden = false;
+                if (flowText) flowText.innerHTML = '<span class="text-success small"><i class="las la-link me-1"></i>@lang("Connected & Ready")</span>';
+            } else {
+                if (autoBtn) autoBtn.hidden = false;
+                if (startBtn) startBtn.hidden = true;
+                if (flowText) flowText.innerHTML = '<span class="text-info small"><i class="las la-info-circle me-1"></i>@lang("Detected - Click Connect")</span>';
+            }
+        } else {
+            flowBadge.className = 'badge badge--secondary';
+            flowBadge.innerHTML = '<i class="las la-times-circle me-1"></i> @lang("Not Detected")';
+            if (autoBtn) autoBtn.hidden = true;
+            if (startBtn) startBtn.hidden = true;
+            if (flowText) flowText.innerHTML = '';
         }
     }
 
@@ -187,17 +211,24 @@
         const hasAttr = document.documentElement.getAttribute('data-dcx-ext-bridge') === '1' ||
                         document.documentElement.getAttribute('data-bf-ext-bridge') === '1';
         if (hasAttr) {
-            showButtons(isPaired);
+            setFlowDetected(true, isPaired);
             return true;
         }
         return false;
     }
 
+    // Set initial Not Detected state if bridge doesn't respond quickly
+    setTimeout(() => {
+        if (!flowDetected && !checkFlowDom()) {
+            setFlowDetected(false);
+        }
+    }, 400);
+
     window.addEventListener('message', event => {
         if (event.source !== window || event.origin !== location.origin) return;
         if (event.data?.type === 'DCX_FLOW_EXTENSION_PRESENT' || event.data?.type === 'DCX_FLOW_STATUS_REPLY' || event.data?.type === '__dcx_ext_pong__') {
             const isConn = !!(event.data?.data?.connected || event.data?.connected || isPaired);
-            showButtons(isConn);
+            setFlowDetected(true, isConn);
         }
         const item = pending.get(event.data?.requestId);
         if (!item || !event.data?.type?.endsWith('_REPLY')) return;
@@ -211,6 +242,7 @@
     checkFlowDom();
     setTimeout(() => { checkFlowDom(); window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'flow-detect' }, location.origin); }, 200);
     setTimeout(() => { checkFlowDom(); window.postMessage({ type: '__dcx_ext_ping__', userId, requestId: 'flow-detect' }, location.origin); }, 600);
+
 
     async function issue(codeChallenge = null) {
         const response = await fetch(@json(route('user.extensions.pair')), {

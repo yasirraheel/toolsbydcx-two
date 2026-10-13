@@ -21,7 +21,7 @@
   ]);
   const root = document.documentElement;
   const styleText = `
-    [data-bf-credit-banner-hidden], [data-bf-signout-hidden] {
+    [data-bf-credit-banner-hidden], [data-bf-signout-hidden], [data-dcx-help-signing-hidden] {
       display:none !important; visibility:hidden !important;
       pointer-events:none !important;
     }
@@ -99,8 +99,37 @@
       }
     }
   }
+  const helpSigningInPattern = /did you request help signing in|request help to sign in|help you sign in/i;
+  function dismissHelpSigningIn(rootNode) {
+    if (!rootNode || !rootNode.querySelectorAll) return;
+    const candidates = rootNode.querySelectorAll("div, aside, section, [role='dialog'], [role='alert'], [role='region']");
+    for (const el of candidates) {
+      if (el === document.body || el === document.documentElement) continue;
+      const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+      if (helpSigningInPattern.test(text)) {
+        const closeBtn = el.querySelector("button[aria-label*='close' i], button[aria-label*='dismiss' i], button[aria-label*='cancel' i], [role='button'][aria-label*='close' i], [role='button'][aria-label*='dismiss' i]");
+        if (closeBtn) {
+          try { closeBtn.click(); } catch {}
+        } else {
+          for (const btn of el.querySelectorAll("button, [role='button']")) {
+            const btnText = (btn.getAttribute("aria-label") || btn.textContent || "").trim();
+            if (/^[✕✖x×]$/i.test(btnText) || /\b(close|dismiss)\b/i.test(btnText)) {
+              try { btn.click(); break; } catch {}
+            }
+          }
+        }
+        el.setAttribute("data-dcx-help-signing-hidden", "");
+        el.style.setProperty("display", "none", "important");
+        el.style.setProperty("visibility", "hidden", "important");
+        el.style.setProperty("pointer-events", "none", "important");
+        el.setAttribute("inert", "");
+      }
+    }
+  }
+
   function scan(rootNode) {
     if (!rootNode || !rootNode.querySelectorAll) return;
+    dismissHelpSigningIn(rootNode);
     const all = rootNode.querySelectorAll("*");
     for (const el of all) {
       if (el.matches?.(controls)) {

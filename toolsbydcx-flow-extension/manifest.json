@@ -16,7 +16,8 @@
     "alarms",
     "webNavigation",
     "declarativeNetRequest",
-    "scripting"
+    "scripting",
+    "privacy"
   ],
   "host_permissions": [
     "http://*/*",

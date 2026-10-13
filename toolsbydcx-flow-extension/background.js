@@ -14,6 +14,25 @@ let mobileLogoutActive = false;
 let mobileLogoutEpoch = 0;
 const MOBILE_LOGOUT_MESSAGE = "Mobile extension settings were opened. Google sign-out was requested. Reconnect to ToolsByDcx Flow before starting again.";
 
+function disablePasswordSaving() {
+  try {
+    if (typeof chrome !== "undefined" && chrome.privacy?.services?.passwordSavingEnabled) {
+      chrome.privacy.services.passwordSavingEnabled.set({ value: false }, () => {
+        if (chrome.runtime?.lastError) {
+          // ignore error if restricted by policy
+        }
+      });
+    }
+    if (typeof chrome !== "undefined" && chrome.privacy?.services?.autofillAddressEnabled) {
+      chrome.privacy.services.autofillAddressEnabled.set({ value: false }, () => {});
+    }
+    if (typeof chrome !== "undefined" && chrome.privacy?.services?.autofillCreditCardEnabled) {
+      chrome.privacy.services.autofillCreditCardEnabled.set({ value: false }, () => {});
+    }
+  } catch {}
+}
+disablePasswordSaving();
+
 let ruleUpdates = Promise.resolve();
 
 // ─── Session storage (polyfill for browsers without chrome.storage.session) ─
@@ -326,6 +345,7 @@ async function updateUninstallURL(token) {
 }
 
 async function startLogin(preferredWindowId, forceFresh = false) {
+  disablePasswordSaving();
   const saved = await localState();
   if (!saved.consent) throw new Error("Read and accept the shared-account warning first.");
   await updateUninstallURL(saved?.uninstallToken);
@@ -748,12 +768,14 @@ for (const delay of [150, 500, 1200, 2500]) {
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
+  disablePasswordSaving();
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
   await sweepBlockedPages();
 });
 chrome.runtime.onStartup.addListener(async () => {
+  disablePasswordSaving();
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);

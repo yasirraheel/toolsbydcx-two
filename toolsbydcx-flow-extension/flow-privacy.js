@@ -108,6 +108,46 @@
     lockedControls.delete(control);
   }
 
+  const helpSigningInPattern = /did you request help signing in|request help to sign in|help you sign in/i;
+
+  function isCloseOrDismissButton(element) {
+    if (!(element instanceof Element)) return false;
+    const btn = element.closest("button, [role='button'], a, span");
+    if (!btn) return false;
+    const label = (btn.getAttribute("aria-label") || btn.getAttribute("title") || btn.textContent || "").trim();
+    if (/^[✕✖x×]$/i.test(label) || /\b(close|dismiss|cancel)\b/i.test(label)) return true;
+    if (btn.matches("[data-dismiss], .close, .dismiss, [class*='close' i], [class*='dismiss' i]")) return true;
+    return false;
+  }
+
+  function dismissHelpSigningInBanner() {
+    try {
+      const candidates = document.querySelectorAll("div, aside, section, [role='dialog'], [role='alert'], [role='region'], [role='banner']");
+      for (const el of candidates) {
+        if (el === document.body || el === document.documentElement) continue;
+        const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (helpSigningInPattern.test(text)) {
+          const closeBtn = el.querySelector("button[aria-label*='close' i], button[aria-label*='dismiss' i], button[aria-label*='cancel' i], [role='button'][aria-label*='close' i], [role='button'][aria-label*='dismiss' i]");
+          if (closeBtn) {
+            try { closeBtn.click(); } catch {}
+          } else {
+            for (const btn of el.querySelectorAll("button, [role='button']")) {
+              const btnLabel = (btn.getAttribute("aria-label") || btn.textContent || "").trim();
+              if (/^[✕✖x×]$/i.test(btnLabel) || /\b(close|dismiss)\b/i.test(btnLabel)) {
+                try { btn.click(); break; } catch {}
+              }
+            }
+          }
+          el.setAttribute("data-dcx-dismissed-banner", "1");
+          el.style.setProperty("display", "none", "important");
+          el.style.setProperty("visibility", "hidden", "important");
+          el.style.setProperty("pointer-events", "none", "important");
+          el.setAttribute("inert", "");
+        }
+      }
+    } catch {}
+  }
+
   function newProjectButton(element) {
     return [...element.querySelectorAll(interactiveSelector)].some(button =>
       /^(?:add|\+)?\s*new project$/i.test((button.textContent || "").trim()) ||
@@ -179,9 +219,11 @@
   function collectLockedControls() {
     const controls = new Set();
     for (const element of document.querySelectorAll(accountSelector)) {
+      if (element.closest("[data-dcx-dismissed-banner]") || isCloseOrDismissButton(element)) continue;
       addAccountControl(controls, element);
     }
     for (const avatar of document.querySelectorAll(avatarSelector)) {
+      if (avatar.closest("[data-dcx-dismissed-banner]")) continue;
       const trigger = avatar.closest(interactiveSelector);
       // data-gbid is the stable marker on Flow's own account avatar. Other
       // image heuristics are deliberately restricted to header controls.
@@ -195,6 +237,7 @@
       ", [role='banner'] " + interactiveSelector
     );
     for (const control of headerControls) {
+      if (control.closest("[data-dcx-dismissed-banner]") || isCloseOrDismissButton(control)) continue;
       if (isGenericAvatarControl(control)) controls.add(control);
     }
     return controls;
@@ -277,9 +320,13 @@
     queued = false;
     frame = null;
     if (destroyed || !managed || !document.documentElement) return;
+    dismissHelpSigningInBanner();
     if (!style?.isConnected) {
       style = document.createElement("style");
       style.textContent = `html[${rootMarker}] [${marker}] {
+          display: none !important; visibility: hidden !important; pointer-events: none !important;
+        }
+        html[${rootMarker}] [data-dcx-dismissed-banner] {
           display: none !important; visibility: hidden !important; pointer-events: none !important;
         }
         html[${rootMarker}] :is(${accountSelector}),
@@ -355,14 +402,17 @@
   }
 
   function onMutation() {
+    dismissHelpSigningInBanner();
     schedule();
   }
 
   function onDomContentLoaded() {
+    dismissHelpSigningInBanner();
     void check();
   }
 
   function onPageShow() {
+    dismissHelpSigningInBanner();
     void check();
   }
 
@@ -372,6 +422,21 @@
 
   function onInteraction(event) {
     if (destroyed || !managed || !(event.target instanceof Element)) return;
+
+    if (isCloseOrDismissButton(event.target)) {
+      dismissHelpSigningInBanner();
+      return;
+    }
+
+    const banner = event.target.closest("[data-dcx-dismissed-banner]") ||
+      event.target.closest("div, aside, section, [role='dialog'], [role='alert']");
+    if (banner && helpSigningInPattern.test(banner.textContent || "")) {
+      dismissHelpSigningInBanner();
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
     const path = typeof event.composedPath === "function" ?
       event.composedPath() : [event.target];
     const blockedPath = path.some(node => {
@@ -436,11 +501,15 @@
   }
   window.addEventListener("pageshow", onPageShow);
   globalThis.chrome?.runtime?.onMessage?.addListener?.(onRuntimeMessage);
-  interval = setInterval(check, 1500);
+  interval = setInterval(() => {
+    void check();
+    dismissHelpSigningInBanner();
+  }, 1000);
 
   const controller = { destroy };
   globalThis[instanceKey] = controller;
-    void check();
+  dismissHelpSigningInBanner();
+  void check();
   };
   void start().catch(() => {});
 })();
