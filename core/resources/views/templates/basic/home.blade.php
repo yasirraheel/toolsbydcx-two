@@ -36,10 +36,6 @@
                         <span>@lang('Explore Pricing Plans')</span>
                         <i class="las la-arrow-down fs-5"></i>
                     </a>
-                    <a href="{{ route('extension.download') }}" class="btn btn-outline-light btn-lg d-inline-flex align-items-center gap-2 px-4 py-3 fw-semibold rounded-pill border-secondary" style="font-size: 16px; background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(8px);">
-                        <i class="las la-puzzle-piece text-primary fs-5"></i>
-                        <span>@lang('Download Extension')</span>
-                    </a>
                 </div>
 
                 {{-- Trust Stats Bar --}}
@@ -110,9 +106,9 @@
                     <div class="icon-box mb-4">
                         <i class="las la-puzzle-piece text-success fs-2"></i>
                     </div>
-                    <h4 class="text-white fw-semibold mb-2">@lang('2. Install Extension')</h4>
+                    <h4 class="text-white fw-semibold mb-2">@lang('2. Connect Extension')</h4>
                     <p class="text-muted small mb-0 lh-base">
-                        @lang('Download and add our secure browser extension in just one click to your preferred browser.')
+                        @lang('Access your user panel to connect the official browser extension to your preferred browser.')
                     </p>
                 </div>
             </div>

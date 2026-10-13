@@ -22,6 +22,11 @@ class SiteController extends Controller
 {
     public function downloadExtension($filename = null)
     {
+        if (!auth()->check() && !auth('admin')->check()) {
+            $notify[] = ['error', 'Please login to download extensions.'];
+            return redirect()->route('user.login')->withNotify($notify);
+        }
+
         $directory = storage_path('app/public/extension');
         $filePath = null;
         $downloadName = null;
