@@ -3,9 +3,15 @@
 
 chrome.storage.local.get(['injectedDomains'], (result) => {
     const domains = result.injectedDomains || [];
-    if (domains.length === 0) return;
-
     const currentHost = window.location.hostname.toLowerCase();
+    const isChatHost = currentHost === 'chatgpt.com'
+        || currentHost.endsWith('.chatgpt.com')
+        || currentHost === 'openai.com'
+        || currentHost.endsWith('.openai.com');
+
+    // ChatGPT isolation is server-authoritative and must run even before a
+    // platform cookie injection has populated injectedDomains.
+    if (domains.length === 0 && !isChatHost) return;
     
     // Find if the current host falls under any injected domain
     let matchedPlatform = null;
@@ -17,7 +23,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         }
     }
 
-    if (matchedPlatform) {
+    if (matchedPlatform || isChatHost) {
         // --- 1. Prevent top-level navigation to unauthorized paths or logout URLs ---
         if (window.top === window) {
             const currentUrl = window.location.href.toLowerCase();
