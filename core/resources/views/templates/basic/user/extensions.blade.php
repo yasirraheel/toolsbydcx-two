@@ -10,7 +10,7 @@
                         <i class="las la-puzzle-piece text--base me-2"></i> @lang('Browser Extensions')
                     </h5>
                     <span class="badge bg--primary px-3 py-2 fw-semibold">
-                        <i class="las la-check-circle me-1"></i> 2 @lang('Extensions')
+                        <i class="las la-check-circle me-1"></i> {{ $kiwiExists ? 3 : 2 }} @lang('Extensions')
                     </span>
                 </div>
                 <div class="card-body">
@@ -106,6 +106,46 @@
                                     </button>
                                 @endif
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Kiwi Browser distribution --}}
+                    <div class="product-item">
+                        <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                            <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
+                                <div style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    <i class="las la-mobile-alt" style="font-size: 2.8rem; color: #10b981;"></i>
+                                </div>
+                            </div>
+                            <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
+                                <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
+                                    <span class="text--base">@lang('Kiwi Browser')</span>
+                                    @if($kiwiExists && $kiwiVersion)
+                                        <span class="badge badge--dark">v{{ $kiwiVersion }}</span>
+                                    @endif
+                                </h4>
+                                <div class="mt-1 text-muted small" style="line-height: 1.4;">
+                                    <i class="las la-info-circle text--base me-1"></i>@lang('Android browser with Chrome extension support for ToolsByDcx Flow.')
+                                </div>
+                                <div class="mt-1">
+                                    @if($kiwiExists)
+                                        <span class="badge badge--success"><i class="las la-check-circle me-1"></i>@lang('Ready to download')</span>
+                                    @else
+                                        <span class="badge badge--secondary"><i class="las la-clock me-1"></i>@lang('Administrator is preparing the download')</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center flex-wrap flex-shrink-0">
+                            @if($kiwiExists)
+                                <a href="{{ $kiwiDownloadUrl }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                    <i class="las la-download me-1"></i> <span class="btn-text">@lang('Download Kiwi Browser')</span>
+                                </a>
+                            @else
+                                <button type="button" class="btn btn--secondary d-inline-flex align-items-center justify-content-center text-nowrap" disabled>
+                                    <i class="las la-clock me-1"></i> <span class="btn-text">@lang('Not available yet')</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>

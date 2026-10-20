@@ -36,6 +36,7 @@ class SiteController extends Controller
 
         $isSocial = $type === 'social' || str_contains($lowerName, 'social') || str_contains($lowerName, 'toolsbydcx-ext') || $lowerName === 'ext';
         $isFlow = $type === 'flow' || str_contains($lowerName, 'flow');
+        $isKiwi = $type === 'kiwi' || str_contains($lowerName, 'kiwi') || str_ends_with($lowerName, '.apk') || str_ends_with($lowerName, '.xapk');
 
         if ($isSocial) {
             $history = \App\Models\ExtensionHistory::where('type', 'social')->where('is_current', true)->first()
@@ -70,6 +71,21 @@ class SiteController extends Controller
                 $filePath = public_path('toolsbydcx-extension.zip');
                 $downloadName = 'toolsbydcx-flow.zip';
             }
+        } elseif ($isKiwi) {
+            $history = \App\Models\ExtensionHistory::where('type', 'kiwi')->where('is_current', true)->first()
+                     ?: \App\Models\ExtensionHistory::where('type', 'kiwi')->orderByDesc('id')->first();
+            if ($history && file_exists($directory . '/' . $history->filename)) {
+                $filePath = $directory . '/' . $history->filename;
+                $downloadName = $history->filename;
+            } else {
+                foreach (['kiwi-browser.apk', 'kiwi-browser.xapk'] as $candidate) {
+                    if (file_exists($directory . '/' . $candidate)) {
+                        $filePath = $directory . '/' . $candidate;
+                        $downloadName = $candidate;
+                        break;
+                    }
+                }
+            }
         } elseif ($filename) {
             $candidate = $directory . '/' . basename($filename);
             if (file_exists($candidate)) {
@@ -79,7 +95,7 @@ class SiteController extends Controller
         }
 
         // Generic fallback if not resolved yet
-        if (!$filePath) {
+        if (!$filePath && !$isKiwi) {
             $history = \App\Models\ExtensionHistory::where('is_current', true)->first()
                      ?: \App\Models\ExtensionHistory::orderByDesc('id')->first();
             if ($history && file_exists($directory . '/' . $history->filename)) {
@@ -88,7 +104,7 @@ class SiteController extends Controller
             }
         }
 
-        if (!$filePath && is_dir($directory)) {
+        if (!$filePath && !$isKiwi && is_dir($directory)) {
             $files = scandir($directory);
             $latestTime = 0;
             foreach ($files as $file) {
@@ -104,7 +120,7 @@ class SiteController extends Controller
             }
         }
 
-        if (!$filePath) {
+        if (!$filePath && !$isKiwi) {
             $publicFallback = public_path('download/extension.zip');
             if (file_exists($publicFallback)) {
                 $filePath = $publicFallback;

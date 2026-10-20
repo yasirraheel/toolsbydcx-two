@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ExtensionHistory;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class ExtensionUploadController extends Controller
 {
@@ -46,6 +47,22 @@ class ExtensionUploadController extends Controller
         $flowDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-flow.zip']);
         $flowVersion = $flowHistory ? $flowHistory->version : '1.0.3';
 
+        // Kiwi Browser APK/XAPK status
+        $kiwiHistory = ExtensionHistory::where('type', 'kiwi')->where('is_current', true)->first()
+                    ?: ExtensionHistory::where('type', 'kiwi')->orderByDesc('id')->first();
+        $kiwiExists = ($kiwiHistory && file_exists($directory . '/' . $kiwiHistory->filename))
+                   || file_exists($directory . '/kiwi-browser.apk')
+                   || file_exists($directory . '/kiwi-browser.xapk');
+        $kiwiLastModified = 'Never';
+        if ($kiwiExists) {
+            $kiwiFile = $kiwiHistory && file_exists($directory . '/' . $kiwiHistory->filename)
+                ? $directory . '/' . $kiwiHistory->filename
+                : (file_exists($directory . '/kiwi-browser.apk') ? $directory . '/kiwi-browser.apk' : $directory . '/kiwi-browser.xapk');
+            $kiwiLastModified = date('F d Y, H:i:s', filemtime($kiwiFile));
+        }
+        $kiwiDownloadUrl = route('extension.download', ['filename' => 'kiwi-browser.apk', 'type' => 'kiwi']);
+        $kiwiVersion = $kiwiHistory ? $kiwiHistory->version : 'Not uploaded';
+
         $minVersion = gs('min_extension_version') ?: '1.0.0';
         if (!preg_match('/^\d+(\.\d+)*$/', $minVersion)) {
             $minVersion = '1.0.0';
@@ -69,6 +86,11 @@ class ExtensionUploadController extends Controller
             'flowDownloadUrl',
             'flowVersion',
             'flowHistory',
+            'kiwiExists',
+            'kiwiLastModified',
+            'kiwiDownloadUrl',
+            'kiwiVersion',
+            'kiwiHistory',
             'minVersion',
             'forceUpdate',
             'histories'
@@ -78,13 +100,24 @@ class ExtensionUploadController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'extension_type'        => 'required|in:social,flow',
-            'extension_zip'         => 'required|file|mimes:zip',
+            'extension_type'        => 'required|in:social,flow,kiwi',
+            'extension_zip'         => 'required|file|max:524288',
             'min_extension_version' => 'nullable|string',
         ]);
 
         $extType = $request->extension_type;
         $file = $request->file('extension_zip');
+        $originalExtension = strtolower($file->getClientOriginalExtension());
+        if ($extType === 'kiwi' && !in_array($originalExtension, ['apk', 'xapk'], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'extension_zip' => 'Kiwi Browser must be an APK or XAPK file.',
+            ]);
+        }
+        if ($extType !== 'kiwi' && $originalExtension !== 'zip') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'extension_zip' => 'Extensions must be uploaded as ZIP files.',
+            ]);
+        }
         $detectedVersion = null;
 
         // Define storage directory
@@ -115,11 +148,41 @@ class ExtensionUploadController extends Controller
             $zip->close();
         }
 
-        $defaultVer = $extType === 'social' ? '2.3.3' : '1.0.3';
+        $defaultVer = $extType === 'social' ? '2.3.3' : ($extType === 'flow' ? '1.0.3' : '1.0.0');
         $version = $detectedVersion ?: ($request->min_extension_version ?: $defaultVer);
         $cleanVersion = preg_replace('/[^0-9.]/', '', $version) ?: $defaultVer;
 
-        if ($extType === 'social') {
+        if ($extType === 'kiwi') {
+            $finalExtension = $originalExtension;
+            $finalFilename = 'kiwi-browser-v' . $cleanVersion . '.' . $finalExtension;
+            $finalPath = $directory . '/' . $finalFilename;
+
+            foreach (scandir($directory) ?: [] as $item) {
+                if (str_starts_with($item, 'kiwi-browser-v') && $item !== $finalFilename) {
+                    @unlink($directory . '/' . $item);
+                }
+            }
+
+            rename($tempPath, $finalPath);
+            try {
+                copy($finalPath, $directory . '/kiwi-browser.' . $finalExtension);
+            } catch (\Throwable $e) {}
+
+            $fileSize = file_exists($finalPath) ? round(filesize($finalPath) / 1024, 1) . ' KB' : '0 KB';
+            try {
+                ExtensionHistory::where('type', 'kiwi')->update(['is_current' => false]);
+                ExtensionHistory::create([
+                    'version'    => $cleanVersion,
+                    'filename'   => $finalFilename,
+                    'file_path'  => 'storage/extension/' . $finalFilename,
+                    'file_size'  => $fileSize,
+                    'type'       => 'kiwi',
+                    'is_current' => true,
+                ]);
+            } catch (\Throwable $e) {}
+
+            $notifyMsg = 'Kiwi Browser ' . strtoupper($finalExtension) . ' v' . $cleanVersion . ' uploaded successfully!';
+        } elseif ($extType === 'social') {
             $finalFilename = 'toolsbydcx-ext-v' . $cleanVersion . '.zip';
             $finalPath = $directory . '/' . $finalFilename;
 
@@ -202,13 +265,117 @@ class ExtensionUploadController extends Controller
             $notifyMsg = 'ToolsByDcx Flow Extension v' . $cleanVersion . ' uploaded successfully!';
         }
 
-        $general = gs();
-        $general->min_extension_version = $cleanVersion;
-        $general->force_extension_update = $request->force_extension_update ? 1 : 0;
-        $general->save();
+        if ($extType !== 'kiwi') {
+            $general = gs();
+            $general->min_extension_version = $cleanVersion;
+            $general->force_extension_update = $request->force_extension_update ? 1 : 0;
+            $general->save();
+        }
 
         $notify[] = ['success', $notifyMsg];
         return back()->withNotify($notify);
+    }
+
+    /**
+     * Receive one small Kiwi Browser chunk. Keeping each request below the
+     * PHP/web-server upload limit allows APKs around 250 MB to upload safely.
+     */
+    public function uploadChunk(Request $request)
+    {
+        $request->validate([
+            'extension_type' => 'required|in:kiwi',
+            // Keep the payload near 1 MB so the endpoint also works with
+            // conservative hosting defaults such as upload_max_filesize=2M.
+            'chunk'         => 'required|file|max:2048',
+            'upload_id'     => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{16,80}$/'],
+            'chunk_index'   => 'required|integer|min:0|max:9999',
+            'total_chunks'  => 'required|integer|min:1|max:10000',
+            'original_name' => 'required|string|max:255',
+        ]);
+
+        $extension = strtolower(pathinfo($request->input('original_name'), PATHINFO_EXTENSION));
+        if (!in_array($extension, ['apk', 'xapk'], true)) {
+            return response()->json(['message' => 'Kiwi Browser must be an APK or XAPK file.'], 422);
+        }
+
+        $chunkDirectory = storage_path('app/tmp/kiwi-chunks/' . $request->input('upload_id'));
+        if (!is_dir($chunkDirectory)) {
+            mkdir($chunkDirectory, 0755, true);
+        }
+
+        $chunkName = sprintf('%06d.part', (int) $request->input('chunk_index'));
+        $request->file('chunk')->move($chunkDirectory, $chunkName);
+
+        return response()->json([
+            'ok' => true,
+            'uploaded' => count(glob($chunkDirectory . '/*.part') ?: []),
+            'totalChunks' => (int) $request->input('total_chunks'),
+        ]);
+    }
+
+    /** Assemble a completed Kiwi upload and pass it through the normal release flow. */
+    public function completeChunkUpload(Request $request)
+    {
+        $request->validate([
+            'extension_type'        => 'required|in:kiwi',
+            'upload_id'             => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{16,80}$/'],
+            'total_chunks'          => 'required|integer|min:1|max:10000',
+            'original_name'         => 'required|string|max:255',
+            'min_extension_version' => 'nullable|string|max:50',
+        ]);
+
+        $extension = strtolower(pathinfo($request->input('original_name'), PATHINFO_EXTENSION));
+        if (!in_array($extension, ['apk', 'xapk'], true)) {
+            return response()->json(['message' => 'Kiwi Browser must be an APK or XAPK file.'], 422);
+        }
+
+        $chunkDirectory = storage_path('app/tmp/kiwi-chunks/' . $request->input('upload_id'));
+        $totalChunks = (int) $request->input('total_chunks');
+        $assembledPath = $chunkDirectory . '/assembled.' . $extension;
+        if (!is_dir($chunkDirectory)) {
+            return response()->json(['message' => 'Upload session was not found. Please start again.'], 422);
+        }
+
+        $output = @fopen($assembledPath, 'wb');
+        if (!$output) {
+            return response()->json(['message' => 'Could not prepare the server upload.'], 500);
+        }
+
+        try {
+            for ($index = 0; $index < $totalChunks; $index++) {
+                $partPath = $chunkDirectory . '/' . sprintf('%06d.part', $index);
+                if (!is_file($partPath)) {
+                    throw new \RuntimeException('Missing upload chunk ' . ($index + 1) . ' of ' . $totalChunks . '.');
+                }
+                $input = fopen($partPath, 'rb');
+                stream_copy_to_stream($input, $output);
+                fclose($input);
+            }
+            fclose($output);
+
+            $request->files->set('extension_zip', new UploadedFile(
+                $assembledPath,
+                $request->input('original_name'),
+                'application/vnd.android.package-archive',
+                null,
+                true
+            ));
+            // upload() handles validation, release naming, history, and cleanup
+            // exactly as a regular admin upload.
+            $this->upload($request);
+        } catch (\Throwable $e) {
+            if (is_resource($output)) {
+                fclose($output);
+            }
+            return response()->json(['message' => $e->getMessage()], 422);
+        } finally {
+            foreach (glob($chunkDirectory . '/*') ?: [] as $part) {
+                @unlink($part);
+            }
+            @rmdir($chunkDirectory);
+        }
+
+        return response()->json(['ok' => true, 'message' => 'Kiwi Browser uploaded successfully.']);
     }
 
     private function flattenExtensionZip($zipPath)

@@ -36,6 +36,15 @@ class ExtensionsController extends Controller
                    || file_exists($socialStorage . '/toolsbydcx-flow.zip')
                    || count(glob($socialStorage . '/toolsbydcx-flow*.zip') ?: []) > 0;
 
+        // 3. Kiwi Browser APK/XAPK distributed by the administrator
+        $kiwiHistory = ExtensionHistory::where('type', 'kiwi')->where('is_current', true)->first()
+                    ?: ExtensionHistory::where('type', 'kiwi')->orderByDesc('id')->first();
+        $kiwiVersion = $kiwiHistory ? $kiwiHistory->version : null;
+        $kiwiDownloadUrl = route('extension.download', ['filename' => 'kiwi-browser.apk', 'type' => 'kiwi']);
+        $kiwiExists = ($kiwiHistory && file_exists($socialStorage . '/' . $kiwiHistory->filename))
+                   || file_exists($socialStorage . '/kiwi-browser.apk')
+                   || file_exists($socialStorage . '/kiwi-browser.xapk');
+
         // Assigned Google Flow account & pairings
         $flowAccount = $user->flow_account;
         $pairings = ExtensionPairing::where('user_id', $user->id)
@@ -68,6 +77,9 @@ class ExtensionsController extends Controller
             'flowDownloadUrl',
             'flowExists',
             'flowAccount',
+            'kiwiVersion',
+            'kiwiDownloadUrl',
+            'kiwiExists',
             'pairings',
             'isExtensionPaired',
             'isFlowSupportedBrowser'

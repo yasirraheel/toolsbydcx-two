@@ -108,6 +108,8 @@ Route::middleware('admin')->group(function () {
     Route::controller('ExtensionUploadController')->prefix('extension')->name('extension.')->group(function(){
         Route::get('upload', 'index')->name('upload');
         Route::post('upload', 'upload')->name('upload.store');
+        Route::post('upload/chunk', 'uploadChunk')->name('upload.chunk');
+        Route::post('upload/complete', 'completeChunkUpload')->name('upload.complete');
     });
 
     // Subscriber
