@@ -83,10 +83,12 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         `;
         document.documentElement.appendChild(style);
 
-        let ownedChats = [];
-        let chatStorageReady = false;
+        let serverChatIds = new Set();
+        let chatServerReady = false;
         let chatFilter = null;
         let chatIsolationInitialized = false;
+        let chatRefreshTimer = null;
+        let lastRegisteredChatId = null;
 
         // --- 3. Hide logout elements via JS based on text content ---
         const hideLogoutByText = () => {
@@ -125,28 +127,72 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 });
             });
 
-            // Dynamic ChatGPT Chat History Isolation (show owned chats, hide unowned chats).
-            // Keep this state outside the protection loop. The page is a React SPA and
-            // repeatedly reading storage and forcing inline layout styles makes its sidebar blink.
+            // Dynamic ChatGPT Chat History Isolation. The server owns the allow-list;
+            // local extension storage is deliberately not used as an authority.
             if ((currentHost.includes('chatgpt.com') || currentHost.includes('openai.com')) && !chatIsolationInitialized) {
                 chatIsolationInitialized = true;
 
-                const captureCurrentChat = () => {
-                    const match = window.location.pathname.match(/\/c\/([a-zA-Z0-9-]+)/);
-                    if (!match || !match[1] || ownedChats.includes(match[1])) return;
-
-                    ownedChats = [...ownedChats, match[1]];
+                const sendChatHistoryMessage = (message, callback) => {
                     try {
-                        chrome.storage.local.set({
-                            toolsbydcx_owned_chats: ownedChats,
-                            wemate_owned_chats: ownedChats
+                        chrome.runtime.sendMessage(message, (response) => {
+                            if (chrome.runtime.lastError) {
+                                callback({ success: false, error: chrome.runtime.lastError.message });
+                                return;
+                            }
+                            callback(response || { success: false, error: 'No response from extension worker.' });
                         });
-                    } catch(e) {}
+                    } catch (error) {
+                        callback({ success: false, error: error.message });
+                    }
+                };
+
+                const currentChatId = () => {
+                    const match = window.location.pathname.match(/\/c\/([a-zA-Z0-9-]+)/);
+                    return match && match[1] ? match[1] : null;
+                };
+
+                const currentChatTitle = (chatId) => {
+                    if (!chatId) return '';
+                    const item = Array.from(document.querySelectorAll('a[href*="/c/"]')).find((el) => {
+                        const href = el.getAttribute('href') || '';
+                        return href.includes(`/c/${chatId}`);
+                    });
+                    return (item?.innerText || item?.textContent || document.title || '').trim().slice(0, 300);
+                };
+
+                const registerCurrentChat = () => {
+                    if (!chatServerReady) return;
+                    const chatId = currentChatId();
+                    if (!chatId || lastRegisteredChatId === chatId) return;
+
+                    lastRegisteredChatId = chatId;
+                    sendChatHistoryMessage({
+                        type: 'CHAT_HISTORY_REGISTER',
+                        chatId,
+                        title: currentChatTitle(chatId)
+                    }, (response) => {
+                        if (response?.success && response.data?.chat?.id) {
+                            serverChatIds.add(response.data.chat.id);
+                            chatFilter();
+                        }
+                    });
+                };
+
+                const applyServerChats = (response) => {
+                    chatServerReady = true;
+                    if (response?.success && Array.isArray(response.data?.chats)) {
+                        serverChatIds = new Set(response.data.chats.map((chat) => chat.id).filter(Boolean));
+                        lastRegisteredChatId = null;
+                    } else {
+                        // Fail closed. A network/auth failure must never expose another user's chats.
+                        serverChatIds = new Set();
+                    }
+                    chatFilter();
                 };
 
                 chatFilter = () => {
-                    if (!chatStorageReady) return;
-                    captureCurrentChat();
+                    if (!chatServerReady) return;
+                    registerCurrentChat();
 
                     document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
                         const href = el.getAttribute('href') || el.querySelector('a')?.getAttribute('href') || '';
@@ -154,7 +200,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                         if (!match || !match[1]) return;
 
                         const container = el.closest('li') || el;
-                        const shouldHide = !ownedChats.includes(match[1]);
+                        const shouldHide = !serverChatIds.has(match[1]);
                         const alreadyHidden = container.classList.contains('toolsbydcx-chat-hidden');
 
                         if (shouldHide && !alreadyHidden) {
@@ -165,25 +211,12 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                     });
                 };
 
-                try {
-                    chrome.storage.local.get(['toolsbydcx_owned_chats', 'wemate_owned_chats'], (res) => {
-                        const stored = res?.toolsbydcx_owned_chats ?? res?.wemate_owned_chats;
-                        ownedChats = Array.isArray(stored) ? [...new Set(stored)] : [];
-                        chatStorageReady = true;
-                        chatFilter();
-                    });
-                    chrome.storage.onChanged.addListener((changes, area) => {
-                        if (area !== 'local') return;
-                        const changed = changes.toolsbydcx_owned_chats || changes.wemate_owned_chats;
-                        if (!changed) return;
-                        ownedChats = Array.isArray(changed.newValue) ? [...new Set(changed.newValue)] : [];
-                        chatFilter();
-                    });
-                } catch(e) {
-                    chatStorageReady = true;
-                }
+                const refreshServerChats = () => {
+                    sendChatHistoryMessage({ type: 'CHAT_HISTORY_LIST' }, applyServerChats);
+                };
 
-                chatFilter();
+                refreshServerChats();
+                chatRefreshTimer = window.setInterval(refreshServerChats, 10000);
             }
 
             if (chatFilter) chatFilter();

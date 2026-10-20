@@ -21,10 +21,17 @@ Route::get('cron/cookie-check', 'CronController@cookieCheck')->name('cron.cookie
 
 // Extension API Routes (Session-based via normal auth)
 Route::options('api/extension/{any?}', function() {
-    return response('', 200)
-        ->header('Access-Control-Allow-Origin', '*')
+    $origin = (string) request()->header('Origin', '');
+    $allowed = str_starts_with($origin, 'chrome-extension://')
+        || str_starts_with($origin, 'moz-extension://')
+        || str_contains($origin, 'toolsbydcx.com');
+
+    $response = response('', 200)
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Admin-Key, Accept')
-        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        ->header('Access-Control-Allow-Credentials', 'true');
+
+    return $allowed ? $response->header('Access-Control-Allow-Origin', $origin) : $response;
 })->where('any', '.*');
 
 Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(function () {
@@ -35,6 +42,8 @@ Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(
         Route::get('me', 'ExtensionController@me')->name('me');
         Route::get('platforms', 'ExtensionController@platforms')->name('platforms');
         Route::get('cookies/{platformId}/{accountId?}', 'ExtensionController@getCookies')->name('cookies');
+        Route::get('chat-history', 'ChatHistoryController@index')->middleware('throttle:120,1')->name('chat.history.index');
+        Route::post('chat-history', 'ChatHistoryController@store')->middleware('throttle:120,1')->name('chat.history.store');
     });
 });
 

@@ -1,4 +1,11 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER') {
+        handleChatHistoryMessage(request)
+            .then((data) => sendResponse({ success: true, data }))
+            .catch((error) => sendResponse({ success: false, status: error.status || 0, error: error.message }));
+        return true;
+    }
+
     if (request.type === 'WIPE_COOKIES') {
         wipeAllInjectedCookies();
         sendResponse({ success: true });
@@ -14,6 +21,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const API_URL = 'https://toolsbydcx.com/api/extension';
+
+async function requestChatHistory(path = '', options = {}) {
+    const response = await fetch(`${API_URL}/chat-history${path}`, {
+        credentials: 'include',
+        cache: 'no-store',
+        ...options,
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers || {})
+        }
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const error = new Error(payload.message || `Chat history request failed (${response.status}).`);
+        error.status = response.status;
+        throw error;
+    }
+    return payload;
+}
+
+async function handleChatHistoryMessage(request) {
+    if (request.type === 'CHAT_HISTORY_LIST') {
+        return requestChatHistory('?provider=chatgpt');
+    }
+
+    if (request.type === 'CHAT_HISTORY_REGISTER') {
+        const chatId = String(request.chatId || '');
+        if (!/^[A-Za-z0-9_-]{4,128}$/.test(chatId)) {
+            throw new Error('Invalid chat id.');
+        }
+
+        return requestChatHistory('', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'chatgpt',
+                chat_id: chatId,
+                title: String(request.title || '').slice(0, 300)
+            })
+        });
+    }
+
+    return null;
+}
 
 // Set up periodic alarm to check subscription status
 chrome.runtime.onInstalled.addListener(() => {
