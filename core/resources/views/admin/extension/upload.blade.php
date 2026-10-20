@@ -504,7 +504,7 @@
             button.disabled = true;
             progress.style.display = 'flex';
             bar.style.width = '0%';
-            status.textContent = `Uploading 0 of ${totalChunks} chunks...`;
+            status.textContent = 'Uploaded 0%';
 
             try {
                 for (let index = 0; index < totalChunks; index++) {
@@ -521,7 +521,7 @@
                     if (!response.ok) throw new Error(result.message || `Chunk ${index + 1} failed.`);
                     const percent = Math.round(((index + 1) / totalChunks) * 100);
                     bar.style.width = percent + '%';
-                    status.textContent = `Uploading ${index + 1} of ${totalChunks} chunks...`;
+                    status.textContent = `Uploaded ${percent}%`;
                 }
 
                 const complete = new FormData();
@@ -534,7 +534,7 @@
                 const response = await fetch(completeUrl, { method: 'POST', body: complete, credentials: 'same-origin' });
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(result.message || 'Could not complete the upload.');
-                status.textContent = 'Upload complete. Refreshing...';
+                status.textContent = 'Uploaded 100%. Refreshing...';
                 window.location.reload();
             } catch (error) {
                 status.textContent = error.message || 'Upload failed. Please try again.';

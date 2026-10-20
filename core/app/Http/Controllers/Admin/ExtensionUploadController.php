@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ExtensionHistory;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class ExtensionUploadController extends Controller
 {
@@ -153,35 +152,7 @@ class ExtensionUploadController extends Controller
         $cleanVersion = preg_replace('/[^0-9.]/', '', $version) ?: $defaultVer;
 
         if ($extType === 'kiwi') {
-            $finalExtension = $originalExtension;
-            $finalFilename = 'kiwi-browser-v' . $cleanVersion . '.' . $finalExtension;
-            $finalPath = $directory . '/' . $finalFilename;
-
-            foreach (scandir($directory) ?: [] as $item) {
-                if (str_starts_with($item, 'kiwi-browser-v') && $item !== $finalFilename) {
-                    @unlink($directory . '/' . $item);
-                }
-            }
-
-            rename($tempPath, $finalPath);
-            try {
-                copy($finalPath, $directory . '/kiwi-browser.' . $finalExtension);
-            } catch (\Throwable $e) {}
-
-            $fileSize = file_exists($finalPath) ? round(filesize($finalPath) / 1024, 1) . ' KB' : '0 KB';
-            try {
-                ExtensionHistory::where('type', 'kiwi')->update(['is_current' => false]);
-                ExtensionHistory::create([
-                    'version'    => $cleanVersion,
-                    'filename'   => $finalFilename,
-                    'file_path'  => 'storage/extension/' . $finalFilename,
-                    'file_size'  => $fileSize,
-                    'type'       => 'kiwi',
-                    'is_current' => true,
-                ]);
-            } catch (\Throwable $e) {}
-
-            $notifyMsg = 'Kiwi Browser ' . strtoupper($finalExtension) . ' v' . $cleanVersion . ' uploaded successfully!';
+            $notifyMsg = $this->storeKiwiRelease($tempPath, $originalExtension, $cleanVersion, $directory);
         } elseif ($extType === 'social') {
             $finalFilename = 'toolsbydcx-ext-v' . $cleanVersion . '.zip';
             $finalPath = $directory . '/' . $finalFilename;
@@ -276,6 +247,41 @@ class ExtensionUploadController extends Controller
         return back()->withNotify($notify);
     }
 
+    private function storeKiwiRelease(string $sourcePath, string $extension, string $version, string $directory): string
+    {
+        $finalFilename = 'kiwi-browser-v' . $version . '.' . $extension;
+        $finalPath = $directory . '/' . $finalFilename;
+
+        foreach (scandir($directory) ?: [] as $item) {
+            if (str_starts_with($item, 'kiwi-browser-v') && $item !== $finalFilename) {
+                @unlink($directory . '/' . $item);
+            }
+        }
+
+        @unlink($finalPath);
+        if (!rename($sourcePath, $finalPath)) {
+            throw new \RuntimeException('Could not save the assembled Kiwi Browser file.');
+        }
+
+        foreach (['apk', 'xapk'] as $oldExtension) {
+            @unlink($directory . '/kiwi-browser.' . $oldExtension);
+        }
+        copy($finalPath, $directory . '/kiwi-browser.' . $extension);
+
+        $fileSize = round(filesize($finalPath) / 1024, 1) . ' KB';
+        ExtensionHistory::where('type', 'kiwi')->update(['is_current' => false]);
+        ExtensionHistory::create([
+            'version'    => $version,
+            'filename'   => $finalFilename,
+            'file_path'  => 'storage/extension/' . $finalFilename,
+            'file_size'  => $fileSize,
+            'type'       => 'kiwi',
+            'is_current' => true,
+        ]);
+
+        return 'Kiwi Browser ' . strtoupper($extension) . ' v' . $version . ' uploaded successfully!';
+    }
+
     /**
      * Receive one small Kiwi Browser chunk. Keeping each request below the
      * PHP/web-server upload limit allows APKs around 250 MB to upload safely.
@@ -353,16 +359,8 @@ class ExtensionUploadController extends Controller
             }
             fclose($output);
 
-            $request->files->set('extension_zip', new UploadedFile(
-                $assembledPath,
-                $request->input('original_name'),
-                'application/vnd.android.package-archive',
-                null,
-                true
-            ));
-            // upload() handles validation, release naming, history, and cleanup
-            // exactly as a regular admin upload.
-            $this->upload($request);
+            $version = preg_replace('/[^0-9.]/', '', (string) $request->input('min_extension_version')) ?: '1.0.0';
+            $this->storeKiwiRelease($assembledPath, $extension, $version, storage_path('app/public/extension'));
         } catch (\Throwable $e) {
             if (is_resource($output)) {
                 fclose($output);
