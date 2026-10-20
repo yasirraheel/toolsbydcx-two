@@ -19,8 +19,17 @@
 
                         <div class="form-group">
                             <label>@lang('Social Extension File (.zip)')</label>
-                            <div class="custom-file">
-                                <input type="file" class="form-control" name="extension_zip" accept=".zip" required>
+                            <div class="dcx-file-picker" data-file-picker>
+                                <input id="socialExtensionFile" class="dcx-file-picker__input" type="file" name="extension_zip" accept=".zip" required>
+                                <label class="dcx-file-picker__label" for="socialExtensionFile">
+                                    <span class="dcx-file-picker__icon"><i class="las la-file-archive"></i></span>
+                                    <span class="dcx-file-picker__copy">
+                                        <strong>@lang('Choose a ZIP file')</strong>
+                                        <small>@lang('Click to browse from your computer')</small>
+                                    </span>
+                                    <span class="dcx-file-picker__action"><i class="las la-folder-open me-1"></i>@lang('Browse')</span>
+                                </label>
+                                <span class="dcx-file-picker__name" data-file-name>@lang('No file selected')</span>
                             </div>
                             <small class="text-muted">@lang('Tools access extension (Netflix, Prime, Canva). Filename: toolsbydcx-ext.zip')</small>
                         </div>
@@ -81,8 +90,17 @@
 
                         <div class="form-group">
                             <label>@lang('Flow Extension File (.zip)')</label>
-                            <div class="custom-file">
-                                <input type="file" class="form-control" name="extension_zip" accept=".zip" required>
+                            <div class="dcx-file-picker" data-file-picker>
+                                <input id="flowExtensionFile" class="dcx-file-picker__input" type="file" name="extension_zip" accept=".zip" required>
+                                <label class="dcx-file-picker__label" for="flowExtensionFile">
+                                    <span class="dcx-file-picker__icon"><i class="las la-file-archive"></i></span>
+                                    <span class="dcx-file-picker__copy">
+                                        <strong>@lang('Choose a ZIP file')</strong>
+                                        <small>@lang('Click to browse from your computer')</small>
+                                    </span>
+                                    <span class="dcx-file-picker__action"><i class="las la-folder-open me-1"></i>@lang('Browse')</span>
+                                </label>
+                                <span class="dcx-file-picker__name" data-file-name>@lang('No file selected')</span>
                             </div>
                             <small class="text-muted">@lang('Google Flow workspace automation. Filename: toolsbydcx-flow.zip')</small>
                         </div>
@@ -157,7 +175,18 @@
                         <input type="hidden" name="extension_type" value="kiwi">
                         <div class="form-group">
                             <label>@lang('Kiwi Browser APK/XAPK')</label>
-                            <input id="kiwiFile" type="file" class="form-control" name="extension_zip" accept=".apk,.xapk" required>
+                            <div class="dcx-file-picker" data-file-picker>
+                                <input id="kiwiFile" class="dcx-file-picker__input" type="file" name="extension_zip" accept=".apk,.xapk" required>
+                                <label class="dcx-file-picker__label" for="kiwiFile">
+                                    <span class="dcx-file-picker__icon dcx-file-picker__icon--green"><i class="las la-mobile-alt"></i></span>
+                                    <span class="dcx-file-picker__copy">
+                                        <strong>@lang('Choose an APK or XAPK')</strong>
+                                        <small>@lang('Large files upload securely in chunks')</small>
+                                    </span>
+                                    <span class="dcx-file-picker__action"><i class="las la-folder-open me-1"></i>@lang('Browse')</span>
+                                </label>
+                                <span class="dcx-file-picker__name" data-file-name>@lang('No file selected')</span>
+                            </div>
                             <small class="text-muted">@lang('Large files upload in small chunks so APKs around 250 MB do not exceed server request limits.')</small>
                         </div>
                         <div class="form-group">
@@ -267,6 +296,146 @@
     </div>
 @endsection
 
+@push('style')
+<style>
+    .dcx-file-picker {
+        position: relative;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.96));
+        overflow: hidden;
+        transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .dcx-file-picker:hover,
+    .dcx-file-picker:focus-within {
+        border-color: rgba(99, 102, 241, 0.9);
+        background: linear-gradient(135deg, rgba(37, 46, 75, 0.98), rgba(19, 25, 51, 0.98));
+        box-shadow: 0 0 0 3px rgba(70, 52, 255, 0.14), 0 10px 26px rgba(2, 6, 23, 0.2);
+    }
+
+    .dcx-file-picker__input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .dcx-file-picker__label {
+        min-height: 76px;
+        margin: 0;
+        padding: 13px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .dcx-file-picker__icon {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        color: #a5b4fc;
+        background: rgba(70, 52, 255, 0.18);
+        border: 1px solid rgba(129, 140, 248, 0.28);
+        font-size: 1.35rem;
+    }
+
+    .dcx-file-picker__icon--green {
+        color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.14);
+        border-color: rgba(52, 211, 153, 0.28);
+    }
+
+    .dcx-file-picker__copy {
+        min-width: 0;
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .dcx-file-picker__copy strong {
+        color: #f8fafc;
+        font-size: .9rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .dcx-file-picker__copy small {
+        overflow: hidden;
+        color: #94a3b8 !important;
+        font-size: .73rem;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dcx-file-picker__action {
+        flex: 0 0 auto;
+        padding: 8px 11px;
+        border: 1px solid rgba(129, 140, 248, 0.38);
+        border-radius: 8px;
+        color: #c7d2fe;
+        background: rgba(70, 52, 255, 0.16);
+        font-size: .78rem;
+        font-weight: 600;
+        transition: background .2s ease, color .2s ease;
+    }
+
+    .dcx-file-picker__label:hover .dcx-file-picker__action {
+        color: #fff;
+        background: #4634ff;
+    }
+
+    .dcx-file-picker__name {
+        display: block;
+        min-height: 34px;
+        padding: 9px 14px 10px;
+        border-top: 1px solid rgba(148, 163, 184, 0.12);
+        overflow: hidden;
+        color: #64748b;
+        font-size: .76rem;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dcx-file-picker.is-selected .dcx-file-picker__name {
+        color: #a5b4fc;
+        background: rgba(70, 52, 255, 0.08);
+    }
+
+    @media (max-width: 575px) {
+        .dcx-file-picker__label {
+            min-height: 70px;
+            padding: 11px;
+            gap: 9px;
+        }
+
+        .dcx-file-picker__icon {
+            width: 36px;
+            height: 36px;
+            flex-basis: 36px;
+            font-size: 1.15rem;
+        }
+
+        .dcx-file-picker__copy small {
+            display: none;
+        }
+
+        .dcx-file-picker__action {
+            padding: 7px 9px;
+        }
+    }
+</style>
+@endpush
+
 @push('script')
 <script>
     (function($){
@@ -288,6 +457,17 @@
             }
         });
     })(jQuery);
+
+    document.querySelectorAll('[data-file-picker]').forEach(function (picker) {
+        const input = picker.querySelector('.dcx-file-picker__input');
+        const name = picker.querySelector('[data-file-name]');
+        if (!input || !name) return;
+        input.addEventListener('change', function () {
+            const file = input.files && input.files[0];
+            picker.classList.toggle('is-selected', !!file);
+            name.textContent = file ? file.name : 'No file selected';
+        });
+    });
 
     // Kiwi APKs can be about 250 MB. Upload 1 MB pieces so the request size
     // stays below common PHP and reverse-proxy limits, then assemble server-side.
