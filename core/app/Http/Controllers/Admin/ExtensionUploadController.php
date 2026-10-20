@@ -28,17 +28,17 @@ class ExtensionUploadController extends Controller
             }
         }
         $socialDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-ext.zip']);
-        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.3';
+        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.4';
 
         // Flow Extension status
         $flowHistory = ExtensionHistory::where('type', 'flow')->where('is_current', true)->first()
                     ?: ExtensionHistory::where('type', 'flow')->orderByDesc('id')->first();
-        $flowExists = file_exists(public_path('toolsbydcx-extension.zip'))
+        $flowExists = file_exists(public_path('toolsbydcx-flow.zip'))
                    || ($flowHistory && file_exists($directory . '/' . $flowHistory->filename))
                    || count(glob($directory . '/toolsbydcx-flow*.zip') ?: []) > 0;
         $flowLastModified = 'Never';
         if ($flowExists) {
-            $flowFile = ($flowHistory && file_exists($directory . '/' . $flowHistory->filename)) ? $directory . '/' . $flowHistory->filename : (glob($directory . '/toolsbydcx-flow*.zip')[0] ?? public_path('toolsbydcx-extension.zip'));
+            $flowFile = ($flowHistory && file_exists($directory . '/' . $flowHistory->filename)) ? $directory . '/' . $flowHistory->filename : (glob($directory . '/toolsbydcx-flow*.zip')[0] ?? public_path('toolsbydcx-flow.zip'));
             if ($flowFile && file_exists($flowFile)) {
                 $flowLastModified = date('F d Y, H:i:s', filemtime($flowFile));
             }
@@ -147,7 +147,7 @@ class ExtensionUploadController extends Controller
             $zip->close();
         }
 
-        $defaultVer = $extType === 'social' ? '2.3.3' : ($extType === 'flow' ? '1.0.3' : '1.0.0');
+        $defaultVer = $extType === 'social' ? '2.3.4' : ($extType === 'flow' ? '1.0.3' : '1.0.0');
         $version = $detectedVersion ?: ($request->min_extension_version ?: $defaultVer);
         $cleanVersion = preg_replace('/[^0-9.]/', '', $version) ?: $defaultVer;
 
@@ -215,8 +215,8 @@ class ExtensionUploadController extends Controller
                 copy($finalPath, $directory . '/toolsbydcx-flow.zip');
                 $downloadDir = public_path('download');
                 if (!file_exists($downloadDir)) mkdir($downloadDir, 0755, true);
-                copy($finalPath, $downloadDir . '/extension.zip');
-                copy($finalPath, public_path('toolsbydcx-extension.zip'));
+                copy($finalPath, $downloadDir . '/toolsbydcx-flow.zip');
+                copy($finalPath, public_path('toolsbydcx-flow.zip'));
             } catch (\Throwable $e) {}
 
             $fileSize = file_exists($finalPath) ? round(filesize($finalPath) / 1024, 1) . ' KB' : '0 KB';

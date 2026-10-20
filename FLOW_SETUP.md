@@ -2,7 +2,7 @@
 
 ## How the reference works
 
-The supplied `BunnyFlow-v1.6.4` uses real Google sign-in form automation, not cookie injection. Its manifest has no `cookies` permission, and its login worker requests each credential separately. Google creates the normal authenticated browser session after sign-in.
+The analyzed BunnyFlow reference used real Google sign-in form automation, not cookie injection. ToolsByDcx Flow keeps that model: its manifest has no `cookies` permission, and its login worker requests each credential separately. Google creates the normal authenticated browser session after sign-in.
 
 1. A signed-in website user pairs the extension. Manual connection uses a one-time code. Website onboarding uses a verifier held in extension storage and a SHA-256 challenge sent to the website (PKCE-style proof).
 2. The extension stores its ToolsByDcx access token and installation ID. This token grants access to the ToolsByDcx API; it is not a Google cookie or password.
@@ -48,7 +48,7 @@ Passwords, authenticator seeds and new backup codes are encrypted with Laravel's
 1. Admin assigns an account from the Flow account form or the user detail page.
 2. Admin generates a six-digit code from the user detail page, or the customer selects **Get connection code** at `/user/flow-extension`.
 3. Resellers use **Flow Extensions** to generate codes or revoke connections for their own customers. They cannot assign arbitrary Google accounts or manage another reseller's customers.
-4. Download `/download/extension.zip`, extract it, open `edge://extensions`, enable Developer mode, and select **Load unpacked** on the extracted folder containing `manifest.json`.
+4. Download the current Flow archive from `/download/toolsbydcx-flow.zip`, extract it, open `edge://extensions`, enable Developer mode, and select **Load unpacked** on the extracted folder containing `manifest.json`.
 5. Enter the code in the popup. Alternatively, use **Connect this browser** on the extension page for proof-bound website pairing.
 6. Select **Open Flow** in the popup or **Start Flow login** on the website. Complete any manual Google prompt and resume.
 7. Review pairing status and login attempts under Flow Manager. Revoke a connection from admin, reseller or customer controls. Credential rotation/reassignment invalidates relevant connections.
@@ -60,8 +60,8 @@ Codes expire in 15 minutes and can be redeemed once. Paired access expires with 
 - Backend integration tests: `php core/vendor/phpunit/phpunit/phpunit -c core/phpunit.xml core/tests/Feature/FlowExtensionTest.php`
 - Worker tests: `node --experimental-vm-modules --test tests/flow-extension.test.mjs`
 - Blade compilation: `php core/artisan view:cache`
-- Rebuild branded icons and archive: `php scripts/build-extension.php`
-- The ZIP uses ToolsByDcx branding and contains no customer credentials.
+- The repository keeps the two unpacked sources only: `toolsbydcx-social-extension/` and `toolsbydcx-flow-extension/`. Create a ZIP manually when distributing an updated extension.
+- The archive uses ToolsByDcx branding and contains no customer credentials.
 - Add-ons store submission is separate from manual distribution.
 
 ## Required live acceptance check

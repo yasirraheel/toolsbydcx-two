@@ -31,10 +31,6 @@ Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(
     Route::get('version', 'ExtensionController@version')->name('version');
     Route::post('login', 'ExtensionController@mobileLogin')->name('mobile.login');
 
-    // Admin Master Cookie Sync Routes (Authorized via X-Admin-Key)
-    Route::post('admin-sync', 'AdminSyncApiController@sync')->name('admin.sync');
-    Route::get('admin-sync/accounts', 'AdminSyncApiController@accounts')->name('admin.sync.accounts');
-
     Route::middleware('auth')->group(function () {
         Route::get('me', 'ExtensionController@me')->name('me');
         Route::get('platforms', 'ExtensionController@platforms')->name('platforms');

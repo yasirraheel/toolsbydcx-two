@@ -18,7 +18,7 @@ class ExtensionsController extends Controller
         // 1. ToolsByDcx Social Extension (Cookie-Based Accounts)
         $socialHistory = ExtensionHistory::where('type', 'social')->where('is_current', true)->first()
                       ?: ExtensionHistory::where('type', 'social')->orderByDesc('id')->first();
-        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.3';
+        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.4';
         $socialDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-ext.zip']);
         $socialStorage = storage_path('app/public/extension');
         $socialExists = file_exists($socialStorage . '/toolsbydcx-ext.zip')
@@ -31,7 +31,7 @@ class ExtensionsController extends Controller
                     ?: ExtensionHistory::where('type', 'flow')->orderByDesc('id')->first();
         $flowVersion = $flowHistory ? $flowHistory->version : '1.0.3';
         $flowDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-flow.zip']);
-        $flowExists = file_exists(public_path('toolsbydcx-extension.zip'))
+        $flowExists = file_exists(public_path('toolsbydcx-flow.zip'))
                    || ($flowHistory && file_exists($socialStorage . '/' . $flowHistory->filename))
                    || file_exists($socialStorage . '/toolsbydcx-flow.zip')
                    || count(glob($socialStorage . '/toolsbydcx-flow*.zip') ?: []) > 0;

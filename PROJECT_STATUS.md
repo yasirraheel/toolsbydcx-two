@@ -1,4 +1,4 @@
-# ToolsByDcx â€” Project Status
+# ToolsByDcx ï¿½ Project Status
 
 Updated: 2026-09-29. Branch: main. Deployed commit: bc22fc0.
 
@@ -23,7 +23,7 @@ See [FLOW_SETUP.md](FLOW_SETUP.md) for reference analysis, server inputs, instal
 | R9 Website onboarding | Proof-bound automatic website connection, explicit start action, dashboard presence and website logout sync |
 | R10 Assignments | Admin user detail dropdown/save plus Flow account editor; reassignment revokes previous connections |
 | R11 Reseller | Own-client connection list, code generation and revocation |
-| R12 Distribution | download/extension.zip; reproducible build script |
+| R12 Distribution | Social and Flow archives are distributed from the admin upload module; source folders remain unpacked |
 | R13 Testing | Automated API/worker tests pass. Real Google login/CAPTCHA/device acceptance still needs the assigned user to connect from an Edge test profile |
 | R14 Visibility fix | Admin Google Flow list now has a direct Code button for assigned accounts; user dashboard/profile/Flow Extension page show the assigned Google Flow account |
 
@@ -41,8 +41,8 @@ Dark landing page with dynamic plans; reseller email suffix; support links remov
 - Admin: core/app/Http/Controllers/Admin/GoogleFlowController.php
 - User: core/app/Http/Controllers/User/FlowExtensionController.php
 - Reseller: core/app/Http/Controllers/Reseller/ResellerController.php
-- Extension: toolsbydcx-extension/ (v1.0.1)
-- ZIP: download/extension.zip
+- Social extension: toolsbydcx-social-extension/ (v2.3.4)
+- Flow extension: toolsbydcx-flow-extension/ (v1.0.2)
 - Tests: core/tests/Feature/FlowExtensionTest.php and tests/flow-extension.test.mjs
 - New migration: core/database/migrations/2026_09_28_000001_bind_flow_attempts_to_pairings.php (attempt-to-pairing FK and website proof fields)
 
@@ -56,7 +56,7 @@ Deployment completed on Hostinger with git pull --ff-only, Composer --no-dev --n
 Verified after deployment:
 - Server HEAD: bc22fc0
 - Migration `2026_09_28_000001_bind_flow_attempts_to_pairings`: ran
-- `download/extension.zip`: HTTP 200, SHA256 `b9ab534dbd57320860ba1adaa4871313b7449450d8517b146c860436aa6b3c9d`
+- Current Social and Flow archives are uploaded manually through the admin distribution module.
 - `GET /api/dcx-flow/status` without token: HTTP 401 JSON
 - `GET /user/flow-extension` without login: HTTP 302 to user login
 - Production DB count: 1 Flow account, 1 assigned Flow account, 0 active pairings after revoking the verification pairing
@@ -72,7 +72,7 @@ Google credentials are transiently delivered to Google's form; this is not cooki
 
 ---
 
-## Session 2026-09-29 — Auto-Pairing (BunnyFlow-identical)
+## Session 2026-09-29 ? Auto-Pairing (BunnyFlow-identical)
 
 **Commit:** `7cb5eaf`
 

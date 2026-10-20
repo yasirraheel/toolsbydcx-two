@@ -47,8 +47,8 @@ class SiteController extends Controller
             } elseif (file_exists($directory . '/toolsbydcx-ext.zip')) {
                 $filePath = $directory . '/toolsbydcx-ext.zip';
                 $downloadName = 'toolsbydcx-ext.zip';
-            } elseif (file_exists($directory . '/toolsbydcx-ext-v2.3.3.zip')) {
-                $filePath = $directory . '/toolsbydcx-ext-v2.3.3.zip';
+            } elseif (file_exists($directory . '/toolsbydcx-ext-v2.3.4.zip')) {
+                $filePath = $directory . '/toolsbydcx-ext-v2.3.4.zip';
                 $downloadName = 'toolsbydcx-ext.zip';
             } else {
                 $candidates = glob($directory . '/toolsbydcx-ext*.zip');
@@ -67,8 +67,8 @@ class SiteController extends Controller
             } elseif (file_exists($directory . '/toolsbydcx-flow-v1.0.3.zip')) {
                 $filePath = $directory . '/toolsbydcx-flow-v1.0.3.zip';
                 $downloadName = 'toolsbydcx-flow-v1.0.3.zip';
-            } elseif (file_exists(public_path('toolsbydcx-extension.zip'))) {
-                $filePath = public_path('toolsbydcx-extension.zip');
+            } elseif (file_exists(public_path('toolsbydcx-flow.zip'))) {
+                $filePath = public_path('toolsbydcx-flow.zip');
                 $downloadName = 'toolsbydcx-flow.zip';
             }
         } elseif ($isKiwi) {
@@ -117,14 +117,6 @@ class SiteController extends Controller
                         $downloadName = $file;
                     }
                 }
-            }
-        }
-
-        if (!$filePath && !$isKiwi) {
-            $publicFallback = public_path('download/extension.zip');
-            if (file_exists($publicFallback)) {
-                $filePath = $publicFallback;
-                $downloadName = 'extension.zip';
             }
         }
 

@@ -50,7 +50,7 @@ window.addEventListener('ToolsByDcxInject', (e) => handleInjectEvent(e, 'ToolsBy
 window.addEventListener('WeMateInject', (e) => handleInjectEvent(e, 'WeMate'));
 
 // Also let the web page know the extension is installed and its exact version
-const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.3';
+const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.4';
 
 function injectExtensionMetaTags() {
     const target = document.head || document.documentElement;
