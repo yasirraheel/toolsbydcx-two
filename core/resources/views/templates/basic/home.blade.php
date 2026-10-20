@@ -133,7 +133,7 @@
 {{-- =========================================================================
      3. DYNAMIC SUBSCRIPTION PLANS (FROM ADMIN)
 ========================================================================= --}}
-<section id="pricing-plans" class="py-6 py-lg-7 position-relative" style="background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, #0b0f19 75%);">
+<section id="pricing-plans" class="dcx-pricing-section py-6 py-lg-7 position-relative">
     <div class="container">
         <div class="text-center mb-5 scroll-reveal">
             <span class="text-uppercase fw-bold text-primary small letter-spacing-1">@lang('FLEXIBLE TIERS')</span>
@@ -146,15 +146,38 @@
         <div class="row justify-content-center g-4">
             @forelse ($plans as $plan)
                 <div class="col-xl-4 col-md-6 col-sm-10 scroll-reveal">
-                    <div class="card pricing-card h-100 position-relative d-flex flex-column">
+                    @php
+                        $flattenFeatures = function ($items) use (&$flattenFeatures) {
+                            $result = [];
+                            foreach ((array) $items as $item) {
+                                if (is_array($item)) {
+                                    $result = array_merge($result, $flattenFeatures($item));
+                                    continue;
+                                }
+                                if (is_string($item)) {
+                                    $decoded = json_decode($item, true);
+                                    if (is_array($decoded)) {
+                                        $result = array_merge($result, $flattenFeatures($decoded));
+                                        continue;
+                                    }
+                                }
+                                if (is_scalar($item) && trim((string) $item) !== '') {
+                                    $result[] = trim(preg_replace('/^[-•]\s*/u', '', (string) $item));
+                                }
+                            }
+                            return $result;
+                        };
+                        $planFeatures = $flattenFeatures($plan->features);
+                    @endphp
+                    <div class="card pricing-card dcx-pricing-card h-100 position-relative d-flex flex-column">
                         {{-- Card Header --}}
                         <div class="card-header border-0 pt-4 pb-3 px-4 text-center bg-transparent">
-                            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill mb-3" style="font-size: 12px; font-weight: 600;">
+                            <span class="badge dcx-plan-badge px-3 py-1 rounded-pill mb-3">
                                 {{ __($plan->name) }}
                             </span>
-                            <div class="d-flex align-items-baseline justify-content-center gap-1 my-2">
-                                <span class="display-6 fw-bold text-white">{{ showAmount($plan->price) }}</span>
-                                <span class="text-muted">/ @lang('month')</span>
+                            <div class="dcx-plan-price-wrap d-flex align-items-baseline justify-content-center gap-1 my-2">
+                                <span class="display-6 fw-bold text-white dcx-plan-price">{{ showAmount($plan->price) }}</span>
+                                <span class="text-muted dcx-plan-period">/ @lang('month')</span>
                             </div>
                         </div>
 
@@ -164,23 +187,23 @@
                                 <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">@lang('INCLUDED CAPABILITIES'):</span>
                             </div>
                             <ul class="list-unstyled mb-0 d-flex flex-column gap-2.5">
-                                @if($plan->features && is_array($plan->features))
-                                    @foreach($plan->features as $feature)
-                                        <li class="d-flex align-items-start gap-2.5 text-white small" style="font-size: 14px;">
+                                @if(count($planFeatures) > 0)
+                                    @foreach($planFeatures as $feature)
+                                        <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                             <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
                                             <span>{{ __($feature) }}</span>
                                         </li>
                                     @endforeach
                                 @else
-                                    <li class="d-flex align-items-start gap-2.5 text-white small" style="font-size: 14px;">
+                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                         <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
                                         <span>@lang('Full Access to All Platform Accounts')</span>
                                     </li>
-                                    <li class="d-flex align-items-start gap-2.5 text-white small" style="font-size: 14px;">
+                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                         <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
                                         <span>@lang('One-Click Browser Extension Login')</span>
                                     </li>
-                                    <li class="d-flex align-items-start gap-2.5 text-white small" style="font-size: 14px;">
+                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                         <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
                                         <span>@lang('Automatic Token & Session Sync')</span>
                                     </li>
@@ -188,7 +211,7 @@
 
                                 @if($plan->included_resources && count($plan->included_resources) > 0)
                                     @foreach($plan->included_resources as $resource)
-                                        <li class="d-flex align-items-start gap-2.5 text-white small" style="font-size: 14px;">
+                                        <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                             <i class="las la-check-circle text-primary fs-5 flex-shrink-0 mt-0.5"></i>
                                             <span>{{ $resource }}</span>
                                         </li>
@@ -201,16 +224,16 @@
                         <div class="card-footer border-0 p-4 bg-transparent pt-0 mt-auto">
                             @auth
                                 @if(auth()->user()->plan_id == $plan->id)
-                                    <button class="btn btn-outline-success w-100 py-2.5 rounded-pill fw-bold" disabled>
+                                    <button class="btn dcx-plan-action dcx-plan-action-current w-100 py-2.5 rounded-pill fw-bold" disabled>
                                         <i class="las la-check-circle me-1"></i> @lang('Current Plan')
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-primary w-100 py-2.5 rounded-pill fw-bold shadow-primary confirmationBtn" data-action="{{ route('user.plan.subscribe', $plan->id) }}" data-question="@lang('Are you sure you want to subscribe to this plan for ' . showAmount($plan->price) . '?')">
+                                    <button type="button" class="btn dcx-plan-action dcx-plan-action-primary w-100 py-2.5 rounded-pill fw-bold shadow-primary confirmationBtn" data-action="{{ route('user.plan.subscribe', $plan->id) }}" data-question="@lang('Are you sure you want to subscribe to this plan for ' . showAmount($plan->price) . '?')">
                                         <i class="las la-shopping-cart me-1"></i> @lang('Subscribe Now')
                                     </button>
                                 @endif
                             @else
-                                <a href="{{ route('user.login') }}" class="btn btn-primary w-100 py-2.5 rounded-pill fw-bold shadow-primary">
+                                <a href="{{ route('user.login') }}" class="btn dcx-plan-action dcx-plan-action-primary w-100 py-2.5 rounded-pill fw-bold shadow-primary">
                                     <i class="las la-sign-in-alt me-1"></i> @lang('Get Started')
                                 </a>
                             @endauth
@@ -424,15 +447,79 @@
 
     .pricing-card {
         background: #111827 !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 20px !important;
-        transition: all 0.3s ease !important;
+        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+        border-radius: 22px !important;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
     }
 
     .pricing-card:hover {
-        transform: translateY(-8px);
-        border-color: rgba(99, 102, 241, 0.5) !important;
-        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(99, 102, 241, 0.2) !important;
+        transform: translateY(-6px);
+        border-color: rgba(129, 140, 248, 0.8) !important;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), 0 0 28px rgba(99, 102, 241, 0.18) !important;
+    }
+
+    .dcx-pricing-section {
+        background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, #0b0f19 72%);
+    }
+
+    .dcx-pricing-card .card-header {
+        min-height: 148px;
+    }
+
+    .dcx-plan-badge {
+        color: #c7d2fe !important;
+        background: rgba(99, 102, 241, 0.16) !important;
+        border: 1px solid rgba(129, 140, 248, 0.38) !important;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .dcx-plan-price {
+        font-size: clamp(2rem, 4vw, 2.65rem) !important;
+        letter-spacing: -0.04em;
+    }
+
+    .dcx-plan-period {
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .dcx-plan-feature {
+        font-size: 14px;
+        line-height: 1.45;
+        color: #e2e8f0 !important;
+    }
+
+    .dcx-plan-feature i {
+        color: #34d399 !important;
+    }
+
+    .dcx-plan-action {
+        min-height: 48px;
+        border-radius: 12px !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .dcx-plan-action-primary {
+        color: #fff !important;
+        background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+        border: 1px solid rgba(165, 180, 252, 0.25) !important;
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28);
+    }
+
+    .dcx-plan-action-primary:hover,
+    .dcx-plan-action-primary:focus-visible {
+        color: #fff !important;
+        background: linear-gradient(135deg, #818cf8, #6366f1) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(79, 70, 229, 0.4);
+    }
+
+    .dcx-plan-action-current {
+        color: #6ee7b7 !important;
+        background: rgba(16, 185, 129, 0.08) !important;
+        border: 1px solid rgba(52, 211, 153, 0.48) !important;
     }
 
     .icon-box {

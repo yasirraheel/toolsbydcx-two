@@ -1,7 +1,99 @@
 @extends($activeTemplate . 'layouts.master')
 
+@push('style')
+<style>
+    .dcx-user-dashboard .dcx-dashboard-action,
+    .dcx-user-dashboard .product-item__button .btn {
+        min-height: 42px;
+        border-radius: 10px !important;
+        padding: 0.65rem 1rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .dcx-user-dashboard .dcx-dashboard-action:hover,
+    .dcx-user-dashboard .product-item__button .btn:hover,
+    .dcx-user-dashboard .dcx-dashboard-action:focus-visible,
+    .dcx-user-dashboard .product-item__button .btn:focus-visible {
+        transform: translateY(-1px);
+    }
+
+    .dcx-user-dashboard .dcx-action-primary,
+    .dcx-user-dashboard .flow-visit-platform-btn,
+    .dcx-user-dashboard .social-visit-platform-btn {
+        color: #fff !important;
+        background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+        border: 1px solid rgba(165, 180, 252, 0.3) !important;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.25);
+    }
+
+    .dcx-user-dashboard .dcx-action-primary:hover,
+    .dcx-user-dashboard .flow-visit-platform-btn:hover,
+    .dcx-user-dashboard .social-visit-platform-btn:hover,
+    .dcx-user-dashboard .dcx-action-primary:focus-visible,
+    .dcx-user-dashboard .flow-visit-platform-btn:focus-visible,
+    .dcx-user-dashboard .social-visit-platform-btn:focus-visible {
+        color: #fff !important;
+        background: linear-gradient(135deg, #818cf8, #6366f1) !important;
+        box-shadow: 0 10px 22px rgba(79, 70, 229, 0.38);
+    }
+
+    .dcx-user-dashboard .dcx-action-success {
+        color: #6ee7b7 !important;
+        background: rgba(16, 185, 129, 0.08) !important;
+        border: 1px solid rgba(52, 211, 153, 0.46) !important;
+    }
+
+    .dcx-user-dashboard .dcx-action-success:hover,
+    .dcx-user-dashboard .dcx-action-success:focus-visible {
+        color: #d1fae5 !important;
+        background: rgba(16, 185, 129, 0.18) !important;
+        border-color: rgba(110, 231, 183, 0.75) !important;
+    }
+
+    .dcx-user-dashboard .dcx-action-secondary,
+    .dcx-user-dashboard .flow-ext-missing-btn,
+    .dcx-user-dashboard .social-ext-missing-btn,
+    .dcx-user-dashboard .btn-copy-cookie {
+        color: #93c5fd !important;
+        background: rgba(59, 130, 246, 0.1) !important;
+        border: 1px solid rgba(96, 165, 250, 0.45) !important;
+    }
+
+    .dcx-user-dashboard .dcx-action-secondary:hover,
+    .dcx-user-dashboard .dcx-action-secondary:focus-visible,
+    .dcx-user-dashboard .flow-ext-missing-btn:hover,
+    .dcx-user-dashboard .flow-ext-missing-btn:focus-visible,
+    .dcx-user-dashboard .social-ext-missing-btn:hover,
+    .dcx-user-dashboard .social-ext-missing-btn:focus-visible,
+    .dcx-user-dashboard .btn-copy-cookie:hover,
+    .dcx-user-dashboard .btn-copy-cookie:focus-visible {
+        color: #dbeafe !important;
+        background: rgba(59, 130, 246, 0.2) !important;
+        border-color: rgba(147, 197, 253, 0.75) !important;
+    }
+
+    .dcx-user-dashboard .product-item__button .btn:disabled {
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
+    }
+
+    @media (max-width: 575.98px) {
+        .dcx-user-dashboard .product-item__button {
+            width: 100%;
+        }
+
+        .dcx-user-dashboard .product-item__button .btn {
+            flex: 1 1 auto;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-    <div class="dashboard-section">
+    <div class="dashboard-section dcx-user-dashboard">
         {{-- Subscription Expiry Calculation --}}
         @php
             $expiryDate = auth()->user()->expires_at ?: auth()->user()->created_at->addDays(30);
@@ -119,7 +211,7 @@
                     <p class="text-muted small mb-3">
                         @lang('Unlock more premium AI tools, SEO utilities, and marketing platforms with instant activation.')
                     </p>
-                    <a href="{{ route('plans') }}" class="btn btn--primary w-100 fw-bold py-2 mt-auto" style="border-radius: 8px;">
+                    <a href="{{ route('plans') }}" class="btn dcx-dashboard-action dcx-action-primary w-100 fw-bold py-2 mt-auto">
                         <i class="las la-rocket me-1"></i> @lang('Browse Available Plans')
                     </a>
                 </div>
@@ -136,7 +228,7 @@
                     <p class="text-muted small mb-3">
                         @lang('Easily deposit funds into your account wallet to purchase or renew platform subscriptions.')
                     </p>
-                    <a href="{{ route('user.deposit.index') }}" class="btn btn-outline-success w-100 fw-bold py-2 mt-auto" style="border-radius: 8px;">
+                    <a href="{{ route('user.deposit.index') }}" class="btn dcx-dashboard-action dcx-action-success w-100 fw-bold py-2 mt-auto">
                         <i class="las la-plus-circle me-1"></i> @lang('Deposit Funds Now')
                     </a>
                 </div>

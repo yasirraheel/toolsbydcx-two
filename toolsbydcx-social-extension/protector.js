@@ -73,8 +73,20 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
             .mavatar-footer-row {
                 cursor: not-allowed !important;
             }
+
+            /* Chat history isolation without changing the host application's layout. */
+            .toolsbydcx-chat-hidden {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
         `;
         document.documentElement.appendChild(style);
+
+        let ownedChats = [];
+        let chatStorageReady = false;
+        let chatFilter = null;
+        let chatIsolationInitialized = false;
 
         // --- 3. Hide logout elements via JS based on text content ---
         const hideLogoutByText = () => {
@@ -113,70 +125,68 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 });
             });
 
-            // Dynamic ChatGPT Chat History Isolation (Show owned chats, hide unowned chats)
-            if (currentHost.includes('chatgpt.com') || currentHost.includes('openai.com')) {
-                let ownedChats = [];
-
-                try {
-                    chrome.storage.local.get(['toolsbydcx_owned_chats', 'wemate_owned_chats'], (res) => {
-                        if (res && Array.isArray(res.toolsbydcx_owned_chats)) {
-                            ownedChats = res.toolsbydcx_owned_chats;
-                        } else if (res && Array.isArray(res.wemate_owned_chats)) {
-                            ownedChats = res.wemate_owned_chats;
-                        }
-                    });
-                } catch(e) {}
+            // Dynamic ChatGPT Chat History Isolation (show owned chats, hide unowned chats).
+            // Keep this state outside the protection loop. The page is a React SPA and
+            // repeatedly reading storage and forcing inline layout styles makes its sidebar blink.
+            if ((currentHost.includes('chatgpt.com') || currentHost.includes('openai.com')) && !chatIsolationInitialized) {
+                chatIsolationInitialized = true;
 
                 const captureCurrentChat = () => {
                     const match = window.location.pathname.match(/\/c\/([a-zA-Z0-9-]+)/);
-                    if (match && match[1]) {
-                        const chatId = match[1];
-                        if (!ownedChats.includes(chatId)) {
-                            ownedChats.push(chatId);
-                            try {
-                                chrome.storage.local.set({ toolsbydcx_owned_chats: ownedChats, wemate_owned_chats: ownedChats });
-                            } catch(e) {}
-                        }
-                    }
+                    if (!match || !match[1] || ownedChats.includes(match[1])) return;
+
+                    ownedChats = [...ownedChats, match[1]];
+                    try {
+                        chrome.storage.local.set({
+                            toolsbydcx_owned_chats: ownedChats,
+                            wemate_owned_chats: ownedChats
+                        });
+                    } catch(e) {}
                 };
 
-                const filterChatGPTChats = () => {
+                chatFilter = () => {
+                    if (!chatStorageReady) return;
                     captureCurrentChat();
 
-                    const chatLinks = document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]');
-                    chatLinks.forEach(el => {
+                    document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
                         const href = el.getAttribute('href') || el.querySelector('a')?.getAttribute('href') || '';
                         const match = href.match(/\/c\/([a-zA-Z0-9-]+)/);
-                        if (match && match[1]) {
-                            const chatId = match[1];
-                            const container = el.closest('li') || el;
-                            if (ownedChats.includes(chatId)) {
-                                el.style.setProperty('display', 'flex', 'important');
-                                el.style.setProperty('visibility', 'visible', 'important');
-                                el.style.setProperty('opacity', '1', 'important');
-                                el.style.setProperty('height', 'auto', 'important');
-                                el.style.setProperty('pointer-events', 'auto', 'important');
-                                if (container && container !== el) {
-                                    container.style.setProperty('display', 'block', 'important');
-                                    container.style.setProperty('visibility', 'visible', 'important');
-                                }
-                            } else {
-                                el.style.setProperty('display', 'none', 'important');
-                                el.style.setProperty('visibility', 'hidden', 'important');
-                                el.style.setProperty('opacity', '0', 'important');
-                                el.style.setProperty('height', '0', 'important');
-                                el.style.setProperty('pointer-events', 'none', 'important');
-                                if (container && container !== el) {
-                                    container.style.setProperty('display', 'none', 'important');
-                                }
-                            }
+                        if (!match || !match[1]) return;
+
+                        const container = el.closest('li') || el;
+                        const shouldHide = !ownedChats.includes(match[1]);
+                        const alreadyHidden = container.classList.contains('toolsbydcx-chat-hidden');
+
+                        if (shouldHide && !alreadyHidden) {
+                            container.classList.add('toolsbydcx-chat-hidden');
+                        } else if (!shouldHide && alreadyHidden) {
+                            container.classList.remove('toolsbydcx-chat-hidden');
                         }
                     });
                 };
 
-                filterChatGPTChats();
-                setInterval(filterChatGPTChats, 800);
+                try {
+                    chrome.storage.local.get(['toolsbydcx_owned_chats', 'wemate_owned_chats'], (res) => {
+                        const stored = res?.toolsbydcx_owned_chats ?? res?.wemate_owned_chats;
+                        ownedChats = Array.isArray(stored) ? [...new Set(stored)] : [];
+                        chatStorageReady = true;
+                        chatFilter();
+                    });
+                    chrome.storage.onChanged.addListener((changes, area) => {
+                        if (area !== 'local') return;
+                        const changed = changes.toolsbydcx_owned_chats || changes.wemate_owned_chats;
+                        if (!changed) return;
+                        ownedChats = Array.isArray(changed.newValue) ? [...new Set(changed.newValue)] : [];
+                        chatFilter();
+                    });
+                } catch(e) {
+                    chatStorageReady = true;
+                }
+
+                chatFilter();
             }
+
+            if (chatFilter) chatFilter();
         };
 
         // --- DOM Destroyer for Cookie Editor Extensions ---
