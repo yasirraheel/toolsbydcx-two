@@ -232,7 +232,9 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 };
 
                 const chatSidebarTarget = () => {
-                    const nativeChat = document.querySelector('a[href*="/c/"]');
+                    const nativeChat = Array.from(
+                        document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])')
+                    ).find((link) => !link.closest('.toolsbydcx-chat-hidden'));
                     if (!nativeChat) {
                         const navigation = document.querySelector('nav, [role="navigation"], aside');
                         return navigation ? { host: navigation, sample: null, rowWrapper: null } : null;
