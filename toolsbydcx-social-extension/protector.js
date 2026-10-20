@@ -86,10 +86,32 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 visibility: hidden !important;
                 pointer-events: none !important;
             }
+
+            a[data-toolsbydcx-chat-row] {
+                display: flex !important;
+                align-items: center !important;
+                width: auto !important;
+                min-height: 40px !important;
+                margin: 2px 8px !important;
+                padding: 8px 12px !important;
+                border-radius: 8px !important;
+                color: #ececf1 !important;
+                font-size: 14px !important;
+                line-height: 20px !important;
+                text-decoration: none !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            a[data-toolsbydcx-chat-row]:hover {
+                background: rgba(255, 255, 255, 0.08) !important;
+            }
         `;
         document.documentElement.appendChild(style);
 
         let serverChatIds = new Set();
+        let serverChats = [];
         let chatServerReady = false;
         let chatFilter = null;
         let chatIsolationInitialized = false;
@@ -187,18 +209,125 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 const applyServerChats = (response) => {
                     chatServerReady = true;
                     if (response?.success && Array.isArray(response.data?.chats)) {
-                        serverChatIds = new Set(response.data.chats.map((chat) => chat.id).filter(Boolean));
+                        serverChats = response.data.chats
+                            .map((chat) => ({
+                                id: String(chat?.id || ''),
+                                title: String(chat?.title || '').trim().slice(0, 300)
+                            }))
+                            .filter((chat) => /^[A-Za-z0-9_-]{4,128}$/.test(chat.id));
+                        serverChatIds = new Set(serverChats.map((chat) => chat.id));
                         lastRegisteredChatId = null;
                     } else {
                         // Fail closed. A network/auth failure must never expose another user's chats.
+                        serverChats = [];
                         serverChatIds = new Set();
                     }
                     chatFilter();
                 };
 
+                const chatIdFromLink = (link) => {
+                    const href = link?.getAttribute?.('href') || '';
+                    const match = href.match(/\/c\/([a-zA-Z0-9-]+)/);
+                    return match && match[1] ? match[1] : null;
+                };
+
+                const chatSidebarTarget = () => {
+                    const nativeChat = document.querySelector('a[href*="/c/"]');
+                    if (!nativeChat) {
+                        const navigation = document.querySelector('nav, [role="navigation"], aside');
+                        return navigation ? { host: navigation, sample: null, rowWrapper: null } : null;
+                    }
+
+                    const parent = nativeChat.parentElement;
+                    if (!parent) return null;
+
+                    // ChatGPT commonly wraps each history link in an li/listitem.
+                    // Insert synthetic links beside those rows so they use the
+                    // host sidebar's existing spacing, hover, and typography.
+                    if (parent.matches('li, [role="listitem"]') && parent.parentElement) {
+                        return { host: parent.parentElement, sample: nativeChat, rowWrapper: parent };
+                    }
+
+                    return { host: parent, sample: nativeChat, rowWrapper: null };
+                };
+
+                const renderServerChatsInSidebar = () => {
+                    if (!chatServerReady || !document.body) return;
+
+                    const target = chatSidebarTarget();
+                    if (!target) return;
+
+                    const visibleNativeIds = new Set(
+                        Array.from(target.host.querySelectorAll('a[href*="/c/"]'))
+                            .map(chatIdFromLink)
+                            .filter(Boolean)
+                    );
+
+                    // Keep ChatGPT's own rows intact and add only server rows
+                    // that are missing from the currently-rendered/virtualized
+                    // sidebar. This fills gaps without duplicating native rows.
+                    serverChats.forEach((chat) => {
+                        if (visibleNativeIds.has(chat.id)) return;
+
+                        const existing = Array.from(
+                            target.host.querySelectorAll('[data-toolsbydcx-chat-row]')
+                        ).find((row) => row.dataset.toolsbydcxChatRow === chat.id);
+                        if (existing) {
+                            const existingLink = target.rowWrapper
+                                ? existing.querySelector('a[href*="/c/"]')
+                                : existing;
+                            if (existingLink && existingLink.textContent !== chat.title) {
+                                existingLink.textContent = chat.title || 'Untitled chat';
+                            }
+                            return;
+                        }
+
+                        const row = target.rowWrapper
+                            ? target.rowWrapper.cloneNode(true)
+                            : target.sample
+                                ? target.sample.cloneNode(true)
+                                : document.createElement('a');
+                        row.dataset.toolsbydcxChatRow = chat.id;
+                        row.removeAttribute('id');
+                        const link = target.rowWrapper
+                            ? row.querySelector('a[href*="/c/"]')
+                            : row;
+                        if (!link) return;
+                        if (!target.sample) {
+                            link.className = 'toolsbydcx-server-chat-row';
+                            link.style.display = 'flex';
+                            link.style.alignItems = 'center';
+                            link.style.width = 'auto';
+                            link.style.minHeight = '40px';
+                            link.style.margin = '2px 8px';
+                            link.style.padding = '8px 12px';
+                            link.style.borderRadius = '8px';
+                            link.style.color = '#ececf1';
+                            link.style.fontSize = '14px';
+                            link.style.lineHeight = '20px';
+                            link.style.textDecoration = 'none';
+                            link.style.whiteSpace = 'nowrap';
+                            link.style.overflow = 'hidden';
+                            link.style.textOverflow = 'ellipsis';
+                        }
+                        link.href = '/c/' + encodeURIComponent(chat.id);
+                        link.textContent = chat.title || 'Untitled chat';
+                        link.setAttribute('aria-label', chat.title || 'Untitled chat');
+                        link.title = chat.title || 'Untitled chat';
+                        target.host.appendChild(row);
+                    });
+
+                    // Remove stale synthetic rows after a server refresh, while
+                    // leaving ChatGPT's own rows untouched.
+                    target.host.querySelectorAll('[data-toolsbydcx-chat-row]').forEach((row) => {
+                        if (!serverChatIds.has(row.dataset.toolsbydcxChatRow || '')) row.remove();
+                    });
+                };
+
                 chatFilter = () => {
                     if (!chatServerReady) return;
                     registerCurrentChat();
+                    renderServerChatsInSidebar();
 
                     document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
                         const href = el.getAttribute('href') || el.querySelector('a')?.getAttribute('href') || '';
