@@ -22,10 +22,22 @@
     .dcx-user-dashboard .dcx-action-primary,
     .dcx-user-dashboard .flow-visit-platform-btn,
     .dcx-user-dashboard .social-visit-platform-btn {
-        color: #fff !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
         border: 1px solid rgba(165, 180, 252, 0.3) !important;
         box-shadow: 0 8px 18px rgba(79, 70, 229, 0.25);
+    }
+
+    /* Keep the solid platform action readable over the purple fill. The global
+       .btn--base rule also sets a text color, so this selector intentionally
+       includes every button class and the icon/text descendants. */
+    .dcx-user-dashboard .btn.btn--base.flow-visit-platform-btn,
+    .dcx-user-dashboard .btn.btn--base.social-visit-platform-btn,
+    .dcx-user-dashboard .btn.btn--base.flow-visit-platform-btn *,
+    .dcx-user-dashboard .btn.btn--base.social-visit-platform-btn * {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .dcx-user-dashboard .dcx-action-primary:hover,
@@ -34,7 +46,8 @@
     .dcx-user-dashboard .dcx-action-primary:focus-visible,
     .dcx-user-dashboard .flow-visit-platform-btn:focus-visible,
     .dcx-user-dashboard .social-visit-platform-btn:focus-visible {
-        color: #fff !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         background: linear-gradient(135deg, #818cf8, #6366f1) !important;
         box-shadow: 0 10px 22px rgba(79, 70, 229, 0.38);
     }

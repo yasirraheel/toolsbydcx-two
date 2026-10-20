@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use App\Models\ListingReport;
 use App\Models\AccountListing;
 use App\Models\BiddingListing;
+use App\Models\UserChatThread;
 use Illuminate\Validation\Rule;
 use App\Lib\GoogleAuthenticator;
 use App\Http\Controllers\Controller;
@@ -81,6 +82,26 @@ class UserController extends Controller
             ->exists();
 
         return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'isExtensionPaired', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
+    }
+
+    /**
+     * Show the authenticated user's server-backed ChatGPT history.
+     *
+     * Chat ownership is scoped by user_id so a user can only open chats that
+     * the extension has registered for their own account.
+     */
+    public function chatHistory()
+    {
+        $pageTitle = 'Chat History';
+        $chatHistory = UserChatThread::query()
+            ->where('user_id', auth()->id())
+            ->where('provider', 'chatgpt')
+            ->orderByDesc('last_seen_at')
+            ->orderByDesc('id')
+            ->limit(500)
+            ->get();
+
+        return view('Template::user.chat_history', compact('pageTitle', 'chatHistory'));
     }
 
     public function subscribePlan(Request $request, $id)

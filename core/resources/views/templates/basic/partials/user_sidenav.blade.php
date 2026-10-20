@@ -6,6 +6,12 @@
     </a>
 
     <a href="{{ route('user.extensions') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive(['user.extensions*', 'user.flow-extension*']) }}"><i class="las la-puzzle-piece fs-5"></i><span>@lang('Extensions')</span></a>
+
+    <a href="{{ route('user.chat.history') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.chat.history') }}">
+        <i class="las la-comments fs-5"></i>
+        <span>@lang('Chat History')</span>
+    </a>
+
     {{-- Subscription Plans --}}
     <a href="{{ route('plans') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('plans*') }}">
         <i class="las la-crown fs-5"></i>
