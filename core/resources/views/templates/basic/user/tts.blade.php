@@ -128,17 +128,23 @@
     .dcx-tts .tts-selected-voice__copy small { color: #a5b4fc; font-size: .7rem; }
     .dcx-tts .tts-selected-voice__check { color: #4ade80; font-size: 1rem; }
     .dcx-tts .tts-status { min-height: 1.2rem; color: #a5b4fc; font-size: .78rem; }
-    .dcx-tts .tts-results { display: grid; gap: .7rem; margin-top: 1rem; }
+    .dcx-tts .tts-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin-top: 1rem; }
     .dcx-tts .tts-audio-player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .75rem; padding: .85rem 1rem; border: 1px solid rgba(52, 211, 153, .3); border-radius: 10px; background: #132d31; }
     .dcx-tts .tts-player-play { display: inline-flex; align-items: center; justify-content: center; width: 2.3rem; height: 2.3rem; border: 0; border-radius: 50%; color: #062e2b; background: #34d399; cursor: pointer; }
     .dcx-tts .tts-player-play:hover { background: #6ee7b7; }
     .dcx-tts .tts-player-main { min-width: 0; }
     .dcx-tts .tts-player-title { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .35rem; color: #d1fae5; font-size: .75rem; }
-    .dcx-tts .tts-player-progress { display: block; width: 100%; height: 5px; accent-color: #34d399; cursor: pointer; }
+    .dcx-tts .tts-player-progress-wrap { position: relative; height: 18px; display: flex; align-items: center; }
+    .dcx-tts .tts-player-progress-track { position: relative; width: 100%; height: 5px; overflow: visible; border-radius: 999px; background: rgba(148, 163, 184, .28); }
+    .dcx-tts .tts-player-progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: #34d399; }
+    .dcx-tts .tts-player-progress-knob { position: absolute; top: 50%; left: 0; width: 12px; height: 12px; border: 2px solid #062e2b; border-radius: 50%; background: #6ee7b7; box-shadow: 0 0 0 2px rgba(52, 211, 153, .2); transform: translate(-50%, -50%); }
+    .dcx-tts .tts-player-progress { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
     .dcx-tts .tts-player-control { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid rgba(167, 243, 208, .25); border-radius: 6px; color: #a7f3d0; background: transparent; cursor: pointer; }
     .dcx-tts .tts-player-control:hover { background: rgba(52, 211, 153, .14); }
     .dcx-tts .tts-player-download { color: #a7f3d0; font-size: 1rem; }
     .dcx-tts .tts-audio-hidden { display: none; }
+    @media (max-width: 1199px) { .dcx-tts .tts-results { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 767px) { .dcx-tts .tts-results { grid-template-columns: 1fr; } }
     @media (max-width: 575px) { .dcx-tts .tts-audio-player { grid-template-columns: auto minmax(0, 1fr) auto; } .dcx-tts .tts-player-download { display: none; } }
     @media (max-width: 1199px) { .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 3; } }
     @media (max-width: 767px) { .dcx-tts .tts-panel__header { align-items: flex-start; flex-direction: column; } .dcx-tts .tts-library, .dcx-tts .tts-composer__body { padding: 1rem; } .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 2; } .dcx-tts .tts-library__grid { grid-template-columns: 1fr; } }
@@ -317,8 +323,13 @@
     const loadFilterOptions = async () => {
         try {
             const params = new URLSearchParams({ page: '1', page_size: '100' });
-            const response = await jsonRequest(voicesUrl + '?' + params.toString());
-            addFilterOptions(extractVoices(response.payload));
+            const urduParams = new URLSearchParams({ provider: 'elevenlabs', language: 'ur', page: '1', page_size: '1' });
+            const responses = await Promise.allSettled([
+                jsonRequest(voicesUrl + '?' + params.toString()),
+                jsonRequest(voicesUrl + '?' + urduParams.toString())
+            ]);
+            const items = responses.filter((result) => result.status === 'fulfilled').flatMap((result) => extractVoices(result.value.payload));
+            addFilterOptions(items);
         } catch (error) { /* The voice page can still render if the catalog request is slow. */ }
     };
 
@@ -354,18 +365,18 @@
     const addAudioPlayer = (src, label = '@lang('Generated audio')') => {
         const player = document.createElement('div');
         player.className = 'tts-audio-player';
-        player.innerHTML = '<button type="button" class="tts-player-play" aria-label="@lang('Play audio')"><i class="las la-play"></i></button><div class="tts-player-main"><div class="tts-player-title"><span>' + escapeHtml(label) + '</span><span class="tts-player-time">0:00 / 0:00</span></div><input type="range" class="tts-player-progress" min="0" max="100" value="0" aria-label="@lang('Audio progress')"></div><button type="button" class="tts-player-control tts-player-volume" aria-label="@lang('Mute audio')"><i class="las la-volume-up"></i></button><a class="tts-player-download" aria-label="@lang('Download audio')" title="@lang('Download audio')" download="toolsbydcx-audio.mp3"><i class="las la-download"></i></a>';
+        player.innerHTML = '<button type="button" class="tts-player-play" aria-label="@lang('Play audio')"><i class="las la-play"></i></button><div class="tts-player-main"><div class="tts-player-title"><span>' + escapeHtml(label) + '</span><span class="tts-player-time">0:00 / 0:00</span></div><div class="tts-player-progress-wrap"><span class="tts-player-progress-track"><span class="tts-player-progress-fill"></span><span class="tts-player-progress-knob"></span></span><input type="range" class="tts-player-progress" min="0" max="100" value="0" aria-label="@lang('Audio progress')"></div></div><button type="button" class="tts-player-control tts-player-volume" aria-label="@lang('Mute audio')"><i class="las la-volume-up"></i></button><a class="tts-player-download" aria-label="@lang('Download audio')" title="@lang('Download audio')" download="toolsbydcx-audio.mp3"><i class="las la-download"></i></a>';
         const media = document.createElement('audio'); media.className = 'tts-audio-hidden'; media.preload = 'metadata'; media.src = src; player.appendChild(media); results.prepend(player);
-        const play = player.querySelector('.tts-player-play'); const progress = player.querySelector('.tts-player-progress'); const time = player.querySelector('.tts-player-time'); const volume = player.querySelector('.tts-player-volume'); const download = player.querySelector('.tts-player-download');
+        const play = player.querySelector('.tts-player-play'); const progress = player.querySelector('.tts-player-progress'); const progressFill = player.querySelector('.tts-player-progress-fill'); const progressKnob = player.querySelector('.tts-player-progress-knob'); const time = player.querySelector('.tts-player-time'); const volume = player.querySelector('.tts-player-volume'); const download = player.querySelector('.tts-player-download');
         download.href = src;
         let animationFrame = null;
-        const paint = () => { if (Number.isFinite(media.duration) && media.duration > 0) progress.value = media.currentTime; time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration); if (!media.paused) animationFrame = requestAnimationFrame(paint); };
+        const paint = () => { const duration = Number(media.duration); const current = Number(media.currentTime) || 0; const percentage = Number.isFinite(duration) && duration > 0 ? Math.min(100, Math.max(0, (current / duration) * 100)) : 0; if (Number.isFinite(duration) && duration > 0) progress.value = current; progressFill.style.width = percentage + '%'; progressKnob.style.left = percentage + '%'; time.textContent = formatTime(current) + ' / ' + formatTime(duration); if (!media.paused) animationFrame = requestAnimationFrame(paint); };
         play.addEventListener('click', () => { if (media.paused) media.play().catch(() => {}); else media.pause(); });
         media.addEventListener('play', () => { if (activeGeneratedMedia && activeGeneratedMedia !== media) activeGeneratedMedia.pause(); activeGeneratedMedia = media; play.innerHTML = '<i class="las la-pause"></i>'; cancelAnimationFrame(animationFrame); animationFrame = requestAnimationFrame(paint); });
         media.addEventListener('pause', () => { play.innerHTML = '<i class="las la-play"></i>'; cancelAnimationFrame(animationFrame); paint(); if (activeGeneratedMedia === media) activeGeneratedMedia = null; });
         media.addEventListener('loadedmetadata', () => { progress.max = media.duration || 100; time.textContent = '0:00 / ' + formatTime(media.duration); });
-        media.addEventListener('ended', () => { progress.value = 0; });
-        progress.addEventListener('input', () => { media.currentTime = Number(progress.value); });
+        media.addEventListener('ended', () => { progress.value = 0; progressFill.style.width = '0%'; progressKnob.style.left = '0%'; });
+        progress.addEventListener('input', () => { media.currentTime = Number(progress.value); paint(); });
         volume.addEventListener('click', () => { media.muted = !media.muted; volume.innerHTML = media.muted ? '<i class="las la-volume-mute"></i>' : '<i class="las la-volume-up"></i>'; });
     };
     form.addEventListener('submit', (event) => {
