@@ -286,7 +286,14 @@
         });
     };
 
-    const filteredVoices = () => library;
+    const valuesOf = (item, key) => {
+        const values = [detailOf(item, key)];
+        if (Array.isArray(item?.languages) && (key === 'language' || key === 'accent')) {
+            values.push(...item.languages.map((language) => String(language?.[key] || '').trim()));
+        }
+        return values.filter(Boolean).map((value) => value.toLowerCase());
+    };
+    const filteredVoices = () => library.filter((item) => Object.entries(filters).every(([key, select]) => !select.value || valuesOf(item, key).includes(select.value.toLowerCase())));
     const activeFilterParams = () => Object.fromEntries(Object.entries(filters).filter(([, select]) => select.value).map(([key, select]) => [key, select.value]));
 
     const cardFor = (item) => {
@@ -314,7 +321,8 @@
     const renderLibrary = () => {
         if (activePreviewButton && !document.body.contains(activePreviewButton)) stopPreview();
         const items = filteredVoices();
-        countLabel.textContent = (totalVoices || items.length).toLocaleString();
+        const hasFilters = Object.values(filters).some((select) => select.value);
+        countLabel.textContent = (hasFilters ? items.length : (totalVoices || items.length)).toLocaleString();
         pageLabel.textContent = totalVoices ? '@lang('Page') ' + page + ' @lang('of') ' + totalPages : '';
         grid.innerHTML = items.length ? items.map(cardFor).join('') : '<div class="tts-library__empty"><i class="las la-search me-1"></i>@lang('No voices match these filters.')<\/div>';
         pagination.innerHTML = totalPages > 1 ? '<button type="button" class="tts-page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '><i class="las la-arrow-left me-1"></i>@lang('Prev')</button><span class="tts-page tts-page__label">' + page + ' / ' + totalPages + '</span><button type="button" class="tts-page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>@lang('Next')<i class="las la-arrow-right ms-1"></i></button>' : '';
@@ -336,7 +344,8 @@
     const loadVoices = async (query = '', requestedPage = 1) => {
         setStatus('@lang('Loading voice library...')');
         try {
-            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(PAGE_SIZE), ...activeFilterParams() }); if (query) params.set('search', query);
+            const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
+            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(requestSize), ...activeFilterParams() }); if (query) params.set('search', query);
             const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
             library = extractVoices(response.payload).filter((item) => idOf(item));
             page = Number(response.payload?.page || requestedPage || 1);
