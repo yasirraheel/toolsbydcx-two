@@ -121,7 +121,12 @@
     .dcx-tts .tts-composer label { display: block; margin-bottom: .45rem; color: #e2e8f0; font-size: .82rem; font-weight: 600; }
     .dcx-tts .tts-composer textarea { width: 100%; min-height: 145px; padding: .75rem .85rem; resize: vertical; }
     .dcx-tts .tts-help { color: #94a3b8; font-size: .75rem; }
-    .dcx-tts .tts-selected-voice { display: flex; align-items: center; gap: .5rem; min-height: 40px; padding: .55rem .75rem; border: 1px solid rgba(129, 140, 248, .3); border-radius: 8px; color: #c7d2fe; background: rgba(79, 70, 229, .12); font-size: .8rem; }
+    .dcx-tts .tts-selected-voice { display: flex; align-items: center; gap: .65rem; min-height: 54px; padding: .55rem .75rem; border: 1px solid rgba(129, 140, 248, .38); border-radius: 9px; color: #e2e8f0; background: linear-gradient(100deg, rgba(79, 70, 229, .2), rgba(30, 41, 59, .8)); font-size: .8rem; }
+    .dcx-tts .tts-selected-voice__icon { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; flex: 0 0 auto; border-radius: 8px; color: #c4b5fd; background: rgba(124, 58, 237, .28); }
+    .dcx-tts .tts-selected-voice__copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: .12rem; }
+    .dcx-tts .tts-selected-voice__copy strong { overflow: hidden; color: #f8fafc; font-size: .82rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .dcx-tts .tts-selected-voice__copy small { color: #a5b4fc; font-size: .7rem; }
+    .dcx-tts .tts-selected-voice__check { color: #4ade80; font-size: 1rem; }
     .dcx-tts .tts-status { min-height: 1.2rem; color: #a5b4fc; font-size: .78rem; }
     .dcx-tts .tts-results { display: grid; gap: .7rem; margin-top: 1rem; }
     .dcx-tts .tts-audio-player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .75rem; padding: .85rem 1rem; border: 1px solid rgba(52, 211, 153, .3); border-radius: 10px; background: #132d31; }
@@ -176,9 +181,9 @@
             </div>
             <div class="tts-composer__body">
                 <form id="tts-form">
-                    <div class="form-group mb-3"><label for="tts-text">@lang('Text') <span class="text-danger">*</span></label><textarea id="tts-text" maxlength="10000" placeholder="@lang('Write or paste the text you want to convert...')" required></textarea><div class="tts-help mt-1"><span id="tts-count">0</span>/10,000 @lang('characters')</div></div>
+                    <div class="form-group mb-3"><label for="tts-text">@lang('Text')</label><textarea id="tts-text" maxlength="10000" placeholder="@lang('Write or paste the text you want to convert...')" required></textarea><div class="tts-help mt-1"><span id="tts-count">0</span>/10,000 @lang('characters')</div></div>
                     <div class="row g-3 align-items-end">
-                        <div class="col-lg-8"><label>@lang('Selected voice')</label><div id="tts-selected-voice" class="tts-selected-voice"><i class="las la-microphone"></i><span>@lang('Choose a voice from the library')</span></div><input type="hidden" id="tts-voice" value="{{ $defaultVoiceId }}"></div>
+                        <div class="col-lg-8"><label>@lang('Selected voice')</label><div id="tts-selected-voice" class="tts-selected-voice"><span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>@lang('Choose a voice from the library')</strong><small>@lang('Select a voice card above to continue')</small></span><i class="las la-circle tts-selected-voice__check"></i></div><input type="hidden" id="tts-voice" value="{{ $defaultVoiceId }}"></div>
                         <div class="col-lg-4 d-flex justify-content-lg-end"><button type="submit" id="tts-generate" class="btn btn--base px-4"><i class="las la-play me-1"></i>@lang('Generate audio')</button></div>
                     </div>
                     <div id="tts-status" class="tts-status mt-3" role="status"></div>
@@ -310,7 +315,7 @@
         } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
     };
 
-    const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<i class="las la-microphone"></i><span>' + escapeHtml(name) + '</span>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+    const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
     grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; renderLibrary(); }));
