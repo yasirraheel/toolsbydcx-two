@@ -250,7 +250,7 @@
     const jsonRequest = async (url, options) => {
         const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { Accept: 'application/json', ...(options?.headers || {}) } });
         const contentType = response.headers.get('content-type') || '';
-        if (!response.ok) { const payload = contentType.includes('json') ? await response.json() : {}; throw new Error(payload.message || 'The request could not be completed.'); }
+        if (!response.ok) { let payload = {}; try { payload = contentType.includes('json') ? await response.json() : {}; } catch (error) {} throw new Error(payload.message || payload.error || ('Request failed (' + response.status + ').')); }
         return { response, contentType, payload: contentType.includes('json') ? await response.json() : null };
     };
     const extractVoices = (payload) => [payload?.voices, payload?.data?.voices, payload?.data?.items, Array.isArray(payload?.data) ? payload.data : null].find(Array.isArray) || [];
@@ -343,7 +343,7 @@
         } catch (error) { /* The voice page can still render if the catalog request is slow. */ }
     };
 
-    const loadVoices = async (query = '', requestedPage = 1) => {
+    const loadVoices = async (query = '', requestedPage = 1, retry = 0) => {
         setStatus('@lang('Loading voice library...')');
         try {
             const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
@@ -358,7 +358,10 @@
             if (!voice.value && savedVoice) selectVoice(savedVoice.id, savedVoice.name || savedVoice.id);
             else if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
             setStatus(library.length ? '' : '@lang('No voices were returned.')');
-        } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
+        } catch (error) {
+            if (retry < 2) { setStatus('@lang('Retrying voice library...')'); setTimeout(() => loadVoices(query, requestedPage, retry + 1), 1500 * (retry + 1)); return; }
+            library = []; renderLibrary(); setStatus(error.message, true);
+        }
     };
 
     const selectVoice = (id, name) => { stopPreview(); try { localStorage.setItem(voiceStorageKey, JSON.stringify({ id: String(id), name: String(name) })); } catch (error) {} voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
