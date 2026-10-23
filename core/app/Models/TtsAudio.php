@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TtsAudio extends Model
 {
+    protected $table = 'tts_audios';
+
     protected $fillable = [
         'user_id',
         'voice_id',
