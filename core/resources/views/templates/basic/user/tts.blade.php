@@ -235,6 +235,7 @@
     const generateUrl = @json(route('user.tts.generate'));
     const taskUrlTemplate = @json(route('user.tts.task', ['task' => '__TASK__']));
     const PAGE_SIZE = 24;
+    const voiceStorageKey = 'toolsbydcx.tts.selected-voice';
     let library = [];
     let page = 1;
     let totalVoices = 0;
@@ -245,6 +246,7 @@
     let activeGeneratedMedia = null;
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
+    const savedVoice = (() => { try { const value = JSON.parse(localStorage.getItem(voiceStorageKey) || 'null'); return value && value.id ? value : null; } catch (error) { return null; } })();
     const jsonRequest = async (url, options) => {
         const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { Accept: 'application/json', ...(options?.headers || {}) } });
         const contentType = response.headers.get('content-type') || '';
@@ -353,12 +355,13 @@
             totalVoices = Number(response.payload?.total || library.length);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
             renderLibrary();
-            if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
+            if (!voice.value && savedVoice) selectVoice(savedVoice.id, savedVoice.name || savedVoice.id);
+            else if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
             setStatus(library.length ? '' : '@lang('No voices were returned.')');
         } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
     };
 
-    const selectVoice = (id, name) => { stopPreview(); voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+    const selectVoice = (id, name) => { stopPreview(); try { localStorage.setItem(voiceStorageKey, JSON.stringify({ id: String(id), name: String(name) })); } catch (error) {} voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
     grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
