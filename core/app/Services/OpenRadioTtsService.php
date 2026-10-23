@@ -55,6 +55,8 @@ class OpenRadioTtsService
         return Http::withToken((string) $apiKey)
             ->acceptJson()
             ->asJson()
+            // Do not follow redirects with an Authorization header.
+            ->withOptions(['allow_redirects' => false])
             ->timeout(45)
             ->connectTimeout(10);
     }
