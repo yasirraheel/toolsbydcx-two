@@ -111,9 +111,11 @@
     .dcx-tts .tts-voice-action--preview:hover { background: rgba(16, 185, 129, .12); }
     .dcx-tts .tts-voice-action--preview:disabled { opacity: .4; cursor: not-allowed; }
     .dcx-tts .tts-library__empty { grid-column: 1 / -1; padding: 2rem; border: 1px dashed rgba(148, 163, 184, .22); border-radius: 10px; color: #94a3b8; text-align: center; }
-    .dcx-tts .tts-pagination { display: flex; justify-content: center; gap: .35rem; margin-top: 1rem; }
-    .dcx-tts .tts-page { min-width: 32px; min-height: 30px; border: 1px solid rgba(129, 140, 248, .25); border-radius: 6px; color: #c7d2fe; background: transparent; cursor: pointer; font-size: .72rem; }
-    .dcx-tts .tts-page.is-active, .dcx-tts .tts-page:hover { color: #fff; background: #4f46e5; }
+    .dcx-tts .tts-pagination { display: flex; align-items: center; justify-content: center; gap: .65rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(148, 163, 184, .12); }
+    .dcx-tts .tts-page { display: inline-flex; align-items: center; justify-content: center; min-width: 68px; min-height: 36px; padding: .45rem .7rem; border: 1px solid rgba(129, 140, 248, .35); border-radius: 8px; color: #c7d2fe; background: transparent; cursor: pointer; font-size: .78rem; font-weight: 600; }
+    .dcx-tts .tts-page:hover:not(:disabled) { color: #fff; border-color: #818cf8; background: rgba(79, 70, 229, .22); }
+    .dcx-tts .tts-page:disabled { opacity: .42; cursor: not-allowed; }
+    .dcx-tts .tts-page__label { min-width: 74px; border-color: transparent; color: #f8fafc; background: transparent; cursor: default; font-weight: 700; }
     .dcx-tts .tts-composer { margin-top: 1rem; }
     .dcx-tts .tts-composer__body { padding: 1.25rem 1.5rem 1.5rem; }
     .dcx-tts .tts-composer label { display: block; margin-bottom: .45rem; color: #e2e8f0; font-size: .82rem; font-weight: 600; }
@@ -289,7 +291,7 @@
         countLabel.textContent = (totalVoices || items.length).toLocaleString();
         pageLabel.textContent = totalVoices ? '@lang('Page') ' + page + ' @lang('of') ' + totalPages : '';
         grid.innerHTML = items.length ? items.map(cardFor).join('') : '<div class="tts-library__empty"><i class="las la-search me-1"></i>@lang('No voices match these filters.')<\/div>';
-        pagination.innerHTML = totalPages > 1 ? '<button type="button" class="tts-page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '><i class="las la-arrow-left"></i> @lang('Prev')</button><span class="tts-page is-active">' + page + ' / ' + totalPages + '</span><button type="button" class="tts-page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>@lang('Next') <i class="las la-arrow-right"></i></button>' : '';
+        pagination.innerHTML = totalPages > 1 ? '<button type="button" class="tts-page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '><i class="las la-arrow-left me-1"></i>@lang('Prev')</button><span class="tts-page tts-page__label">' + page + ' / ' + totalPages + '</span><button type="button" class="tts-page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>@lang('Next')<i class="las la-arrow-right ms-1"></i></button>' : '';
     };
 
     const loadVoices = async (query = '', requestedPage = 1) => {
