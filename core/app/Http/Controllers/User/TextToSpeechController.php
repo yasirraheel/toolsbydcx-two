@@ -48,7 +48,7 @@ class TextToSpeechController extends Controller
             'category' => ['nullable', 'string', 'max:80'],
         ]);
 
-        return $this->forward($this->tts->voices(
+        return $this->forwardVoices($this->tts->voices(
             $request->input('search'),
             (int) $request->input('page', 1),
             (int) $request->input('page_size', 24),
@@ -170,6 +170,41 @@ class TextToSpeechController extends Controller
 
         return response()->json($payload, $upstream->status())
             ->header('Cache-Control', 'no-store');
+    }
+
+    private function forwardVoices(Response $upstream)
+    {
+        if (!$upstream->successful()) {
+            return $this->forward($upstream);
+        }
+
+        $payload = $upstream->json();
+        if (!is_array($payload) || !is_array($payload['data'] ?? null)) {
+            return $this->forward($upstream);
+        }
+
+        foreach ($payload['data'] as &$voice) {
+            if (is_array($voice) && filled($voice['language'] ?? null)) {
+                $voice['language_label'] = $this->languageLabel((string) $voice['language']);
+            }
+        }
+        unset($voice);
+
+        return response()->json($payload, $upstream->status())
+            ->header('Cache-Control', 'no-store');
+    }
+
+    private function languageLabel(string $language): string
+    {
+        $language = str_replace('_', '-', trim($language));
+        if (class_exists(\Locale::class)) {
+            $label = \Locale::getDisplayLanguage($language, 'en');
+            if (filled($label)) {
+                return $label;
+            }
+        }
+
+        return $language;
     }
 
     private function ensureAccess(Request $request): void
