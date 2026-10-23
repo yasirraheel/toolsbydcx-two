@@ -155,7 +155,7 @@
                             {{-- Assign Text-to-Speech access --}}
                             <div class="col-lg-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
-                                <label class="d-flex align-items-start gap-2 p-3 border rounded mb-0" style="background: rgba(255,255,255,.025); cursor: pointer;">
+                                <label class="dcx-tts-assignment d-flex align-items-start gap-2 p-3 rounded mb-0">
                                     <input type="checkbox" name="tts_access" value="1" class="mt-1" @checked(old('tts_access', $user->tts_access))>
                                     <span class="d-flex flex-column gap-1">
                                         <strong><i class="las la-microphone text--primary"></i> @lang('Assign Text-to-Speech access')</strong>
@@ -319,6 +319,15 @@
     <a href="{{ route('admin.users.all') }}" class="btn btn-sm btn-outline--dark ms-2">
         <i class="las la-arrow-left"></i> @lang('Back to Users')
     </a>
+@endpush
+
+@push('style')
+<style>
+    .dcx-tts-assignment { border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
+    .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
+    .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
+</style>
 @endpush
 
 @push('script')
