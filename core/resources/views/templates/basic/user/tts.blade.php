@@ -244,9 +244,11 @@
     let previewAudio = null;
     let activePreviewButton = null;
     let activeGeneratedMedia = null;
+    let serverFilteredKeys = new Set();
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
     const savedVoice = (() => { try { const value = JSON.parse(localStorage.getItem(voiceStorageKey) || 'null'); return value && value.id ? value : null; } catch (error) { return null; } })();
+    let lastSelectedVoice = savedVoice;
     let restoredSavedVoice = false;
     const jsonRequest = async (url, options) => {
         const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { Accept: 'application/json', ...(options?.headers || {}) } });
@@ -296,8 +298,12 @@
         }
         return values.filter(Boolean).map((value) => value.toLowerCase());
     };
-    const filteredVoices = () => library.filter((item) => Object.entries(filters).every(([key, select]) => !select.value || valuesOf(item, key).includes(select.value.toLowerCase())));
+    const filteredVoices = () => library.filter((item) => Object.entries(filters).every(([key, select]) => !select.value || serverFilteredKeys.has(key) || valuesOf(item, key).includes(select.value.toLowerCase())));
     const activeFilterParams = () => Object.fromEntries(Object.entries(filters).filter(([, select]) => select.value).map(([key, select]) => [key, select.value]));
+    const selectedVoiceMatchesFilters = (item) => Object.entries(activeFilterParams()).every(([key, value]) => {
+        const values = valuesOf(item, key);
+        return serverFilteredKeys.has(key) ? (values.includes(String(value).toLowerCase()) || lastSelectedVoice?.filters?.[key] === value) : (values.length ? values.includes(String(value).toLowerCase()) : lastSelectedVoice?.filters?.[key] === value);
+    });
 
     const cardFor = (item) => {
         const id = escapeHtml(idOf(item)); const name = escapeHtml(nameOf(item)); const preview = escapeHtml(previewOf(item));
@@ -348,16 +354,21 @@
         setStatus('@lang('Loading voice library...')');
         try {
             const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
-            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(requestSize), ...activeFilterParams() }); if (query) params.set('search', query);
+            const activeParams = activeFilterParams();
+            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(requestSize), ...activeParams }); if (query) params.set('search', query);
             const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
+            serverFilteredKeys = new Set(Object.keys(activeParams).filter((key) => ['language', 'gender'].includes(key)));
             library = extractVoices(response.payload).filter((item) => idOf(item));
+            if (lastSelectedVoice?.id && selectedVoiceMatchesFilters(lastSelectedVoice.item || { voice_id: lastSelectedVoice.id, name: lastSelectedVoice.name }) && !library.some((item) => idOf(item) === String(lastSelectedVoice.id))) {
+                library.unshift(lastSelectedVoice.item || { voice_id: lastSelectedVoice.id, name: lastSelectedVoice.name });
+            }
             page = Number(response.payload?.page || requestedPage || 1);
             const pageSize = Number(response.payload?.page_size || PAGE_SIZE);
             totalVoices = Number(response.payload?.total || library.length);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
             renderLibrary();
             if (!restoredSavedVoice) {
-                if (savedVoice) selectVoice(savedVoice.id, savedVoice.name || savedVoice.id);
+                if (lastSelectedVoice) selectVoice(lastSelectedVoice.id, lastSelectedVoice.name || lastSelectedVoice.id, lastSelectedVoice.item || null, false);
                 else if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
                 restoredSavedVoice = true;
             }
@@ -368,8 +379,8 @@
         }
     };
 
-    const selectVoice = (id, name) => { stopPreview(); try { localStorage.setItem(voiceStorageKey, JSON.stringify({ id: String(id), name: String(name) })); } catch (error) {} voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
-    grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
+    const selectVoice = (id, name, item = null, persist = true) => { stopPreview(); lastSelectedVoice = { id: String(id), name: String(name), item: item || lastSelectedVoice?.item || null, filters: persist ? activeFilterParams() : (lastSelectedVoice?.filters || {}) }; if (persist) { try { localStorage.setItem(voiceStorageKey, JSON.stringify(lastSelectedVoice)); } catch (error) {} } voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+    grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName, library.find((item) => idOf(item) === use.dataset.voiceId) || null); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });
