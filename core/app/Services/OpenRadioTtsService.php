@@ -24,7 +24,7 @@ class OpenRadioTtsService
             && $setting->hasApiKey();
     }
 
-    public function voices(?string $search = null, int $page = 1, int $pageSize = 24): Response
+    public function voices(?string $search = null, int $page = 1, int $pageSize = 24, array $filters = []): Response
     {
         $query = [
             'provider' => 'elevenlabs',
@@ -33,6 +33,11 @@ class OpenRadioTtsService
         ];
         if (filled($search)) {
             $query['search'] = $search;
+        }
+        foreach (['language', 'accent', 'gender', 'age', 'category'] as $filter) {
+            if (filled($filters[$filter] ?? null)) {
+                $query[$filter] = $filters[$filter];
+            }
         }
 
         return $this->client()->get($this->url('voices'), $query);

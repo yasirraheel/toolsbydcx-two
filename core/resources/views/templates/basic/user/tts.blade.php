@@ -46,7 +46,7 @@
     .dcx-tts .tts-library { padding: 1.25rem 1.5rem 1.5rem; }
     .dcx-tts .tts-library__toolbar {
         display: grid;
-        grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(120px, 1fr)) auto;
+        grid-template-columns: minmax(220px, 1.5fr) repeat(5, minmax(120px, 1fr)) auto;
         gap: .65rem;
         padding: .8rem;
         border: 1px solid rgba(148, 163, 184, .16);
@@ -166,6 +166,7 @@
                     <select id="tts-filter-language" class="form-control"><option value="">@lang('All languages')</option></select>
                     <select id="tts-filter-accent" class="form-control"><option value="">@lang('All accents')</option></select>
                     <select id="tts-filter-gender" class="form-control"><option value="">@lang('All genders')</option></select>
+                    <select id="tts-filter-age" class="form-control"><option value="">@lang('All ages')</option></select>
                     <select id="tts-filter-category" class="form-control"><option value="">@lang('All categories')</option></select>
                     <button type="button" id="tts-library-reset" class="tts-reset" title="@lang('Reset filters')"><i class="las la-redo"></i></button>
                 </div>
@@ -217,11 +218,14 @@
         language: document.getElementById('tts-filter-language'),
         accent: document.getElementById('tts-filter-accent'),
         gender: document.getElementById('tts-filter-gender'),
+        age: document.getElementById('tts-filter-age'),
         category: document.getElementById('tts-filter-category')
     };
     const defaultVoiceId = @json($defaultVoiceId);
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const voicesUrl = @json(route('user.tts.voices'));
+    const historyUrl = @json(route('user.tts.history'));
+    const persistUrl = @json(route('user.tts.persist'));
     const generateUrl = @json(route('user.tts.generate'));
     const taskUrlTemplate = @json(route('user.tts.task', ['task' => '__TASK__']));
     const PAGE_SIZE = 24;
@@ -232,6 +236,7 @@
     let searchTimer;
     let previewAudio = null;
     let activePreviewButton = null;
+    let activeGeneratedMedia = null;
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
     const jsonRequest = async (url, options) => {
@@ -250,23 +255,18 @@
     const initialsOf = (name) => name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'V';
     const previewOf = (item) => String(item?.preview_url || item?.previewUrl || item?.sample_url || item?.sampleUrl || '');
 
-    const addFilterOptions = () => {
+    const addFilterOptions = (items) => {
         Object.entries(filters).forEach(([key, select]) => {
-            const values = [...new Set(library.map((item) => detailOf(item, key)).filter(Boolean))].sort();
+            const values = [...new Set(items.map((item) => detailOf(item, key)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
             const current = select.value;
-            select.innerHTML = '<option value="">' + ({ language: '@lang('All languages')', accent: '@lang('All accents')', gender: '@lang('All genders')', category: '@lang('All categories')' }[key]) + '</option>';
+            select.innerHTML = '<option value="">' + ({ language: '@lang('All languages')', accent: '@lang('All accents')', gender: '@lang('All genders')', age: '@lang('All ages')', category: '@lang('All categories')' }[key]) + '</option>';
             values.forEach((value) => select.add(new Option(value, value)));
             if (values.includes(current)) select.value = current;
         });
     };
 
-    const filteredVoices = () => {
-        const query = searchInput.value.trim().toLowerCase();
-        return library.filter((item) => {
-            const haystack = [nameOf(item), descriptionOf(item), detailOf(item, 'language'), detailOf(item, 'accent'), detailOf(item, 'gender'), detailOf(item, 'category')].join(' ').toLowerCase();
-            return (!query || haystack.includes(query)) && Object.entries(filters).every(([key, select]) => !select.value || detailOf(item, key).toLowerCase() === select.value.toLowerCase());
-        });
-    };
+    const filteredVoices = () => library;
+    const activeFilterParams = () => Object.fromEntries(Object.entries(filters).filter(([, select]) => select.value).map(([key, select]) => [key, select.value]));
 
     const cardFor = (item) => {
         const id = escapeHtml(idOf(item)); const name = escapeHtml(nameOf(item)); const preview = escapeHtml(previewOf(item));
@@ -299,17 +299,27 @@
         pagination.innerHTML = totalPages > 1 ? '<button type="button" class="tts-page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '><i class="las la-arrow-left me-1"></i>@lang('Prev')</button><span class="tts-page tts-page__label">' + page + ' / ' + totalPages + '</span><button type="button" class="tts-page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>@lang('Next')<i class="las la-arrow-right ms-1"></i></button>' : '';
     };
 
+    const loadFilterOptions = async () => {
+        try {
+            const params = new URLSearchParams({ page: '1', page_size: '100' });
+            const response = await jsonRequest(voicesUrl + '?' + params.toString());
+            addFilterOptions(extractVoices(response.payload));
+        } catch (error) {
+            setStatus(error.message, true);
+        }
+    };
+
     const loadVoices = async (query = '', requestedPage = 1) => {
         setStatus('@lang('Loading voice library...')');
         try {
-            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(PAGE_SIZE) }); if (query) params.set('search', query);
+            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(PAGE_SIZE), ...activeFilterParams() }); if (query) params.set('search', query);
             const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
             library = extractVoices(response.payload).filter((item) => idOf(item));
             page = Number(response.payload?.page || requestedPage || 1);
             const pageSize = Number(response.payload?.page_size || PAGE_SIZE);
             totalVoices = Number(response.payload?.total || library.length);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
-            addFilterOptions(); renderLibrary();
+            renderLibrary();
             if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
             setStatus(library.length ? '' : '@lang('No voices were returned.')');
         } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
@@ -318,7 +328,7 @@
     const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
     grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
-    Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; renderLibrary(); }));
+    Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });
     reset.addEventListener('click', () => { searchInput.value = ''; Object.values(filters).forEach((select) => { select.value = ''; }); page = 1; loadVoices(); });
     text.addEventListener('input', () => { count.textContent = text.value.length; });
@@ -326,19 +336,21 @@
     const findTaskId = (payload) => payload?.task_id || payload?.taskId || payload?.id || payload?.task?.id || payload?.data?.task_id || payload?.data?.taskId || payload?.data?.id || payload?.data?.task?.id || '';
     const findAudioUrl = (payload) => payload?.audio_url || payload?.audioUrl || payload?.url || payload?.data?.audio_url || payload?.data?.audioUrl || payload?.data?.url || payload?.result?.audio_url || payload?.result?.url || '';
     const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The OpenRadio task failed.'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
+    const loadHistory = async () => { try { const response = await jsonRequest(historyUrl); (response.payload?.audios || []).forEach((item) => { if (item.audio_url) addAudioPlayer(item.audio_url, '@lang('Saved audio')'); }); } catch (error) { setStatus(error.message, true); } };
     const formatTime = (seconds) => { if (!Number.isFinite(seconds)) return '0:00'; const minutes = Math.floor(seconds / 60); return minutes + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'); };
-    const addAudioPlayer = (src) => {
+    const addAudioPlayer = (src, label = '@lang('Generated audio')') => {
         const player = document.createElement('div');
         player.className = 'tts-audio-player';
-        player.innerHTML = '<button type="button" class="tts-player-play" aria-label="@lang('Play audio')"><i class="las la-play"></i></button><div class="tts-player-main"><div class="tts-player-title"><span>@lang('Generated audio')</span><span class="tts-player-time">0:00 / 0:00</span></div><input type="range" class="tts-player-progress" min="0" max="100" value="0" aria-label="@lang('Audio progress')"></div><button type="button" class="tts-player-control tts-player-volume" aria-label="@lang('Mute audio')"><i class="las la-volume-up"></i></button><a class="tts-player-download" aria-label="@lang('Download audio')" title="@lang('Download audio')" download="toolsbydcx-audio.mp3"><i class="las la-download"></i></a>';
+        player.innerHTML = '<button type="button" class="tts-player-play" aria-label="@lang('Play audio')"><i class="las la-play"></i></button><div class="tts-player-main"><div class="tts-player-title"><span>' + escapeHtml(label) + '</span><span class="tts-player-time">0:00 / 0:00</span></div><input type="range" class="tts-player-progress" min="0" max="100" value="0" aria-label="@lang('Audio progress')"></div><button type="button" class="tts-player-control tts-player-volume" aria-label="@lang('Mute audio')"><i class="las la-volume-up"></i></button><a class="tts-player-download" aria-label="@lang('Download audio')" title="@lang('Download audio')" download="toolsbydcx-audio.mp3"><i class="las la-download"></i></a>';
         const media = document.createElement('audio'); media.className = 'tts-audio-hidden'; media.preload = 'metadata'; media.src = src; player.appendChild(media); results.prepend(player);
         const play = player.querySelector('.tts-player-play'); const progress = player.querySelector('.tts-player-progress'); const time = player.querySelector('.tts-player-time'); const volume = player.querySelector('.tts-player-volume'); const download = player.querySelector('.tts-player-download');
         download.href = src;
+        let animationFrame = null;
+        const paint = () => { if (Number.isFinite(media.duration) && media.duration > 0) progress.value = media.currentTime; time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration); if (!media.paused) animationFrame = requestAnimationFrame(paint); };
         play.addEventListener('click', () => { if (media.paused) media.play().catch(() => {}); else media.pause(); });
-        media.addEventListener('play', () => { play.innerHTML = '<i class="las la-pause"></i>'; });
-        media.addEventListener('pause', () => { play.innerHTML = '<i class="las la-play"></i>'; });
+        media.addEventListener('play', () => { if (activeGeneratedMedia && activeGeneratedMedia !== media) activeGeneratedMedia.pause(); activeGeneratedMedia = media; play.innerHTML = '<i class="las la-pause"></i>'; cancelAnimationFrame(animationFrame); animationFrame = requestAnimationFrame(paint); });
+        media.addEventListener('pause', () => { play.innerHTML = '<i class="las la-play"></i>'; cancelAnimationFrame(animationFrame); paint(); if (activeGeneratedMedia === media) activeGeneratedMedia = null; });
         media.addEventListener('loadedmetadata', () => { progress.max = media.duration || 100; time.textContent = '0:00 / ' + formatTime(media.duration); });
-        media.addEventListener('timeupdate', () => { progress.value = media.currentTime; time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration); });
         media.addEventListener('ended', () => { progress.value = 0; });
         progress.addEventListener('input', () => { media.currentTime = Number(progress.value); });
         volume.addEventListener('click', () => { media.muted = !media.muted; volume.innerHTML = media.muted ? '<i class="las la-volume-mute"></i>' : '<i class="las la-volume-up"></i>'; });
@@ -348,9 +360,9 @@
         if (!voice.value) { setStatus('@lang('Choose a voice from the library first.')', true); return; }
         const submittedText = text.value.trim(); const selectedId = voice.value;
         text.value = ''; count.textContent = '0'; setStatus('@lang('Generating audio...')'); generate.disabled = false;
-        (async () => { try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: submittedText, voice_id: selectedId }) }); let source = ''; if (!response.contentType.includes('json')) source = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) source = audioUrl; else if (taskId) source = await waitForTask(taskId); else throw new Error('@lang('Audio could not be generated.')'); } addAudioPlayer(source); setStatus('@lang('Audio ready.')'); } catch (error) { setStatus(error.message, true); } })();
+        (async () => { try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: submittedText, voice_id: selectedId }) }); let source = ''; if (!response.contentType.includes('json')) source = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) source = audioUrl; else if (taskId) source = await waitForTask(taskId); else throw new Error('@lang('Audio could not be generated.')'); } if (!response.payload?.audio_id && !source.startsWith(location.origin)) { const saved = await jsonRequest(persistUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ audio_url: source, text: submittedText, voice_id: selectedId }) }); source = findAudioUrl(saved.payload) || source; } addAudioPlayer(source); setStatus('@lang('Audio ready.')'); } catch (error) { setStatus(error.message, true); } })();
     });
-    loadVoices('', 1);
+    (async () => { await Promise.all([loadFilterOptions(), loadHistory()]); await loadVoices('', 1); }());
 }());
 </script>
 @endpush
