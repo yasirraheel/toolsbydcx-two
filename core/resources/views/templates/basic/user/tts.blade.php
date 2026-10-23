@@ -325,7 +325,7 @@
         } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
     };
 
-    const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+    const selectVoice = (id, name) => { stopPreview(); voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
     grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
