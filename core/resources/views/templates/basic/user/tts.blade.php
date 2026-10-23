@@ -121,8 +121,18 @@
     .dcx-tts .tts-help { color: #94a3b8; font-size: .75rem; }
     .dcx-tts .tts-selected-voice { display: flex; align-items: center; gap: .5rem; min-height: 40px; padding: .55rem .75rem; border: 1px solid rgba(129, 140, 248, .3); border-radius: 8px; color: #c7d2fe; background: rgba(79, 70, 229, .12); font-size: .8rem; }
     .dcx-tts .tts-status { min-height: 1.2rem; color: #a5b4fc; font-size: .78rem; }
-    .dcx-tts .tts-result { display: none; padding: 1rem; border: 1px solid rgba(52, 211, 153, .3); border-radius: 10px; background: rgba(16, 185, 129, .08); }
-    .dcx-tts .tts-result audio { width: 100%; }
+    .dcx-tts .tts-results { display: grid; gap: .7rem; margin-top: 1rem; }
+    .dcx-tts .tts-audio-player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .75rem; padding: .85rem 1rem; border: 1px solid rgba(52, 211, 153, .3); border-radius: 10px; background: #132d31; }
+    .dcx-tts .tts-player-play { display: inline-flex; align-items: center; justify-content: center; width: 2.3rem; height: 2.3rem; border: 0; border-radius: 50%; color: #062e2b; background: #34d399; cursor: pointer; }
+    .dcx-tts .tts-player-play:hover { background: #6ee7b7; }
+    .dcx-tts .tts-player-main { min-width: 0; }
+    .dcx-tts .tts-player-title { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .35rem; color: #d1fae5; font-size: .75rem; }
+    .dcx-tts .tts-player-progress { display: block; width: 100%; height: 5px; accent-color: #34d399; cursor: pointer; }
+    .dcx-tts .tts-player-control { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid rgba(167, 243, 208, .25); border-radius: 6px; color: #a7f3d0; background: transparent; cursor: pointer; }
+    .dcx-tts .tts-player-control:hover { background: rgba(52, 211, 153, .14); }
+    .dcx-tts .tts-player-download { color: #a7f3d0; font-size: 1rem; }
+    .dcx-tts .tts-audio-hidden { display: none; }
+    @media (max-width: 575px) { .dcx-tts .tts-audio-player { grid-template-columns: auto minmax(0, 1fr) auto; } .dcx-tts .tts-player-download { display: none; } }
     @media (max-width: 1199px) { .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 3; } }
     @media (max-width: 767px) { .dcx-tts .tts-panel__header { align-items: flex-start; flex-direction: column; } .dcx-tts .tts-library, .dcx-tts .tts-composer__body { padding: 1rem; } .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 2; } .dcx-tts .tts-library__grid { grid-template-columns: 1fr; } }
 </style>
@@ -171,7 +181,7 @@
                     </div>
                     <div id="tts-status" class="tts-status mt-3" role="status"></div>
                 </form>
-                <div id="tts-result" class="tts-result mt-3"><div class="fw-semibold text-success mb-2"><i class="las la-check-circle me-1"></i>@lang('Audio ready')</div><audio id="tts-audio" controls preload="metadata"></audio></div>
+                <div id="tts-results" class="tts-results"></div>
             </div>
         </section>
     @endif
@@ -189,8 +199,7 @@
     const selectedVoice = document.getElementById('tts-selected-voice');
     const status = document.getElementById('tts-status');
     const generate = document.getElementById('tts-generate');
-    const result = document.getElementById('tts-result');
-    const audio = document.getElementById('tts-audio');
+    const results = document.getElementById('tts-results');
     const grid = document.getElementById('tts-library-grid');
     const countLabel = document.getElementById('tts-library-count');
     const pageLabel = document.getElementById('tts-library-page-label');
@@ -283,8 +292,31 @@
 
     const findTaskId = (payload) => payload?.task_id || payload?.taskId || payload?.id || payload?.task?.id || payload?.data?.task_id || payload?.data?.taskId || payload?.data?.id || payload?.data?.task?.id || '';
     const findAudioUrl = (payload) => payload?.audio_url || payload?.audioUrl || payload?.url || payload?.data?.audio_url || payload?.data?.audioUrl || payload?.data?.url || payload?.result?.audio_url || payload?.result?.url || '';
-    const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The OpenRadio task failed.'); setStatus('@lang('Generating audio...') ' + (attempt + 1) + '/45'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
-    form.addEventListener('submit', async (event) => { event.preventDefault(); if (!voice.value) { setStatus('@lang('Choose a voice from the library first.')', true); return; } generate.disabled = true; result.style.display = 'none'; setStatus('@lang('Submitting text...')'); try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: text.value, voice_id: voice.value }) }); if (!response.contentType.includes('json')) audio.src = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) audio.src = audioUrl; else if (taskId) audio.src = await waitForTask(taskId); else throw new Error('@lang('OpenRadio did not return an audio URL or task ID.')'); } result.style.display = 'block'; setStatus('@lang('Audio generated successfully.')'); audio.play().catch(() => {}); } catch (error) { setStatus(error.message, true); } finally { generate.disabled = false; } });
+    const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The OpenRadio task failed.'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
+    const formatTime = (seconds) => { if (!Number.isFinite(seconds)) return '0:00'; const minutes = Math.floor(seconds / 60); return minutes + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'); };
+    const addAudioPlayer = (src) => {
+        const player = document.createElement('div');
+        player.className = 'tts-audio-player';
+        player.innerHTML = '<button type="button" class="tts-player-play" aria-label="@lang('Play audio')"><i class="las la-play"></i></button><div class="tts-player-main"><div class="tts-player-title"><span>@lang('Generated audio')</span><span class="tts-player-time">0:00 / 0:00</span></div><input type="range" class="tts-player-progress" min="0" max="100" value="0" aria-label="@lang('Audio progress')"></div><button type="button" class="tts-player-control tts-player-volume" aria-label="@lang('Mute audio')"><i class="las la-volume-up"></i></button><a class="tts-player-download" aria-label="@lang('Download audio')" title="@lang('Download audio')" download="toolsbydcx-audio.mp3"><i class="las la-download"></i></a>';
+        const media = document.createElement('audio'); media.className = 'tts-audio-hidden'; media.preload = 'metadata'; media.src = src; player.appendChild(media); results.prepend(player);
+        const play = player.querySelector('.tts-player-play'); const progress = player.querySelector('.tts-player-progress'); const time = player.querySelector('.tts-player-time'); const volume = player.querySelector('.tts-player-volume'); const download = player.querySelector('.tts-player-download');
+        download.href = src;
+        play.addEventListener('click', () => { if (media.paused) media.play().catch(() => {}); else media.pause(); });
+        media.addEventListener('play', () => { play.innerHTML = '<i class="las la-pause"></i>'; });
+        media.addEventListener('pause', () => { play.innerHTML = '<i class="las la-play"></i>'; });
+        media.addEventListener('loadedmetadata', () => { progress.max = media.duration || 100; time.textContent = '0:00 / ' + formatTime(media.duration); });
+        media.addEventListener('timeupdate', () => { progress.value = media.currentTime; time.textContent = formatTime(media.currentTime) + ' / ' + formatTime(media.duration); });
+        media.addEventListener('ended', () => { progress.value = 0; });
+        progress.addEventListener('input', () => { media.currentTime = Number(progress.value); });
+        volume.addEventListener('click', () => { media.muted = !media.muted; volume.innerHTML = media.muted ? '<i class="las la-volume-mute"></i>' : '<i class="las la-volume-up"></i>'; });
+    };
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!voice.value) { setStatus('@lang('Choose a voice from the library first.')', true); return; }
+        const submittedText = text.value.trim(); const selectedId = voice.value;
+        text.value = ''; count.textContent = '0'; setStatus('@lang('Generating audio...')'); generate.disabled = false;
+        (async () => { try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: submittedText, voice_id: selectedId }) }); let source = ''; if (!response.contentType.includes('json')) source = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) source = audioUrl; else if (taskId) source = await waitForTask(taskId); else throw new Error('@lang('Audio could not be generated.')'); } addAudioPlayer(source); setStatus('@lang('Audio ready.')'); } catch (error) { setStatus(error.message, true); } })();
+    });
     loadVoices();
 }());
 </script>
