@@ -247,6 +247,7 @@
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
     const savedVoice = (() => { try { const value = JSON.parse(localStorage.getItem(voiceStorageKey) || 'null'); return value && value.id ? value : null; } catch (error) { return null; } })();
+    let restoredSavedVoice = false;
     const jsonRequest = async (url, options) => {
         const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { Accept: 'application/json', ...(options?.headers || {}) } });
         const contentType = response.headers.get('content-type') || '';
@@ -355,8 +356,11 @@
             totalVoices = Number(response.payload?.total || library.length);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
             renderLibrary();
-            if (!voice.value && savedVoice) selectVoice(savedVoice.id, savedVoice.name || savedVoice.id);
-            else if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
+            if (!restoredSavedVoice) {
+                if (savedVoice) selectVoice(savedVoice.id, savedVoice.name || savedVoice.id);
+                else if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
+                restoredSavedVoice = true;
+            }
             setStatus(library.length ? '' : '@lang('No voices were returned.')');
         } catch (error) {
             if (retry < 2) { setStatus('@lang('Retrying voice library...')'); setTimeout(() => loadVoices(query, requestedPage, retry + 1), 1500 * (retry + 1)); return; }
