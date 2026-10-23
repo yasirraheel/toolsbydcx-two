@@ -304,9 +304,7 @@
             const params = new URLSearchParams({ page: '1', page_size: '100' });
             const response = await jsonRequest(voicesUrl + '?' + params.toString());
             addFilterOptions(extractVoices(response.payload));
-        } catch (error) {
-            setStatus(error.message, true);
-        }
+        } catch (error) { /* The voice page can still render if the catalog request is slow. */ }
     };
 
     const loadVoices = async (query = '', requestedPage = 1) => {
@@ -336,7 +334,7 @@
     const findTaskId = (payload) => payload?.task_id || payload?.taskId || payload?.id || payload?.task?.id || payload?.data?.task_id || payload?.data?.taskId || payload?.data?.id || payload?.data?.task?.id || '';
     const findAudioUrl = (payload) => payload?.audio_url || payload?.audioUrl || payload?.url || payload?.data?.audio_url || payload?.data?.audioUrl || payload?.data?.url || payload?.result?.audio_url || payload?.result?.url || '';
     const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The OpenRadio task failed.'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
-    const loadHistory = async () => { try { const response = await jsonRequest(historyUrl); (response.payload?.audios || []).forEach((item) => { if (item.audio_url) addAudioPlayer(item.audio_url, '@lang('Saved audio')'); }); } catch (error) { setStatus(error.message, true); } };
+    const loadHistory = async () => { try { const response = await jsonRequest(historyUrl); (response.payload?.audios || []).forEach((item) => { if (item.audio_url) addAudioPlayer(item.audio_url, '@lang('Saved audio')'); }); } catch (error) { /* History is optional and must not block the voice library. */ } };
     const formatTime = (seconds) => { if (!Number.isFinite(seconds)) return '0:00'; const minutes = Math.floor(seconds / 60); return minutes + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'); };
     const addAudioPlayer = (src, label = '@lang('Generated audio')') => {
         const player = document.createElement('div');
@@ -362,7 +360,9 @@
         text.value = ''; count.textContent = '0'; setStatus('@lang('Generating audio...')'); generate.disabled = false;
         (async () => { try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: submittedText, voice_id: selectedId }) }); let source = ''; if (!response.contentType.includes('json')) source = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) source = audioUrl; else if (taskId) source = await waitForTask(taskId); else throw new Error('@lang('Audio could not be generated.')'); } if (!response.payload?.audio_id && !source.startsWith(location.origin)) { const saved = await jsonRequest(persistUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ audio_url: source, text: submittedText, voice_id: selectedId }) }); source = findAudioUrl(saved.payload) || source; } addAudioPlayer(source); setStatus('@lang('Audio ready.')'); } catch (error) { setStatus(error.message, true); } })();
     });
-    (async () => { await Promise.all([loadFilterOptions(), loadHistory()]); await loadVoices('', 1); }());
+    loadVoices('', 1);
+    loadFilterOptions();
+    loadHistory();
 }());
 </script>
 @endpush
