@@ -250,6 +250,8 @@
     const nameOf = (item) => String(item?.name || item?.voice_name || item?.display_name || idOf(item));
     const labelsOf = (item) => item?.labels || item?.metadata || {};
     const detailOf = (item, key) => String(item?.[key] || labelsOf(item)?.[key] || '');
+    const languageNames = (() => { try { return new Intl.DisplayNames(['en'], { type: 'language' }); } catch (error) { return null; } })();
+    const languageLabelOf = (value) => { const code = String(value || '').trim().replace('_', '-'); if (!code) return ''; try { return languageNames?.of(code) || code; } catch (error) { return code; } };
     const descriptionOf = (item) => String(item?.description || item?.summary || detailOf(item, 'description') || 'A natural voice ready for your next project.');
     const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const initialsOf = (name) => name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'V';
@@ -260,7 +262,7 @@
             const values = [...new Set(items.map((item) => detailOf(item, key)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
             const current = select.value;
             select.innerHTML = '<option value="">' + ({ language: '@lang('All languages')', accent: '@lang('All accents')', gender: '@lang('All genders')', age: '@lang('All ages')', category: '@lang('All categories')' }[key]) + '</option>';
-            values.forEach((value) => select.add(new Option(value, value)));
+            values.forEach((value) => select.add(new Option(key === 'language' ? languageLabelOf(value) : value, value)));
             if (values.includes(current)) select.value = current;
         });
     };
@@ -270,7 +272,7 @@
 
     const cardFor = (item) => {
         const id = escapeHtml(idOf(item)); const name = escapeHtml(nameOf(item)); const preview = escapeHtml(previewOf(item));
-        const language = escapeHtml(detailOf(item, 'language')); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const category = escapeHtml(detailOf(item, 'category'));
+        const language = escapeHtml(languageLabelOf(detailOf(item, 'language'))); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const category = escapeHtml(detailOf(item, 'category'));
         const tags = [language, accent, gender].filter(Boolean).slice(0, 3).map((tag) => '<span class="tts-tag">' + tag + '</span>').join('');
         return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(nameOf(item))) + '</span><div><h5 title="' + name + '">' + name + '</h5><div class="tts-voice-card__meta">' + (category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play me-1"></i>@lang('Preview')</button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
     };
