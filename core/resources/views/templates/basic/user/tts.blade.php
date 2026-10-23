@@ -107,7 +107,7 @@
     .dcx-tts .tts-voice-action { display: inline-flex; align-items: center; justify-content: center; min-height: 31px; padding: .35rem .6rem; border-radius: 6px; font-size: .72rem; font-weight: 600; cursor: pointer; }
     .dcx-tts .tts-voice-action--use { margin-left: auto; border: 1px solid #4f46e5; color: #fff; background: #4f46e5; }
     .dcx-tts .tts-voice-action--use:hover { background: #6366f1; }
-    .dcx-tts .tts-voice-action--preview { border: 1px solid rgba(52, 211, 153, .55); color: #6ee7b7; background: transparent; }
+    .dcx-tts .tts-voice-action--preview { min-width: 74px; border: 1px solid rgba(52, 211, 153, .55); color: #6ee7b7; background: transparent; }
     .dcx-tts .tts-voice-action--preview:hover { background: rgba(16, 185, 129, .12); }
     .dcx-tts .tts-voice-action--preview:disabled { opacity: .4; cursor: not-allowed; }
     .dcx-tts .tts-library__empty { grid-column: 1 / -1; padding: 2rem; border: 1px dashed rgba(148, 163, 184, .22); border-radius: 10px; color: #94a3b8; text-align: center; }
@@ -221,6 +221,8 @@
     let library = [];
     let page = 1;
     let searchTimer;
+    let previewAudio = null;
+    let activePreviewButton = null;
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
     const jsonRequest = async (url, options) => {
@@ -264,7 +266,23 @@
         return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(nameOf(item))) + '</span><div><h5 title="' + name + '">' + name + '</h5><div class="tts-voice-card__meta">' + (category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play me-1"></i>@lang('Preview')</button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
     };
 
+    const resetPreviewButton = (button) => { if (button) button.innerHTML = '<i class="las la-play me-1"></i>@lang('Preview')'; };
+    const stopPreview = () => { if (previewAudio) { previewAudio.pause(); previewAudio.currentTime = 0; } resetPreviewButton(activePreviewButton); activePreviewButton = null; };
+    const playPreview = (button) => {
+        const source = button.dataset.preview;
+        if (!source) return;
+        if (activePreviewButton === button && previewAudio && !previewAudio.paused) { stopPreview(); return; }
+        stopPreview();
+        if (!previewAudio) previewAudio = new Audio();
+        previewAudio.src = source;
+        activePreviewButton = button;
+        button.innerHTML = '<i class="las la-pause me-1"></i>@lang('Pause')';
+        previewAudio.onended = stopPreview;
+        previewAudio.onerror = stopPreview;
+        previewAudio.play().catch(() => stopPreview());
+    };
     const renderLibrary = () => {
+        if (activePreviewButton && !document.body.contains(activePreviewButton)) stopPreview();
         const items = filteredVoices(); const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE)); page = Math.min(page, pages); const start = (page - 1) * PAGE_SIZE;
         countLabel.textContent = items.length.toLocaleString(); pageLabel.textContent = items.length ? '@lang('Page') ' + page + ' @lang('of') ' + pages : '';
         grid.innerHTML = items.length ? items.slice(start, start + PAGE_SIZE).map(cardFor).join('') : '<div class="tts-library__empty"><i class="las la-search me-1"></i>@lang('No voices match these filters.')</div>';
@@ -283,7 +301,7 @@
     };
 
     const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<i class="las la-microphone"></i><span>' + escapeHtml(name) + '</span>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
-    grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview && preview.dataset.preview) { new Audio(preview.dataset.preview).play().catch(() => setStatus('@lang('Preview could not be played.')', true)); } });
+    grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button) { page = Number(button.dataset.page); renderLibrary(); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; renderLibrary(); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });
