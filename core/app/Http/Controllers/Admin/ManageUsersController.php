@@ -171,6 +171,7 @@ class ManageUsersController extends Controller
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
             'google_flow_account_id' => 'nullable|integer|exists:google_flow_accounts,id',
+            'tts_access' => 'nullable|boolean',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -223,6 +224,7 @@ class ManageUsersController extends Controller
             $user->is_trial = 0;
             $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
+            $user->tts_access = $request->boolean('tts_access');
 
             // Force all verifications and active profile so user can log in immediately
             $user->ev = Status::VERIFIED;
@@ -392,6 +394,10 @@ class ManageUsersController extends Controller
                 $notify[] = ['error', 'Could not update Google Flow assignment: ' . $e->getMessage()];
                 return back()->withNotify($notify)->withInput();
             }
+        }
+
+        if ($request->has('tts_access_submitted')) {
+            $user->tts_access = $request->boolean('tts_access');
         }
 
         try {

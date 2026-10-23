@@ -41,6 +41,7 @@ class User extends Authenticatable
         'is_reseller' => 'integer',
         'reseller_id' => 'integer',
         'google_flow_account_id' => 'integer',
+        'tts_access' => 'boolean',
     ];
 
     protected static function boot()

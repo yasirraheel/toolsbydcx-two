@@ -114,6 +114,18 @@
                                 </div>
                             </div>
 
+                            {{-- Assign Text-to-Speech access --}}
+                            <div class="col-lg-6 col-12">
+                                <input type="hidden" name="tts_access_submitted" value="1">
+                                <label class="d-flex align-items-start gap-2 p-3 border rounded mb-0" style="background: rgba(255,255,255,.025); cursor: pointer;">
+                                    <input type="checkbox" name="tts_access" value="1" class="mt-1" @checked(old('tts_access'))>
+                                    <span class="d-flex flex-column gap-1">
+                                        <strong><i class="las la-microphone text--primary"></i> @lang('Assign Text-to-Speech access')</strong>
+                                        <small class="text-muted">@lang('Allow this user to use the server-side OpenRadio voice tool.')</small>
+                                    </span>
+                                </label>
+                            </div>
+
                             <div class="col-12 mt-3">
                                 <button type="submit" class="btn btn--primary btn-lg w-100 h-45 shadow-sm fw-bold">
                                     <i class="las la-check me-1"></i> @lang('Create User & Activate Access')

@@ -13,8 +13,9 @@ class TextToSpeechController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $this->ensureAccess($request);
         $pageTitle = 'Text to Speech';
         $setting = $this->tts->setting();
 
@@ -27,6 +28,7 @@ class TextToSpeechController extends Controller
 
     public function voices(Request $request)
     {
+        $this->ensureAccess($request);
         if (!$this->tts->configured()) {
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
@@ -40,6 +42,7 @@ class TextToSpeechController extends Controller
 
     public function generate(Request $request)
     {
+        $this->ensureAccess($request);
         if (!$this->tts->configured()) {
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
@@ -60,8 +63,9 @@ class TextToSpeechController extends Controller
         return $this->forward($this->tts->synthesize(trim($validated['text']), $voiceId));
     }
 
-    public function task(string $task)
+    public function task(Request $request, string $task)
     {
+        $this->ensureAccess($request);
         if (!$this->tts->configured()) {
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
@@ -86,5 +90,10 @@ class TextToSpeechController extends Controller
 
         return response()->json($payload, $upstream->status())
             ->header('Cache-Control', 'no-store');
+    }
+
+    private function ensureAccess(Request $request): void
+    {
+        abort_unless($request->user()?->tts_access === true, 403, 'Text-to-Speech access has not been assigned to this account.');
     }
 }

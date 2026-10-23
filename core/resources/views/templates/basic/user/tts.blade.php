@@ -26,7 +26,6 @@
     }
 
     .dcx-tts textarea,
-    .dcx-tts select,
     .dcx-tts input {
         color: #f8fafc !important;
         background: rgba(30, 41, 59, .78) !important;
@@ -34,7 +33,6 @@
     }
 
     .dcx-tts textarea:focus,
-    .dcx-tts select:focus,
     .dcx-tts input:focus {
         border-color: rgba(129, 140, 248, .8) !important;
         box-shadow: 0 0 0 .2rem rgba(99, 102, 241, .18) !important;
@@ -55,6 +53,92 @@
 
     .dcx-tts .tts-result audio {
         width: 100%;
+    }
+
+    .dcx-tts .tts-voice-picker {
+        position: relative;
+    }
+
+    .dcx-tts .tts-voice-search {
+        padding-left: 2.35rem !important;
+    }
+
+    .dcx-tts .tts-voice-search-icon {
+        position: absolute;
+        z-index: 2;
+        top: .78rem;
+        left: .85rem;
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    .dcx-tts .tts-voice-selected {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: .5rem;
+        padding: .65rem .8rem;
+        border: 1px solid rgba(129, 140, 248, .34);
+        border-radius: 8px;
+        color: #e2e8f0;
+        background: rgba(79, 70, 229, .12);
+        font-size: .85rem;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .dcx-tts .tts-voice-selected:hover,
+    .dcx-tts .tts-voice-selected:focus {
+        border-color: rgba(129, 140, 248, .75);
+        outline: none;
+    }
+
+    .dcx-tts .tts-voice-options {
+        display: none;
+        position: absolute;
+        z-index: 20;
+        top: 5.9rem;
+        right: 0;
+        left: 0;
+        max-height: 210px;
+        overflow-y: auto;
+        padding: .35rem;
+        border: 1px solid rgba(148, 163, 184, .24);
+        border-radius: 9px;
+        background: #172033;
+        box-shadow: 0 14px 32px rgba(2, 6, 23, .45);
+    }
+
+    .dcx-tts .tts-voice-picker.is-open .tts-voice-options {
+        display: grid;
+        gap: .2rem;
+    }
+
+    .dcx-tts .tts-voice-option {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: .55rem .65rem;
+        border: 0;
+        border-radius: 6px;
+        color: #cbd5e1;
+        background: transparent;
+        font-size: .8125rem;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .dcx-tts .tts-voice-option:hover,
+    .dcx-tts .tts-voice-option.is-selected {
+        color: #fff;
+        background: rgba(99, 102, 241, .24);
+    }
+
+    .dcx-tts .tts-voice-empty {
+        padding: .65rem;
+        color: #94a3b8;
+        font-size: .78rem;
     }
 </style>
 @endpush
@@ -82,9 +166,15 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-lg-8">
                             <label for="tts-voice" class="fw-semibold">@lang('Voice')</label>
-                            <select id="tts-voice" class="form-control" required>
-                                <option value="{{ $defaultVoiceId }}">@lang('Loading voices...')</option>
-                            </select>
+                            <div class="tts-voice-picker" id="tts-voice-picker">
+                                <i class="las la-search tts-voice-search-icon"></i>
+                                <input type="search" id="tts-voice-search" class="form-control tts-voice-search" autocomplete="off" placeholder="@lang('Search voices...')">
+                                <button type="button" id="tts-voice-selected" class="tts-voice-selected" aria-expanded="false">
+                                    <span id="tts-voice-label">@lang('Loading voices...')</span><i class="las la-angle-down"></i>
+                                </button>
+                                <div id="tts-voice-options" class="tts-voice-options" role="listbox"></div>
+                                <input type="hidden" id="tts-voice" value="{{ $defaultVoiceId }}" required>
+                            </div>
                         </div>
                         <div class="col-lg-4">
                             <button type="button" id="tts-refresh-voices" class="btn btn-outline--base w-100">
@@ -119,6 +209,11 @@
     const text = document.getElementById('tts-text');
     const count = document.getElementById('tts-count');
     const voice = document.getElementById('tts-voice');
+    const voicePicker = document.getElementById('tts-voice-picker');
+    const voiceSearch = document.getElementById('tts-voice-search');
+    const voiceSelected = document.getElementById('tts-voice-selected');
+    const voiceLabel = document.getElementById('tts-voice-label');
+    const voiceOptions = document.getElementById('tts-voice-options');
     const status = document.getElementById('tts-status');
     const generate = document.getElementById('tts-generate');
     const refreshVoices = document.getElementById('tts-refresh-voices');
@@ -166,26 +261,53 @@
     const voiceId = (item) => String(item?.voice_id || item?.voiceId || item?.id || '');
     const voiceName = (item) => String(item?.name || item?.voice_name || item?.display_name || voiceId(item));
 
-    const loadVoices = async () => {
+    const renderVoices = (items) => {
+        voiceOptions.innerHTML = '';
+        if (!items.length) {
+            voiceOptions.innerHTML = '<div class="tts-voice-empty">@lang('No voices found')</div>';
+            return;
+        }
+        items.forEach((item) => {
+            const id = voiceId(item);
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'tts-voice-option' + (voice.value === id ? ' is-selected' : '');
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', voice.value === id ? 'true' : 'false');
+            option.textContent = voiceName(item);
+            option.addEventListener('click', () => {
+                voice.value = id;
+                voiceLabel.textContent = voiceName(item);
+                voicePicker.classList.remove('is-open');
+                voiceSelected.setAttribute('aria-expanded', 'false');
+                renderVoices(items);
+            });
+            voiceOptions.appendChild(option);
+        });
+    };
+
+    const loadVoices = async (query = '') => {
         refreshVoices.disabled = true;
         setStatus('@lang('Loading voices...')');
         try {
-            const search = new URLSearchParams();
-            const response = await jsonRequest(voicesUrl + (search.toString() ? '?' + search.toString() : ''));
+            const params = new URLSearchParams();
+            if (query) params.set('search', query);
+            const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
             const items = extractVoices(response.payload).filter((item) => voiceId(item));
             const selected = voice.value || defaultVoiceId || voiceId(items[0]);
-            voice.innerHTML = '';
             if (!items.length) {
-                if (defaultVoiceId) voice.add(new Option(defaultVoiceId, defaultVoiceId));
-                else voice.add(new Option('@lang('No voices returned')', ''));
+                if (!selected) voiceLabel.textContent = '@lang('No voices returned')';
             } else {
-                items.forEach((item) => voice.add(new Option(voiceName(item), voiceId(item))));
+                if (!voice.value && selected) voice.value = selected;
+                const selectedItem = items.find((item) => voiceId(item) === voice.value);
+                voiceLabel.textContent = selectedItem ? voiceName(selectedItem) : (voice.value || voiceName(items[0]));
             }
+            renderVoices(items);
             if (selected) voice.value = selected;
             setStatus(items.length ? '' : '@lang('No voices were returned. You can still use the configured default voice ID.')');
         } catch (error) {
-            voice.innerHTML = '';
-            if (defaultVoiceId) voice.add(new Option(defaultVoiceId, defaultVoiceId));
+            renderVoices([]);
+            if (defaultVoiceId) voiceLabel.textContent = defaultVoiceId;
             setStatus(error.message, true);
         } finally {
             refreshVoices.disabled = false;
@@ -223,6 +345,22 @@
 
     text.addEventListener('input', () => { count.textContent = text.value.length; });
     refreshVoices.addEventListener('click', loadVoices);
+    voiceSelected.addEventListener('click', () => {
+        const open = voicePicker.classList.toggle('is-open');
+        voiceSelected.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    voiceSearch.addEventListener('focus', () => voicePicker.classList.add('is-open'));
+    let searchTimer;
+    voiceSearch.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadVoices(voiceSearch.value.trim()), 300);
+    });
+    document.addEventListener('click', (event) => {
+        if (!voicePicker.contains(event.target)) {
+            voicePicker.classList.remove('is-open');
+            voiceSelected.setAttribute('aria-expanded', 'false');
+        }
+    });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
