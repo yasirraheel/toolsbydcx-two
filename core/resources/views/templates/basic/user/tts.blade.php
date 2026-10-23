@@ -259,9 +259,20 @@
     const previewOf = (item) => String(item?.preview_url || item?.previewUrl || item?.sample_url || item?.sampleUrl || '');
 
     const addFilterOptions = (items) => {
-        items.forEach((item) => { const code = detailOf(item, 'language'); if (code && item?.language_label) apiLanguageLabels.set(code, String(item.language_label)); });
+        items.forEach((item) => {
+            const code = detailOf(item, 'language');
+            if (code && item?.language_label) apiLanguageLabels.set(code, String(item.language_label));
+            (Array.isArray(item?.languages) ? item.languages : []).forEach((language) => {
+                const nestedCode = String(language?.language || '').trim();
+                if (nestedCode && !apiLanguageLabels.has(nestedCode)) apiLanguageLabels.set(nestedCode, languageLabelOf(nestedCode));
+            });
+        });
         Object.entries(filters).forEach(([key, select]) => {
-            const values = [...new Set(items.map((item) => detailOf(item, key)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            const values = [...new Set(items.flatMap((item) => {
+                const direct = detailOf(item, key);
+                const nested = key === 'language' && Array.isArray(item?.languages) ? item.languages.map((language) => String(language?.language || '').trim()) : [];
+                return [direct, ...nested].filter(Boolean);
+            }))].sort((a, b) => a.localeCompare(b));
             const current = select.value;
             select.innerHTML = '<option value="">' + ({ language: '@lang('All languages')', accent: '@lang('All accents')', gender: '@lang('All genders')', age: '@lang('All ages')', category: '@lang('All categories')' }[key]) + '</option>';
             values.forEach((value) => select.add(new Option(key === 'language' ? (apiLanguageLabels.get(value) || languageLabelOf(value)) : value, value)));
