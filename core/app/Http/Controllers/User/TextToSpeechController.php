@@ -35,9 +35,15 @@ class TextToSpeechController extends Controller
 
         $request->validate([
             'search' => ['nullable', 'string', 'max:80'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'page_size' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        return $this->forward($this->tts->voices($request->input('search')));
+        return $this->forward($this->tts->voices(
+            $request->input('search'),
+            (int) $request->input('page', 1),
+            (int) $request->input('page_size', 24)
+        ));
     }
 
     public function generate(Request $request)

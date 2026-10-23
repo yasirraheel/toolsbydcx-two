@@ -217,9 +217,11 @@
     const voicesUrl = @json(route('user.tts.voices'));
     const generateUrl = @json(route('user.tts.generate'));
     const taskUrlTemplate = @json(route('user.tts.task', ['task' => '__TASK__']));
-    const PAGE_SIZE = 9;
+    const PAGE_SIZE = 24;
     let library = [];
     let page = 1;
+    let totalVoices = 0;
+    let totalPages = 1;
     let searchTimer;
     let previewAudio = null;
     let activePreviewButton = null;
@@ -283,18 +285,24 @@
     };
     const renderLibrary = () => {
         if (activePreviewButton && !document.body.contains(activePreviewButton)) stopPreview();
-        const items = filteredVoices(); const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE)); page = Math.min(page, pages); const start = (page - 1) * PAGE_SIZE;
-        countLabel.textContent = items.length.toLocaleString(); pageLabel.textContent = items.length ? '@lang('Page') ' + page + ' @lang('of') ' + pages : '';
-        grid.innerHTML = items.length ? items.slice(start, start + PAGE_SIZE).map(cardFor).join('') : '<div class="tts-library__empty"><i class="las la-search me-1"></i>@lang('No voices match these filters.')</div>';
-        pagination.innerHTML = pages > 1 ? Array.from({ length: pages }, (_, index) => '<button type="button" class="tts-page ' + (index + 1 === page ? 'is-active' : '') + '" data-page="' + (index + 1) + '">' + (index + 1) + '</button>').join('') : '';
+        const items = filteredVoices();
+        countLabel.textContent = (totalVoices || items.length).toLocaleString();
+        pageLabel.textContent = totalVoices ? '@lang('Page') ' + page + ' @lang('of') ' + totalPages : '';
+        grid.innerHTML = items.length ? items.map(cardFor).join('') : '<div class="tts-library__empty"><i class="las la-search me-1"></i>@lang('No voices match these filters.')<\/div>';
+        pagination.innerHTML = totalPages > 1 ? '<button type="button" class="tts-page" data-page="' + Math.max(1, page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + '><i class="las la-arrow-left"></i> @lang('Prev')</button><span class="tts-page is-active">' + page + ' / ' + totalPages + '</span><button type="button" class="tts-page" data-page="' + Math.min(totalPages, page + 1) + '" ' + (page >= totalPages ? 'disabled' : '') + '>@lang('Next') <i class="las la-arrow-right"></i></button>' : '';
     };
 
-    const loadVoices = async (query = '') => {
+    const loadVoices = async (query = '', requestedPage = 1) => {
         setStatus('@lang('Loading voice library...')');
         try {
-            const params = new URLSearchParams(); if (query) params.set('search', query);
+            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(PAGE_SIZE) }); if (query) params.set('search', query);
             const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
-            library = extractVoices(response.payload).filter((item) => idOf(item)); page = 1; addFilterOptions(); renderLibrary();
+            library = extractVoices(response.payload).filter((item) => idOf(item));
+            page = Number(response.payload?.page || requestedPage || 1);
+            const pageSize = Number(response.payload?.page_size || PAGE_SIZE);
+            totalVoices = Number(response.payload?.total || library.length);
+            totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
+            addFilterOptions(); renderLibrary();
             if (!voice.value && defaultVoiceId) { const selected = library.find((item) => idOf(item) === defaultVoiceId); if (selected) selectVoice(defaultVoiceId, nameOf(selected)); }
             setStatus(library.length ? '' : '@lang('No voices were returned.')');
         } catch (error) { library = []; renderLibrary(); setStatus(error.message, true); }
@@ -302,7 +310,7 @@
 
     const selectVoice = (id, name) => { voice.value = id; selectedVoice.innerHTML = '<i class="las la-microphone"></i><span>' + escapeHtml(name) + '</span>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
     grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName); if (preview) playPreview(preview); });
-    pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button) { page = Number(button.dataset.page); renderLibrary(); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+    pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; renderLibrary(); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });
     reset.addEventListener('click', () => { searchInput.value = ''; Object.values(filters).forEach((select) => { select.value = ''; }); page = 1; loadVoices(); });
@@ -335,7 +343,7 @@
         text.value = ''; count.textContent = '0'; setStatus('@lang('Generating audio...')'); generate.disabled = false;
         (async () => { try { const response = await jsonRequest(generateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ text: submittedText, voice_id: selectedId }) }); let source = ''; if (!response.contentType.includes('json')) source = URL.createObjectURL(await response.response.blob()); else { const audioUrl = findAudioUrl(response.payload); const taskId = findTaskId(response.payload); if (audioUrl) source = audioUrl; else if (taskId) source = await waitForTask(taskId); else throw new Error('@lang('Audio could not be generated.')'); } addAudioPlayer(source); setStatus('@lang('Audio ready.')'); } catch (error) { setStatus(error.message, true); } })();
     });
-    loadVoices();
+    loadVoices('', 1);
 }());
 </script>
 @endpush
