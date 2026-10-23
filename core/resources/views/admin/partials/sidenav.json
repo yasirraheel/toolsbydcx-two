@@ -60,6 +60,13 @@
             }
         ]
     },
+    "text_to_speech": {
+        "keyword": ["Text to speech", "TTS", "Voice generation", "OpenRadio"],
+        "title": "Text to Speech",
+        "icon": "las la-microphone",
+        "route_name": "admin.tts.index",
+        "menu_active": "admin.tts*"
+    },
     "plans": {
         "keyword": ["Subscription plans","Plans","Pricing plans","Access plans"],
         "title": "Plans",

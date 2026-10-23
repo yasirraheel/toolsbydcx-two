@@ -97,6 +97,14 @@ Route::middleware('auth')->name('user.')->group(function () {
                  Route::post('/report', 'report')->name('report');
             });
 
+            // Server-side OpenRadio Text-to-Speech proxy
+            Route::controller('TextToSpeechController')->prefix('tts')->name('tts.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/voices', 'voices')->middleware('throttle:30,1')->name('voices');
+                Route::post('/generate', 'generate')->middleware('throttle:20,1')->name('generate');
+                Route::get('/task/{task}', 'task')->middleware('throttle:60,1')->name('task');
+            });
+
             //Profile setting
             Route::controller('ProfileController')->group(function(){
                 Route::get('general-profile', 'generalProfile')->name('general.profile');

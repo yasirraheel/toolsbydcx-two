@@ -12,6 +12,11 @@
         <span>@lang('Chat History')</span>
     </a>
 
+    <a href="{{ route('user.tts.index') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.tts*') }}">
+        <i class="las la-microphone fs-5"></i>
+        <span>@lang('Text to Speech')</span>
+    </a>
+
     {{-- Subscription Plans --}}
     <a href="{{ route('plans') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('plans*') }}">
         <i class="las la-crown fs-5"></i>

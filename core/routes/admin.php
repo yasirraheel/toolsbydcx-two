@@ -440,4 +440,10 @@ Route::middleware('admin')->group(function () {
         Route::get('/pairings', 'pairings')->name('pairings');
         Route::get('/login-attempts', 'loginAttempts')->name('login-attempts');
     });
+
+    // OpenRadio Text-to-Speech settings
+    Route::controller('TextToSpeechController')->prefix('tts')->name('tts.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/update', 'update')->name('update');
+    });
 });

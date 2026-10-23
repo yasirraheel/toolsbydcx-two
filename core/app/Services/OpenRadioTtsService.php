@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\TtsSetting;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+
+class OpenRadioTtsService
+{
+    private const BASE_URL = 'https://openradio.io/api/v1';
+
+    public function setting(): ?TtsSetting
+    {
+        return TtsSetting::query()->first();
+    }
+
+    public function configured(): bool
+    {
+        $setting = $this->setting();
+
+        return $setting
+            && $setting->enabled
+            && $setting->hasApiKey();
+    }
+
+    public function voices(?string $search = null): Response
+    {
+        $query = ['provider' => 'elevenlabs'];
+        if (filled($search)) {
+            $query['search'] = $search;
+        }
+
+        return $this->client()->get($this->url('voices'), $query);
+    }
+
+    public function synthesize(string $text, string $voiceId): Response
+    {
+        return $this->client()->post($this->url('tts'), [
+            'text' => $text,
+            'voice_id' => $voiceId,
+        ]);
+    }
+
+    public function task(string $taskId): Response
+    {
+        return $this->client()->get($this->url('tasks/' . rawurlencode($taskId)));
+    }
+
+    private function client()
+    {
+        $setting = $this->setting();
+        $apiKey = $setting?->decryptedApiKey();
+
+        return Http::withToken((string) $apiKey)
+            ->acceptJson()
+            ->asJson()
+            ->timeout(45)
+            ->connectTimeout(10);
+    }
+
+    private function url(string $path): string
+    {
+        return self::BASE_URL . '/' . ltrim($path, '/');
+    }
+}
