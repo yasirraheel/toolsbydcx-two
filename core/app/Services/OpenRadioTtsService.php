@@ -24,13 +24,15 @@ class OpenRadioTtsService
             && $setting->hasApiKey();
     }
 
-    public function voices(?string $search = null, int $page = 1, int $pageSize = 24, array $filters = []): Response
+    public function voices(?string $search = null, int $page = 1, int $pageSize = 24, array $filters = [], ?string $provider = 'elevenlabs'): Response
     {
         $query = [
-            'provider' => 'elevenlabs',
             'page' => max(1, $page),
             'page_size' => max(1, min(100, $pageSize)),
         ];
+        if (filled($provider) && strtolower($provider) !== 'all') {
+            $query['provider'] = $provider;
+        }
         if (filled($search)) {
             $query['search'] = $search;
         }

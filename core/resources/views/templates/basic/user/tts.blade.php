@@ -148,6 +148,64 @@
     @media (max-width: 575px) { .dcx-tts .tts-audio-player { grid-template-columns: auto minmax(0, 1fr) auto; } .dcx-tts .tts-player-download { display: none; } }
     @media (max-width: 1199px) { .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 3; } }
     @media (max-width: 767px) { .dcx-tts .tts-panel__header { align-items: flex-start; flex-direction: column; } .dcx-tts .tts-library, .dcx-tts .tts-composer__body { padding: 1rem; } .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 2; } .dcx-tts .tts-library__grid { grid-template-columns: 1fr; } }
+
+    /* Voice Library reference layout */
+    .dcx-tts { color: #475569; }
+    .dcx-tts .tts-panel { border-color: #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, .04); }
+    .dcx-tts .tts-panel__header { padding: 2rem 2.25rem 1.5rem; border-bottom-color: #e2e8f0; background: #fff; }
+    .dcx-tts .tts-heading { gap: .9rem; }
+    .dcx-tts .tts-heading__icon { width: 3.25rem; height: 3.25rem; border-radius: 14px; color: #fff; background: #ff7900; font-size: 1.55rem; }
+    .dcx-tts .tts-panel h4 { color: #0f172a; font-size: 1.65rem; letter-spacing: -.02em; }
+    .dcx-tts .tts-panel__header p { color: #64748b; font-size: .95rem; }
+    .dcx-tts .tts-status-chip { border-color: #22c55e; color: #16a34a; background: #f0fdf4; font-size: .78rem; }
+    .dcx-tts .tts-library { padding: 1.45rem 2.25rem 2rem; }
+    .dcx-tts .tts-provider-tabs { display: flex; align-items: center; gap: .2rem; max-width: 100%; margin-bottom: 1.5rem; padding: .25rem; overflow-x: auto; border: 1px solid #dbe4ef; border-radius: 999px; background: #f1f5f9; scrollbar-width: none; }
+    .dcx-tts .tts-provider-tabs::-webkit-scrollbar { display: none; }
+    .dcx-tts .tts-provider-tab { display: inline-flex; align-items: center; gap: .42rem; flex: 0 0 auto; min-height: 36px; padding: .45rem .9rem; border: 0; border-radius: 999px; color: #334155; background: transparent; font-size: .82rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+    .dcx-tts .tts-provider-tab i { color: #64748b; font-size: .9rem; }
+    .dcx-tts .tts-provider-tab span { padding: .12rem .38rem; border-radius: 999px; color: #f97316; background: #ffedd5; font-size: .7rem; }
+    .dcx-tts .tts-provider-tab:hover { color: #ea580c; background: #fff7ed; }
+    .dcx-tts .tts-provider-tab.is-active { color: #fff; background: #ff7900; box-shadow: 0 4px 10px rgba(255, 121, 0, .2); }
+    .dcx-tts .tts-provider-tab.is-active i, .dcx-tts .tts-provider-tab.is-active span { color: #fff; background: transparent; }
+    .dcx-tts .tts-library__toolbar { grid-template-columns: minmax(250px, 1.5fr) repeat(5, minmax(130px, 1fr)) 50px; gap: .75rem; padding: .85rem; border-color: #dbe4ef; border-radius: 16px; background: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, .04); }
+    .dcx-tts .tts-filter-field { min-width: 0; }
+    .dcx-tts .tts-filter-field label { display: block; margin: 0 0 .4rem .2rem; color: #64748b; font-size: .67rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .dcx-tts .tts-search-wrap > div { position: relative; }
+    .dcx-tts .tts-search-wrap i { top: .76rem; left: .85rem; color: #f97316; }
+    .dcx-tts .tts-library input, .dcx-tts .tts-library select, .dcx-tts .tts-composer textarea { min-height: 49px; border-color: #dbe4ef !important; border-radius: 14px !important; color: #0f172a !important; background: #f8fafc !important; font-size: .9rem; }
+    .dcx-tts .tts-search-wrap input { padding-left: 2.45rem; }
+    .dcx-tts .tts-library input::placeholder { color: #94a3b8; }
+    .dcx-tts .tts-library input:focus, .dcx-tts .tts-library select:focus, .dcx-tts .tts-composer textarea:focus { border-color: #fb923c !important; box-shadow: 0 0 0 .18rem rgba(251, 146, 60, .16) !important; }
+    .dcx-tts .tts-reset { align-self: end; min-height: 49px; border-color: #fed7aa; border-radius: 14px; color: #f97316; background: #fff7ed; }
+    .dcx-tts .tts-reset:hover { color: #ea580c; background: #ffedd5; }
+    .dcx-tts .tts-library__summary { margin: 1.5rem 0 .9rem; color: #64748b; font-size: .9rem; }
+    .dcx-tts .tts-library__summary strong { color: #f97316; font-size: 1rem; }
+    .dcx-tts .tts-library__grid { gap: 1rem; }
+    .dcx-tts .tts-voice-card { min-height: 250px; padding: 1.15rem; border-color: #e2e8f0; border-radius: 18px; background: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, .035); }
+    .dcx-tts .tts-voice-card:hover { border-color: #fdba74; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15, 23, 42, .08); }
+    .dcx-tts .tts-voice-avatar { width: 3rem; height: 3rem; border-radius: 13px; color: #fff; background: #ff7900; font-size: 1.05rem; }
+    .dcx-tts .tts-voice-card h5 { color: #0f172a; font-size: 1rem; }
+    .dcx-tts .tts-voice-card__meta { color: #f97316; font-size: .78rem; }
+    .dcx-tts .tts-voice-card__description { min-height: 3.3rem; margin: .9rem 0; color: #64748b; font-size: .82rem; line-height: 1.5; }
+    .dcx-tts .tts-tags { gap: .4rem; }
+    .dcx-tts .tts-tag { padding: .3rem .58rem; border-color: #dbe4ef; color: #475569; background: #f8fafc; font-size: .7rem; }
+    .dcx-tts .tts-tag:first-child { border-color: #fed7aa; color: #ea580c; background: #fff7ed; }
+    .dcx-tts .tts-voice-card__actions { gap: .55rem; margin-top: 1rem; padding-top: .8rem; border-top-color: #edf2f7; }
+    .dcx-tts .tts-voice-action { min-height: 34px; border-radius: 999px; font-size: .75rem; }
+    .dcx-tts .tts-icon-action { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; color: #64748b; background: transparent; font-size: 1rem; cursor: pointer; }
+    .dcx-tts .tts-icon-action:hover, .dcx-tts .tts-icon-action.is-favorite { color: #f97316; background: #fff7ed; }
+    .dcx-tts .tts-voice-action--use { padding-inline: .9rem; border-color: #ff7900; color: #fff; background: #ff7900; }
+    .dcx-tts .tts-voice-action--use:hover { background: #ea580c; }
+    .dcx-tts .tts-voice-action--preview { padding-inline: .75rem; border-color: #fed7aa; color: #f97316; background: #fff; }
+    .dcx-tts .tts-voice-action--preview:hover { background: #fff7ed; }
+    .dcx-tts .tts-library__empty { border-color: #dbe4ef; color: #64748b; }
+    .dcx-tts .tts-pagination { margin-top: 1.5rem; padding-top: 1.25rem; border-top-color: #e2e8f0; }
+    .dcx-tts .tts-page { border-color: #dbe4ef; border-radius: 10px; color: #475569; background: #fff; }
+    .dcx-tts .tts-page:hover:not(:disabled) { color: #ea580c; border-color: #fdba74; background: #fff7ed; }
+    .dcx-tts .tts-page__label { color: #0f172a; }
+    @media (max-width: 1400px) { .dcx-tts .tts-library__toolbar { grid-template-columns: minmax(230px, 1.4fr) repeat(5, minmax(115px, 1fr)) 48px; } }
+    @media (max-width: 1199px) { .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 3; } }
+    @media (max-width: 767px) { .dcx-tts .tts-panel__header { padding: 1.35rem 1rem; } .dcx-tts .tts-panel h4 { font-size: 1.35rem; } .dcx-tts .tts-library { padding: 1rem; } .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 2; } }
 </style>
 @endpush
 
@@ -167,14 +225,23 @@
                 <span class="tts-status-chip"><i class="las la-check-circle"></i>@lang('Ready')</span>
             </div>
             <div class="tts-library">
+                <div class="tts-provider-tabs" role="tablist" aria-label="@lang('Voice providers')">
+                    <button type="button" class="tts-provider-tab" data-provider="favorites"><i class="las la-heart"></i>@lang('Favorites')</button>
+                    <button type="button" class="tts-provider-tab" data-provider="cloned"><i class="las la-wave-square"></i>@lang('Cloned voices')</button>
+                    <button type="button" class="tts-provider-tab is-active" data-provider="elevenlabs"><i class="las la-pause-circle"></i>@lang('ElevenLabs') <span>20.0k</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="fire_tts"><i class="las la-fire"></i>@lang('Fire TTS') <span>481</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="edge_tts"><i class="lab la-microsoft"></i>@lang('Edge TTS') <span>322</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="fish_audio"><i class="las la-fish"></i>@lang('Fish Audio') <span>50</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="all"><i class="las la-list"></i>@lang('All voices')</button>
+                </div>
                 <div class="tts-library__toolbar">
-                    <div class="tts-search-wrap"><i class="las la-search"></i><input type="search" id="tts-library-search" class="form-control" placeholder="@lang('Search by voice name, accent, or language...')" autocomplete="off"></div>
-                    <select id="tts-filter-language" class="form-control"><option value="">@lang('All languages')</option></select>
-                    <select id="tts-filter-accent" class="form-control"><option value="">@lang('All accents')</option></select>
-                    <select id="tts-filter-gender" class="form-control"><option value="">@lang('All genders')</option></select>
-                    <select id="tts-filter-age" class="form-control"><option value="">@lang('All ages')</option></select>
-                    <select id="tts-filter-category" class="form-control"><option value="">@lang('All categories')</option></select>
-                    <button type="button" id="tts-library-reset" class="tts-reset" title="@lang('Reset filters')"><i class="las la-redo"></i></button>
+                    <div class="tts-filter-field tts-search-wrap"><label for="tts-library-search">@lang('Search')</label><div><i class="las la-search"></i><input type="search" id="tts-library-search" class="form-control" placeholder="@lang('Search by voice name, accent, or language...')" autocomplete="off"></div></div>
+                    <div class="tts-filter-field"><label for="tts-filter-language">@lang('Language')</label><select id="tts-filter-language" class="form-control"><option value="">@lang('All languages')</option></select></div>
+                    <div class="tts-filter-field"><label for="tts-filter-accent">@lang('Accent')</label><select id="tts-filter-accent" class="form-control"><option value="">@lang('All accents')</option></select></div>
+                    <div class="tts-filter-field"><label for="tts-filter-gender">@lang('Gender')</label><select id="tts-filter-gender" class="form-control"><option value="">@lang('All genders')</option></select></div>
+                    <div class="tts-filter-field"><label for="tts-filter-age">@lang('Age')</label><select id="tts-filter-age" class="form-control"><option value="">@lang('All ages')</option></select></div>
+                    <div class="tts-filter-field"><label for="tts-filter-category">@lang('Category')</label><select id="tts-filter-category" class="form-control"><option value="">@lang('All categories')</option></select></div>
+                    <button type="button" id="tts-library-reset" class="tts-reset" title="@lang('Reset filters')" aria-label="@lang('Reset filters')"><i class="las la-redo"></i></button>
                 </div>
                 <div class="tts-library__summary"><span><strong id="tts-library-count">0</strong> @lang('voices available')</span><span id="tts-library-page-label"></span></div>
                 <div id="tts-library-grid" class="tts-library__grid"><div class="tts-library__empty"><i class="las la-spinner la-spin me-1"></i>@lang('Loading voice library...')</div></div>
@@ -220,6 +287,7 @@
     const pagination = document.getElementById('tts-pagination');
     const searchInput = document.getElementById('tts-library-search');
     const reset = document.getElementById('tts-library-reset');
+    const providerTabs = [...document.querySelectorAll('[data-provider]')];
     const filters = {
         language: document.getElementById('tts-filter-language'),
         accent: document.getElementById('tts-filter-accent'),
@@ -245,6 +313,9 @@
     let activePreviewButton = null;
     let activeGeneratedMedia = null;
     let serverFilteredKeys = new Set();
+    let activeProvider = 'elevenlabs';
+    const favoritesKey = 'toolsbydcx.tts.favorite-voices';
+    let favoriteVoiceIds = new Set((() => { try { const values = JSON.parse(localStorage.getItem(favoritesKey) || '[]'); return Array.isArray(values) ? values.map(String) : []; } catch (error) { return []; } })());
 
     const setStatus = (message, error) => { status.textContent = message || ''; status.style.color = error ? '#fca5a5' : '#a5b4fc'; };
     const savedVoice = (() => { try { const value = JSON.parse(localStorage.getItem(voiceStorageKey) || 'null'); return value && value.id ? value : null; } catch (error) { return null; } })();
@@ -307,9 +378,10 @@
 
     const cardFor = (item) => {
         const id = escapeHtml(idOf(item)); const name = escapeHtml(nameOf(item)); const preview = escapeHtml(previewOf(item));
-        const language = escapeHtml(item?.language_label || languageLabelOf(detailOf(item, 'language'))); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const category = escapeHtml(detailOf(item, 'category'));
-        const tags = [language, accent, gender].filter(Boolean).slice(0, 3).map((tag) => '<span class="tts-tag">' + tag + '</span>').join('');
-        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(nameOf(item))) + '</span><div><h5 title="' + name + '">' + name + '</h5><div class="tts-voice-card__meta">' + (category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play me-1"></i>@lang('Preview')</button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
+        const language = escapeHtml(item?.language_label || languageLabelOf(detailOf(item, 'language'))); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const age = escapeHtml(detailOf(item, 'age')); const category = escapeHtml(detailOf(item, 'category'));
+        const tags = [language, accent, gender, age].filter(Boolean).slice(0, 4).map((tag) => '<span class="tts-tag">' + tag + '</span>').join('');
+        const favorite = favoriteVoiceIds.has(String(idOf(item)));
+        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(nameOf(item))) + '</span><div><h5 title="' + name + '">' + name + '</h5><div class="tts-voice-card__meta">' + (category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-icon-action ' + (favorite ? 'is-favorite' : '') + '" data-favorite-id="' + id + '" aria-label="@lang('Favorite voice')" aria-pressed="' + (favorite ? 'true' : 'false') + '"><i class="las la-heart"></i></button><button type="button" class="tts-icon-action" data-copy-id="' + id + '" data-copy-name="' + name + '" aria-label="@lang('Copy voice ID')"><i class="las la-copy"></i></button><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play"></i><span class="visually-hidden">@lang('Preview')</span></button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
     };
 
     const resetPreviewButton = (button) => { if (button) button.innerHTML = '<i class="las la-play me-1"></i>@lang('Preview')'; };
@@ -329,7 +401,7 @@
     };
     const renderLibrary = () => {
         if (activePreviewButton && !document.body.contains(activePreviewButton)) stopPreview();
-        const items = filteredVoices();
+        const items = activeProvider === 'favorites' ? filteredVoices().filter((item) => favoriteVoiceIds.has(String(idOf(item)))) : filteredVoices();
         const hasFilters = Object.values(filters).some((select) => select.value);
         countLabel.textContent = (hasFilters ? items.length : (totalVoices || items.length)).toLocaleString();
         pageLabel.textContent = totalVoices ? '@lang('Page') ' + page + ' @lang('of') ' + totalPages : '';
@@ -339,8 +411,11 @@
 
     const loadFilterOptions = async () => {
         try {
+            const provider = ['favorites', 'cloned'].includes(activeProvider) ? 'elevenlabs' : activeProvider;
             const params = new URLSearchParams({ page: '1', page_size: '100' });
-            const urduParams = new URLSearchParams({ provider: 'elevenlabs', language: 'ur', page: '1', page_size: '1' });
+            if (provider) params.set('provider', provider);
+            const urduParams = new URLSearchParams({ language: 'ur', page: '1', page_size: '1' });
+            if (provider) urduParams.set('provider', provider);
             const responses = await Promise.allSettled([
                 jsonRequest(voicesUrl + '?' + params.toString()),
                 jsonRequest(voicesUrl + '?' + urduParams.toString())
@@ -355,7 +430,10 @@
         try {
             const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
             const activeParams = activeFilterParams();
-            const params = new URLSearchParams({ page: String(requestedPage), page_size: String(requestSize), ...activeParams }); if (query) params.set('search', query);
+            const providerForRequest = ['favorites', 'cloned'].includes(activeProvider) ? 'elevenlabs' : activeProvider;
+            const requestParams = { page: String(requestedPage), page_size: String(requestSize), ...activeParams };
+            if (providerForRequest) requestParams.provider = providerForRequest;
+            const params = new URLSearchParams(requestParams); if (query) params.set('search', query);
             const response = await jsonRequest(voicesUrl + (params.toString() ? '?' + params.toString() : ''));
             serverFilteredKeys = new Set(Object.keys(activeParams).filter((key) => ['language', 'gender'].includes(key)));
             library = extractVoices(response.payload).filter((item) => idOf(item));
@@ -380,7 +458,18 @@
     };
 
     const selectVoice = (id, name, item = null, persist = true) => { stopPreview(); lastSelectedVoice = { id: String(id), name: String(name), item: item || lastSelectedVoice?.item || null, filters: persist ? activeFilterParams() : (lastSelectedVoice?.filters || {}) }; if (persist) { try { localStorage.setItem(voiceStorageKey, JSON.stringify(lastSelectedVoice)); } catch (error) {} } voice.value = id; selectedVoice.innerHTML = '<span class="tts-selected-voice__icon"><i class="las la-microphone"></i></span><span class="tts-selected-voice__copy"><strong>' + escapeHtml(name) + '</strong><small>@lang('Ready to generate with this voice')</small></span><i class="las la-check-circle tts-selected-voice__check"></i>'; selectedVoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
-    grid.addEventListener('click', (event) => { const use = event.target.closest('[data-voice-id]'); const preview = event.target.closest('[data-preview]'); if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName, library.find((item) => idOf(item) === use.dataset.voiceId) || null); if (preview) playPreview(preview); });
+    const persistFavorites = () => { try { localStorage.setItem(favoritesKey, JSON.stringify([...favoriteVoiceIds])); } catch (error) {} };
+    grid.addEventListener('click', (event) => {
+        const favorite = event.target.closest('[data-favorite-id]');
+        const copy = event.target.closest('[data-copy-id]');
+        const use = event.target.closest('[data-voice-id]');
+        const preview = event.target.closest('[data-preview]');
+        if (favorite) { const id = String(favorite.dataset.favoriteId); favoriteVoiceIds.has(id) ? favoriteVoiceIds.delete(id) : favoriteVoiceIds.add(id); persistFavorites(); renderLibrary(); return; }
+        if (copy) { navigator.clipboard?.writeText(copy.dataset.copyId || '').catch(() => {}); return; }
+        if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName, library.find((item) => idOf(item) === use.dataset.voiceId) || null);
+        if (preview) playPreview(preview);
+    });
+    providerTabs.forEach((tab) => tab.addEventListener('click', () => { activeProvider = tab.dataset.provider || 'elevenlabs'; providerTabs.forEach((item) => item.classList.toggle('is-active', item === tab)); page = 1; loadFilterOptions(); loadVoices(searchInput.value.trim(), 1); }));
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });

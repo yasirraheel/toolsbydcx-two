@@ -41,6 +41,7 @@ class TextToSpeechController extends Controller
             'search' => ['nullable', 'string', 'max:80'],
             'page' => ['nullable', 'integer', 'min:1', 'max:2000'],
             'page_size' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'provider' => ['nullable', 'string', 'max:40'],
             'language' => ['nullable', 'string', 'max:80'],
             'accent' => ['nullable', 'string', 'max:80'],
             'gender' => ['nullable', 'string', 'max:40'],
@@ -52,7 +53,8 @@ class TextToSpeechController extends Controller
             $request->input('search'),
             (int) $request->input('page', 1),
             (int) $request->input('page_size', 24),
-            $request->only(['language', 'accent', 'gender', 'age', 'category'])
+            $request->only(['language', 'accent', 'gender', 'age', 'category']),
+            $request->input('provider', 'elevenlabs')
         ));
     }
 
