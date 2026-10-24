@@ -228,10 +228,10 @@
                 <div class="tts-provider-tabs" role="tablist" aria-label="@lang('Voice providers')">
                     <button type="button" class="tts-provider-tab" data-provider="favorites"><i class="las la-heart"></i>@lang('Favorites')</button>
                     <button type="button" class="tts-provider-tab" data-provider="cloned"><i class="las la-wave-square"></i>@lang('Cloned voices')</button>
-                    <button type="button" class="tts-provider-tab is-active" data-provider="elevenlabs"><i class="las la-pause-circle"></i>@lang('ElevenLabs') <span>20.0k</span></button>
-                    <button type="button" class="tts-provider-tab" data-provider="fire_tts"><i class="las la-fire"></i>@lang('Fire TTS') <span>481</span></button>
-                    <button type="button" class="tts-provider-tab" data-provider="edge_tts"><i class="lab la-microsoft"></i>@lang('Edge TTS') <span>322</span></button>
-                    <button type="button" class="tts-provider-tab" data-provider="fish_audio"><i class="las la-fish"></i>@lang('Fish Audio') <span>50</span></button>
+                    <button type="button" class="tts-provider-tab is-active" data-provider="elevenlabs"><i class="las la-pause-circle"></i>@lang('ElevenLabs') <span data-provider-count="elevenlabs">—</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="fire_tts"><i class="las la-fire"></i>@lang('Fire TTS') <span data-provider-count="fire_tts">—</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="edge_tts"><i class="lab la-microsoft"></i>@lang('Edge TTS') <span data-provider-count="edge_tts">—</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="fish_audio"><i class="las la-fish"></i>@lang('Fish Audio') <span data-provider-count="fish_audio">—</span></button>
                     <button type="button" class="tts-provider-tab" data-provider="all"><i class="las la-list"></i>@lang('All voices')</button>
                 </div>
                 <div class="tts-library__toolbar">
@@ -288,6 +288,7 @@
     const searchInput = document.getElementById('tts-library-search');
     const reset = document.getElementById('tts-library-reset');
     const providerTabs = [...document.querySelectorAll('[data-provider]')];
+    const providerCounts = Object.fromEntries([...document.querySelectorAll('[data-provider-count]')].map((element) => [element.dataset.providerCount, element]));
     const filters = {
         language: document.getElementById('tts-filter-language'),
         accent: document.getElementById('tts-filter-accent'),
@@ -371,6 +372,7 @@
     };
     const filteredVoices = () => library.filter((item) => Object.entries(filters).every(([key, select]) => !select.value || serverFilteredKeys.has(key) || valuesOf(item, key).includes(select.value.toLowerCase())));
     const activeFilterParams = () => Object.fromEntries(Object.entries(filters).filter(([, select]) => select.value).map(([key, select]) => [key, select.value]));
+    const updateProviderCount = (provider, total) => { if (providerCounts[provider]) providerCounts[provider].textContent = Number(total || 0).toLocaleString(); };
     const selectedVoiceMatchesFilters = (item) => Object.entries(activeFilterParams()).every(([key, value]) => {
         const values = valuesOf(item, key);
         return serverFilteredKeys.has(key) ? (values.includes(String(value).toLowerCase()) || lastSelectedVoice?.filters?.[key] === value) : (values.length ? values.includes(String(value).toLowerCase()) : lastSelectedVoice?.filters?.[key] === value);
@@ -443,6 +445,7 @@
             page = Number(response.payload?.page || requestedPage || 1);
             const pageSize = Number(response.payload?.page_size || PAGE_SIZE);
             totalVoices = Number(response.payload?.total || library.length);
+            updateProviderCount(activeProvider === 'favorites' ? 'elevenlabs' : activeProvider, totalVoices);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
             renderLibrary();
             if (!restoredSavedVoice) {
