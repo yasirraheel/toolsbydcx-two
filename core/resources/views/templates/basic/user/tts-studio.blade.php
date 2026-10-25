@@ -76,9 +76,9 @@
     .studio-voice-picker__copy small { overflow:hidden; color:var(--muted); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
     .studio-voice-picker > i { color:#fdba74; font-size:14px; }
     .studio-voice-modal[hidden] { display:none; }
-    .studio-voice-modal { position:fixed; inset:0; z-index:1080; display:grid; place-items:center; padding:24px; }
+    .studio-voice-modal { --orange-soft:rgba(249,115,22,.12); position:fixed; inset:0; z-index:1080; display:grid; place-items:center; padding:16px; color:#e2e8f0; font-family:'Poppins',sans-serif; }
     .studio-voice-modal__backdrop { position:absolute; inset:0; border:0; background:rgba(2,6,23,.76); cursor:default; }
-    .studio-voice-modal__dialog { position:relative; z-index:1; display:flex; width:min(1210px,100%); max-height:calc(100vh - 48px); flex-direction:column; overflow:hidden; border:1px solid rgba(148,163,184,.22); border-radius:16px; color:#e2e8f0; background:#111827; box-shadow:0 28px 80px rgba(0,0,0,.55); }
+    .studio-voice-modal__dialog { position:relative; z-index:1; display:flex; width:min(1210px,100%); height:min(860px,calc(100vh - 32px)); max-height:calc(100vh - 32px); flex-direction:column; overflow:hidden; border:1px solid rgba(148,163,184,.22); border-radius:16px; color:#e2e8f0; background:#111827; box-shadow:0 28px 80px rgba(0,0,0,.55); }
     .studio-modal__header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:19px 22px; border-bottom:1px solid rgba(148,163,184,.15); background:#111827; }
     .studio-modal__heading { display:flex; min-width:0; align-items:center; gap:12px; }
     .studio-modal__heading-icon { display:grid; width:42px; height:42px; flex:0 0 auto; place-items:center; border-radius:13px; color:#fff; background:#ff7900; font-size:19px; }
@@ -107,7 +107,7 @@
     .studio-modal__state { display:flex; min-height:180px; align-items:center; justify-content:center; color:#94a3b8; font-size:12px; text-align:center; }
     .studio-modal__grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; }
     /* Exact Voice Library card dimensions and typography, reused inside the picker. */
-    .studio-modal-card { display:flex; min-height:250px; flex-direction:column; padding:1.15rem; border:1px solid rgba(148,163,184,.18); border-radius:18px; background:#172033; box-shadow:0 4px 14px rgba(2,6,23,.2); transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease; }
+    .studio-modal-card { display:flex; height:230px; min-height:230px; max-height:230px; flex-direction:column; overflow:hidden; padding:1.15rem; border:1px solid rgba(148,163,184,.18); border-radius:18px; background:#172033; box-shadow:0 4px 14px rgba(2,6,23,.2); transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease; }
     .studio-modal-card.is-selected { border-color:rgba(255,121,0,.78); box-shadow:0 0 0 1px rgba(255,121,0,.15),0 10px 20px rgba(2,6,23,.22); }
     .studio-modal-card:hover { border-color:rgba(255,121,0,.75); transform:translateY(-2px); box-shadow:0 12px 24px rgba(2,6,23,.3); }
     .studio-modal-card__top { display:flex; min-width:0; align-items:flex-start; gap:.75rem; }
@@ -117,7 +117,7 @@
     .studio-modal-card__name { display:inline-block; min-width:0; overflow:hidden; color:#f8fafc; font-size:1rem; font-weight:700; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
     .studio-modal-card__badge { display:inline-flex; align-items:center; gap:.2rem; padding:.2rem .52rem; border:1px solid rgba(255,121,0,.45); border-radius:999px; color:#fdba74; background:rgba(249,115,22,.1); font-size:.68rem; font-weight:600; white-space:nowrap; }
     .studio-modal-card__sub { margin-top:.16rem; overflow:hidden; color:#fb923c; font-size:.78rem; text-overflow:ellipsis; white-space:nowrap; }
-    .studio-modal-card__description { display:-webkit-box; min-height:3.3rem; overflow:hidden; margin:.9rem 0; color:#aebbd0; font-size:.82rem; line-height:1.5; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+    .studio-modal-card__description { display:-webkit-box; height:3.3rem; min-height:3.3rem; max-height:3.3rem; overflow:hidden; margin:.9rem 0; color:#aebbd0; font-size:.82rem; line-height:1.5; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
     .studio-modal-card__tags { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:auto; }
     .studio-modal-card__tag { padding:.3rem .58rem; border:1px solid rgba(148,163,184,.24); border-radius:999px; color:#cbd5e1; background:#1e293b; font-size:.7rem; }
     .studio-modal-card__tag:first-child { border-color:rgba(255,121,0,.45); color:#fdba74; background:rgba(249,115,22,.1); }
