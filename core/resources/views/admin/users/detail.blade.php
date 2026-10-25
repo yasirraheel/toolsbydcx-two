@@ -68,9 +68,9 @@
                         @csrf
                         <input type="hidden" name="account_ids_submitted" value="1">
 
-                        <div class="row g-3">
+                        <div class="row g-3 user-edit-grid">
                             {{-- Full Name --}}
-                            <div class="col-xl-4 col-md-6 col-12">
+                            <div class="col-xl-4 col-md-4 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2 required">
                                         <i class="las la-user text--primary"></i> @lang('Full Name')
@@ -80,7 +80,7 @@
                             </div>
 
                             {{-- Email Address --}}
-                            <div class="col-xl-4 col-md-6 col-12">
+                            <div class="col-xl-4 col-md-4 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2 required">
                                         <i class="las la-envelope text--primary"></i> @lang('Email Address')
@@ -93,7 +93,7 @@
                             </div>
 
                             {{-- Password (Reset / Update) --}}
-                            <div class="col-xl-4 col-md-12 col-12">
+                            <div class="col-xl-4 col-md-4 col-12">
                                 <div class="form-group mb-0">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <label class="fw-bold mb-0">
@@ -116,7 +116,7 @@
                             </div>
 
                             {{-- Assign Available Accounts --}}
-                            <div class="col-lg-6 col-12">
+                            <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
@@ -184,7 +184,7 @@
 
                             {{-- Account Validity & Expiration Date --}}
                             <div class="col-12">
-                                <div class="p-3 rounded" style="border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65);">
+                                <div class="dcx-expiry-panel p-3 rounded">
                                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
                                         <div>
                                             <strong class="text-white">
@@ -206,7 +206,7 @@
 
                                     <input type="hidden" name="expires_at_submitted" value="1">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-md-6 col-12">
+                                        <div class="col-12">
                                             <div class="input-group">
                                                 <span class="input-group-text bg--dark border-secondary text-white"><i class="las la-calendar"></i></span>
                                                 <input type="datetime-local" class="form-control" name="expires_at" id="detailExpiresAtInput"
@@ -487,10 +487,19 @@
 
 @push('style')
 <style>
-    .dcx-tts-assignment { border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .user-edit-grid > [class*="col-"] { min-width: 0; }
+    .user-edit-grid .form-group { height: 100%; }
+    .user-edit-grid .form-control,
+    .user-edit-grid .select2-container--default .select2-selection--single,
+    .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 54px; border-radius: 10px; }
+    .user-edit-grid .select2-container--default .select2-selection--single { display: flex; align-items: center; }
+    .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 7px; }
+    .dcx-tts-assignment { min-height: 54px; border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
     .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
+    .dcx-expiry-panel { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
+    .dcx-expiry-panel #detailExpiresAtInput { min-height: 54px; }
 </style>
 @endpush
 
