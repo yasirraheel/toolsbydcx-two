@@ -116,7 +116,7 @@
                             </div>
 
                             {{-- Assign Available Accounts --}}
-                            <div class="col-lg-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
@@ -143,7 +143,7 @@
                             </div>
 
                             {{-- Assign Google Flow Account (Extension) --}}
-                            <div class="col-lg-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="google_flow_account_submitted" value="1">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
@@ -171,7 +171,7 @@
                             </div>
 
                             {{-- Assign Text-to-Speech access --}}
-                            <div class="col-lg-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
                                 <label class="dcx-tts-assignment d-flex align-items-start gap-2 p-3 rounded mb-0 h-100">
                                     <input type="checkbox" name="tts_access" value="1" class="mt-1" @checked(old('tts_access', $user->tts_access))>
