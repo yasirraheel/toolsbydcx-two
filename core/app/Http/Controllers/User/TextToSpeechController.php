@@ -49,13 +49,18 @@ class TextToSpeechController extends Controller
             'category' => ['nullable', 'string', 'max:80'],
         ]);
 
-        return $this->forwardVoices($this->tts->voices(
-            $request->input('search'),
-            (int) $request->input('page', 1),
-            (int) $request->input('page_size', 24),
-            $request->only(['language', 'accent', 'gender', 'age', 'category']),
-            $request->input('provider', 'elevenlabs')
-        ));
+        $search = $request->input('search');
+        $page = (int) $request->input('page', 1);
+        $pageSize = (int) $request->input('page_size', 24);
+        $filters = $request->only(['language', 'accent', 'gender', 'age', 'category']);
+        $provider = $request->input('provider', 'elevenlabs');
+
+        if (strtolower((string) $provider) === 'all') {
+            return response()->json($this->forwardVoicePayload($this->tts->allVoices($search, $page, $pageSize, $filters)))
+                ->header('Cache-Control', 'no-store');
+        }
+
+        return $this->forwardVoices($this->tts->voices($search, $page, $pageSize, $filters, $provider));
     }
 
     public function history(Request $request)
@@ -180,20 +185,29 @@ class TextToSpeechController extends Controller
             return $this->forward($upstream);
         }
 
-        $payload = $upstream->json();
+        $payload = $this->forwardVoicePayload($upstream->json());
         if (!is_array($payload) || !is_array($payload['data'] ?? null)) {
             return $this->forward($upstream);
         }
 
-        foreach ($payload['data'] as &$voice) {
+        return response()->json($payload, $upstream->status())
+            ->header('Cache-Control', 'no-store');
+    }
+
+    private function forwardVoicePayload(?array $payload): array
+    {
+        if (!is_array($payload)) {
+            return ['success' => false, 'message' => 'OpenRadio returned an invalid response.'];
+        }
+
+        foreach ($payload['data'] ?? [] as &$voice) {
             if (is_array($voice) && filled($voice['language'] ?? null)) {
                 $voice['language_label'] = $this->languageLabel((string) $voice['language']);
             }
         }
         unset($voice);
 
-        return response()->json($payload, $upstream->status())
-            ->header('Cache-Control', 'no-store');
+        return $payload;
     }
 
     private function languageLabel(string $language): string

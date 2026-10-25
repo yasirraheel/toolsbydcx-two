@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TtsSetting;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class OpenRadioTtsService
@@ -26,23 +27,77 @@ class OpenRadioTtsService
 
     public function voices(?string $search = null, int $page = 1, int $pageSize = 24, array $filters = [], ?string $provider = 'elevenlabs'): Response
     {
-        $query = [
-            'page' => max(1, $page),
-            'page_size' => max(1, min(100, $pageSize)),
-        ];
-        if (filled($provider) && strtolower($provider) !== 'all') {
-            $query['provider'] = $provider;
-        }
-        if (filled($search)) {
-            $query['search'] = $search;
-        }
-        foreach (['language', 'accent', 'gender', 'age', 'category'] as $filter) {
-            if (filled($filters[$filter] ?? null)) {
-                $query[$filter] = $filters[$filter];
+        return $this->client()->get($this->url('voices'), $this->voiceQuery($search, $page, $pageSize, $filters, $provider));
+    }
+
+    /**
+     * Combine the provider catalogs into the same all-voices feed used by OpenRadio's library.
+     * The upstream `provider=all` response currently falls back to ElevenLabs only.
+     */
+    public function allVoices(?string $search = null, int $page = 1, int $pageSize = 24, array $filters = []): array
+    {
+        $page = max(1, $page);
+        $pageSize = max(1, min(100, $pageSize));
+        $providers = ['elevenlabs', 'minimax', 'edge', 'fishaudio'];
+        $cacheKey = 'openradio.voice-counts.' . sha1(json_encode([
+            'search' => $search,
+            'filters' => $filters,
+        ]));
+        $counts = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($providers, $search, $filters) {
+            $result = [];
+            foreach ($providers as $provider) {
+                $response = $this->client()->get($this->url('voices'), $this->voiceQuery($search, 1, 1, $filters, $provider));
+                $result[$provider] = $response->successful() ? (int) ($response->json('total') ?? 0) : 0;
+            }
+
+            return $result;
+        });
+
+        $total = array_sum($counts);
+        $offset = ($page - 1) * $pageSize;
+        $items = [];
+
+        foreach ($providers as $provider) {
+            $providerTotal = (int) ($counts[$provider] ?? 0);
+            if ($offset >= $providerTotal) {
+                $offset -= $providerTotal;
+                continue;
+            }
+
+            $providerOffset = $offset;
+            $offset = 0;
+            while ($providerOffset < $providerTotal && count($items) < $pageSize) {
+                $providerPage = intdiv($providerOffset, $pageSize) + 1;
+                $skip = $providerOffset % $pageSize;
+                $response = $this->client()->get($this->url('voices'), $this->voiceQuery($search, $providerPage, $pageSize, $filters, $provider));
+                $rows = $response->successful() ? $response->json('data', []) : [];
+                $rows = is_array($rows) ? array_slice($rows, $skip) : [];
+                foreach ($rows as &$row) {
+                    if (is_array($row)) {
+                        $row['provider'] = $row['provider'] ?? $provider;
+                    }
+                }
+                unset($row);
+                $items = array_merge($items, $rows);
+                $nextOffset = $providerPage * $pageSize;
+                $providerOffset = $nextOffset > $providerOffset ? $nextOffset : $providerOffset + $pageSize;
+                if (!$rows) {
+                    break;
+                }
+            }
+
+            if (count($items) >= $pageSize) {
+                break;
             }
         }
 
-        return $this->client()->get($this->url('voices'), $query);
+        return [
+            'success' => true,
+            'data' => array_slice($items, 0, $pageSize),
+            'page' => $page,
+            'page_size' => $pageSize,
+            'total' => $total,
+        ];
     }
 
     public function synthesize(string $text, string $voiceId): Response
@@ -70,6 +125,27 @@ class OpenRadioTtsService
             ->withOptions(['allow_redirects' => false])
             ->timeout(45)
             ->connectTimeout(10);
+    }
+
+    private function voiceQuery(?string $search, int $page, int $pageSize, array $filters, ?string $provider): array
+    {
+        $query = [
+            'page' => max(1, $page),
+            'page_size' => max(1, min(100, $pageSize)),
+        ];
+        if (filled($provider) && strtolower($provider) !== 'all') {
+            $query['provider'] = $provider;
+        }
+        if (filled($search)) {
+            $query['search'] = $search;
+        }
+        foreach (['language', 'accent', 'gender', 'age', 'category'] as $filter) {
+            if (filled($filters[$filter] ?? null)) {
+                $query[$filter] = $filters[$filter];
+            }
+        }
+
+        return $query;
     }
 
     private function url(string $path): string

@@ -186,7 +186,7 @@
     .dcx-tts .tts-voice-avatar { width: 3rem; height: 3rem; border-radius: 13px; color: #fff; background: #ff7900; font-size: 1.05rem; }
     .dcx-tts .tts-voice-card h5 { color: #0f172a; font-size: 1rem; }
     .dcx-tts .tts-voice-card__meta { color: #f97316; font-size: .78rem; }
-    .dcx-tts .tts-voice-card__description { min-height: 3.3rem; margin: .9rem 0; color: #64748b; font-size: .82rem; line-height: 1.5; }
+    .dcx-tts .tts-voice-card__description { display: block; overflow: visible; min-height: 4rem; margin: .9rem 0; color: #64748b; font-size: .82rem; line-height: 1.5; -webkit-box-orient: initial; -webkit-line-clamp: unset; }
     .dcx-tts .tts-tags { gap: .4rem; }
     .dcx-tts .tts-tag { padding: .3rem .58rem; border-color: #dbe4ef; color: #475569; background: #f8fafc; font-size: .7rem; }
     .dcx-tts .tts-tag:first-child { border-color: #fed7aa; color: #ea580c; background: #fff7ed; }
@@ -228,11 +228,11 @@
                 <div class="tts-provider-tabs" role="tablist" aria-label="@lang('Voice providers')">
                     <button type="button" class="tts-provider-tab" data-provider="favorites"><i class="las la-heart"></i>@lang('Favorites')</button>
                     <button type="button" class="tts-provider-tab" data-provider="cloned"><i class="las la-wave-square"></i>@lang('Cloned voices')</button>
-                    <button type="button" class="tts-provider-tab is-active" data-provider="elevenlabs"><i class="las la-pause-circle"></i>@lang('ElevenLabs') <span data-provider-count="elevenlabs">—</span></button>
+                    <button type="button" class="tts-provider-tab" data-provider="elevenlabs"><i class="las la-pause-circle"></i>@lang('ElevenLabs') <span data-provider-count="elevenlabs">—</span></button>
                     <button type="button" class="tts-provider-tab" data-provider="fire_tts"><i class="las la-fire"></i>@lang('Fire TTS') <span data-provider-count="fire_tts">—</span></button>
                     <button type="button" class="tts-provider-tab" data-provider="edge_tts"><i class="lab la-microsoft"></i>@lang('Edge TTS') <span data-provider-count="edge_tts">—</span></button>
                     <button type="button" class="tts-provider-tab" data-provider="fish_audio"><i class="las la-fish"></i>@lang('Fish Audio') <span data-provider-count="fish_audio">—</span></button>
-                    <button type="button" class="tts-provider-tab" data-provider="all"><i class="las la-list"></i>@lang('All voices')</button>
+                    <button type="button" class="tts-provider-tab is-active" data-provider="all"><i class="las la-list"></i>@lang('All voices') <span data-provider-count="all">—</span></button>
                 </div>
                 <div class="tts-library__toolbar">
                     <div class="tts-filter-field tts-search-wrap"><label for="tts-library-search">@lang('Search')</label><div><i class="las la-search"></i><input type="search" id="tts-library-search" class="form-control" placeholder="@lang('Search by voice name, accent, or language...')" autocomplete="off"></div></div>
@@ -314,7 +314,7 @@
     let activePreviewButton = null;
     let activeGeneratedMedia = null;
     let serverFilteredKeys = new Set();
-    let activeProvider = 'elevenlabs';
+    let activeProvider = 'all';
     const favoritesKey = 'toolsbydcx.tts.favorite-voices';
     let favoriteVoiceIds = new Set((() => { try { const values = JSON.parse(localStorage.getItem(favoritesKey) || '[]'); return Array.isArray(values) ? values.map(String) : []; } catch (error) { return []; } })());
 
@@ -379,11 +379,11 @@
     });
 
     const cardFor = (item) => {
-        const id = escapeHtml(idOf(item)); const name = escapeHtml(nameOf(item)); const preview = escapeHtml(previewOf(item));
+        const id = escapeHtml(idOf(item)); const fullName = nameOf(item); const nameParts = fullName.split(/\s+-\s+/); const displayName = nameParts.shift()?.trim() || fullName; const descriptor = nameParts.join(' - ').trim(); const name = escapeHtml(fullName); const safeDisplayName = escapeHtml(displayName); const preview = escapeHtml(previewOf(item));
         const language = escapeHtml(item?.language_label || languageLabelOf(detailOf(item, 'language'))); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const age = escapeHtml(detailOf(item, 'age')); const category = escapeHtml(detailOf(item, 'category'));
         const tags = [language, accent, gender, age].filter(Boolean).slice(0, 4).map((tag) => '<span class="tts-tag">' + tag + '</span>').join('');
         const favorite = favoriteVoiceIds.has(String(idOf(item)));
-        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(nameOf(item))) + '</span><div><h5 title="' + name + '">' + name + '</h5><div class="tts-voice-card__meta">' + (category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-icon-action ' + (favorite ? 'is-favorite' : '') + '" data-favorite-id="' + id + '" aria-label="@lang('Favorite voice')" aria-pressed="' + (favorite ? 'true' : 'false') + '"><i class="las la-heart"></i></button><button type="button" class="tts-icon-action" data-copy-id="' + id + '" data-copy-name="' + name + '" aria-label="@lang('Copy voice ID')"><i class="las la-copy"></i></button><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play"></i><span class="visually-hidden">@lang('Preview')</span></button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
+        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(displayName)) + '</span><div><h5 title="' + name + '">' + safeDisplayName + '</h5><div class="tts-voice-card__meta">' + escapeHtml(descriptor || category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-icon-action ' + (favorite ? 'is-favorite' : '') + '" data-favorite-id="' + id + '" aria-label="@lang('Favorite voice')" aria-pressed="' + (favorite ? 'true' : 'false') + '"><i class="las la-heart"></i></button><button type="button" class="tts-icon-action" data-copy-id="' + id + '" data-copy-name="' + name + '" aria-label="@lang('Copy voice ID')"><i class="las la-copy"></i></button><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play"></i><span class="visually-hidden">@lang('Preview')</span></button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
     };
 
     const resetPreviewButton = (button) => { if (button) button.innerHTML = '<i class="las la-play me-1"></i>@lang('Preview')'; };
