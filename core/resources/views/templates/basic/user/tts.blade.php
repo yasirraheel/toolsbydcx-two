@@ -413,7 +413,7 @@
 
     const loadFilterOptions = async () => {
         try {
-            const provider = ['favorites', 'cloned'].includes(activeProvider) ? 'elevenlabs' : activeProvider;
+            const provider = ({ favorites: 'all', cloned: 'clone', fire_tts: 'minimax', edge_tts: 'edge', fish_audio: 'fishaudio' })[activeProvider] || activeProvider;
             const params = new URLSearchParams({ page: '1', page_size: '100' });
             if (provider) params.set('provider', provider);
             const urduParams = new URLSearchParams({ language: 'ur', page: '1', page_size: '1' });
@@ -432,7 +432,7 @@
         try {
             const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
             const activeParams = activeFilterParams();
-            const providerForRequest = ['favorites', 'cloned'].includes(activeProvider) ? 'elevenlabs' : activeProvider;
+            const providerForRequest = ({ favorites: 'all', cloned: 'clone', fire_tts: 'minimax', edge_tts: 'edge', fish_audio: 'fishaudio' })[activeProvider] || activeProvider;
             const requestParams = { page: String(requestedPage), page_size: String(requestSize), ...activeParams };
             if (providerForRequest) requestParams.provider = providerForRequest;
             const params = new URLSearchParams(requestParams); if (query) params.set('search', query);
