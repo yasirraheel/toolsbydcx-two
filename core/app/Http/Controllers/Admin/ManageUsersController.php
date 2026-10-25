@@ -171,6 +171,8 @@ class ManageUsersController extends Controller
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
             'google_flow_account_id' => 'nullable|integer|exists:google_flow_accounts,id',
+            'validity_days' => 'nullable|integer|min:1|max:3650',
+            'expires_at' => 'nullable|date',
             'tts_access' => 'nullable|boolean',
         ]);
 
@@ -220,7 +222,12 @@ class ManageUsersController extends Controller
             $user->plan_id = 0;
             $user->account_prices = [];
             $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
-            $user->expires_at = now()->addDays(30);
+            if ($request->filled('expires_at')) {
+                $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
+            } else {
+                $validityDays = $request->filled('validity_days') ? (int) $request->validity_days : 30;
+                $user->expires_at = now()->addDays(max(1, $validityDays));
+            }
             $user->is_trial = 0;
             $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
@@ -344,6 +351,8 @@ class ManageUsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:80',
             'email' => 'required|string|max:80',
+            'expires_at' => 'nullable|date',
+            'validity_days' => 'nullable|integer',
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
@@ -400,12 +409,104 @@ class ManageUsersController extends Controller
             $user->tts_access = $request->boolean('tts_access');
         }
 
+        if ($request->has('expires_at_submitted') || $request->filled('expires_at') || $request->filled('validity_days')) {
+            if ($request->filled('expires_at')) {
+                $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
+            } elseif ($request->filled('validity_days')) {
+                $days = (int) $request->validity_days;
+                $base = ($user->expires_at && $user->expires_at->isFuture()) ? $user->expires_at->copy() : now();
+                $user->expires_at = $base->addDays($days);
+            }
+
+            if ($user->expires_at && $user->expires_at->isFuture()) {
+                if ($user->status != Status::USER_BAN) {
+                    $user->status = Status::USER_ACTIVE;
+                }
+                $user->ev = Status::VERIFIED;
+                $user->sv = Status::VERIFIED;
+                $user->flowPairings()->where('is_active', true)->update(['expires_at' => $user->expires_at]);
+            }
+        }
+
         try {
             $user->save();
             $notify[] = ['success', 'User details updated successfully.'];
         } catch (\Exception $e) {
             $notify[] = ['error', 'Failed to update user: ' . $e->getMessage()];
         }
+        return back()->withNotify($notify);
+    }
+
+    public function updateExpiry(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'action' => 'required|in:extend,decrease,set_date,expire_now',
+            'days' => 'nullable|integer|min:1|max:3650',
+            'custom_date' => 'nullable|date',
+            'base_from' => 'nullable|in:now,current',
+        ]);
+
+        $now = now();
+        $isCurrentlyActive = $user->expires_at && $user->expires_at->isFuture();
+
+        switch ($request->action) {
+            case 'extend':
+                $days = (int) ($request->days ?: 30);
+                if (!$isCurrentlyActive || $request->base_from === 'now') {
+                    $baseDate = $now->copy();
+                } else {
+                    $baseDate = $user->expires_at->copy();
+                }
+                $user->expires_at = $baseDate->addDays($days);
+                break;
+
+            case 'decrease':
+                $days = (int) ($request->days ?: 7);
+                $baseDate = ($user->expires_at && $user->expires_at->isFuture()) ? $user->expires_at->copy() : $now->copy();
+                $user->expires_at = $baseDate->subDays($days);
+                break;
+
+            case 'set_date':
+                if (!$request->custom_date) {
+                    $notify[] = ['error', 'Please select a valid expiry date.'];
+                    return back()->withNotify($notify);
+                }
+                $user->expires_at = \Carbon\Carbon::parse($request->custom_date);
+                break;
+
+            case 'expire_now':
+                $user->expires_at = $now->copy()->subMinute();
+                break;
+        }
+
+        // When extended into the future, reactivate and verify
+        if ($user->expires_at && $user->expires_at->isFuture()) {
+            if ($user->status != Status::USER_BAN) {
+                $user->status = Status::USER_ACTIVE;
+            }
+            $user->ev = Status::VERIFIED;
+            $user->sv = Status::VERIFIED;
+            $user->flowPairings()->where('is_active', true)->update(['expires_at' => $user->expires_at]);
+        }
+
+        $user->save();
+
+        $formattedExpiry = $user->expires_at ? showDateTime($user->expires_at, 'd M Y, h:i A') : 'N/A';
+        $statusBadge = ($user->expires_at && $user->expires_at->isFuture()) ? 'Active' : 'Expired';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Expiry for @{$user->username} successfully updated to {$formattedExpiry} ({$statusBadge}).",
+                'expires_at' => $user->expires_at ? $user->expires_at->toIso8601String() : null,
+                'expires_at_formatted' => $formattedExpiry,
+                'is_active' => $user->expires_at && $user->expires_at->isFuture(),
+            ]);
+        }
+
+        $notify[] = ['success', "Expiry for @{$user->username} updated to {$formattedExpiry} ({$statusBadge})!"];
         return back()->withNotify($notify);
     }
 

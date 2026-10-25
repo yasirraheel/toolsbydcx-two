@@ -71,6 +71,7 @@ Route::middleware('admin')->group(function () {
         Route::get('kyc-data/{id}', 'kycDetails')->name('kyc.details');
         Route::post('kyc-approve/{id}', 'kycApprove')->name('kyc.approve');
         Route::post('kyc-reject/{id}', 'kycReject')->name('kyc.reject');
+        Route::post('update-expiry/{id}', 'updateExpiry')->name('update.expiry');
         Route::post('update/{id}', 'update')->name('update');
         Route::post('delete/{id}', 'delete')->name('delete');
         Route::post('delete-bulk', 'deleteBulk')->name('delete.bulk');
