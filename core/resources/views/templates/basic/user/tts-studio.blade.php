@@ -7,7 +7,7 @@
     .dcx-studio button,.dcx-studio select,.dcx-studio textarea { font:inherit; }
     .dcx-studio__notice { display:flex; align-items:center; justify-content:center; gap:12px; min-height:42px; padding:8px 42px; color:#fff; background:linear-gradient(90deg,#ff8a00,#b783bc 48%,#635bff); font-size:13px; font-weight:600; position:relative; }
     .dcx-studio__notice button { border:0; background:transparent; color:#fff; position:absolute; right:14px; top:9px; font-size:20px; line-height:1; cursor:pointer; }
-    .dcx-studio__layout { display:grid; grid-template-columns:218px minmax(0,1fr); min-height:calc(100vh - 212px); }
+    .dcx-studio__layout { display:grid; grid-template-columns:minmax(0,1fr); min-height:calc(100vh - 212px); }
     .dcx-studio__nav { border-right:1px solid var(--studio-line); background:#fff; padding:22px 13px; }
     .dcx-studio__brand { display:flex; align-items:center; gap:10px; color:#202738; font-size:19px; font-weight:700; padding:2px 12px 28px; }
     .dcx-studio__brand-mark { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; color:#fff; background:var(--studio-orange); font-size:15px; }
@@ -87,7 +87,7 @@
     .dcx-studio__voice-card p { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; min-height:48px; margin:13px 0; color:#6d7889; font-size:10px; line-height:1.55; }
     .dcx-studio__voice-card button { width:100%; border:1px solid #ffd0a8; border-radius:7px; padding:8px; color:var(--studio-orange); background:#fffaf5; font-size:11px; cursor:pointer; }
     .dcx-studio__modal-empty { grid-column:1/-1; padding:34px; text-align:center; color:#8a96a7; font-size:12px; }
-    @media (max-width:1100px) { .dcx-studio__layout { grid-template-columns:185px minmax(0,1fr); } .dcx-studio__workspace { grid-template-columns:minmax(0,1fr) 290px; } .dcx-studio__voice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:1100px) { .dcx-studio__workspace { grid-template-columns:minmax(0,1fr) 290px; } .dcx-studio__voice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (max-width:820px) { .dcx-studio__layout { grid-template-columns:1fr; } .dcx-studio__nav { display:none; } .dcx-studio__workspace { grid-template-columns:1fr; } .dcx-studio__editor { border-right:0; border-bottom:1px solid var(--studio-line); } .dcx-studio__settings { min-height:400px; } }
     @media (max-width:600px) { .dcx-studio__notice { justify-content:flex-start; font-size:11px; } .dcx-studio__top { padding:0 14px; } .dcx-studio__textarea { padding:20px 16px; min-height:350px; } .dcx-studio__editor-tools,.dcx-studio__bottom { padding-left:16px; padding-right:16px; } .dcx-studio__cost { margin-left:16px; margin-right:16px; } .dcx-studio__status { padding-left:16px; padding-right:16px; } .dcx-studio__modal-tools { grid-template-columns:1fr 1fr; } .dcx-studio__modal-tools input { grid-column:1/-1; } .dcx-studio__voice-grid { grid-template-columns:1fr; padding-left:14px; padding-right:14px; } }
 </style>
@@ -97,22 +97,6 @@
 <div class="dcx-studio" id="dcx-studio">
     <div class="dcx-studio__notice"><i class="las la-bullhorn"></i><span>ToolsByDcx Studio — create natural speech with your assigned voices.</span><button type="button" data-studio-dismiss aria-label="Close">&times;</button></div>
     <div class="dcx-studio__layout">
-        <aside class="dcx-studio__nav">
-            <div class="dcx-studio__brand"><span class="dcx-studio__brand-mark"><i class="las la-layer-group"></i></span>ToolsByDcx</div>
-            <a href="{{ route('user.home') }}"><i class="las la-home"></i>Home</a>
-            <a href="{{ route('user.tts.index') }}" class="is-active"><i class="las la-wand-magic-sparkles"></i>Text to Speech</a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-list"></i>Voice Library</a>
-            <div class="dcx-studio__nav-label">Products</div>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-comments"></i>Text to Dialogue <small>New</small></a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-wave-square"></i>Voice Changer</a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-file-audio"></i>Speech to Text</a>
-            <div class="dcx-studio__nav-label">AI Tools</div>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-layer-group"></i>Bulk TTS <small>New</small></a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-pen"></i>Script Writer</a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-microphone"></i>Voice Cloning</a>
-            <a href="{{ route('user.tts.library') }}"><i class="las la-music"></i>Sound Effects <small>New</small></a>
-            <a class="dcx-studio__upgrade" href="{{ route('plans') }}"><i class="las la-bolt"></i>Upgrade</a>
-        </aside>
         <main class="dcx-studio__main">
             <header class="dcx-studio__top"><h1 class="dcx-studio__title">Speech Synthesis</h1><span class="dcx-studio__provider-pill"><i class="las la-pause"></i> ElevenLabs</span></header>
             @if(!$configured)
