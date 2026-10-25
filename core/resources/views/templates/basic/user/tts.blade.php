@@ -361,6 +361,7 @@
     const persistUrl = @json(route('user.tts.persist'));
     const generateUrl = @json(route('user.tts.generate'));
     const taskUrlTemplate = @json(route('user.tts.task', ['task' => '__TASK__']));
+    const clonesUrl = @json(route('user.tts.clones'));
     const PAGE_SIZE = 24;
     const voiceStorageKey = 'toolsbydcx.tts.selected-voice';
     let library = [];
@@ -373,6 +374,7 @@
     let activeGeneratedMedia = null;
     let serverFilteredKeys = new Set();
     let activeProvider = 'all';
+    let clonedVoices = [];
     const favoritesKey = 'toolsbydcx.tts.favorite-voices';
     let favoriteVoiceIds = new Set((() => { try { const values = JSON.parse(localStorage.getItem(favoritesKey) || '[]'); return Array.isArray(values) ? values.map(String) : []; } catch (error) { return []; } })());
 
@@ -387,6 +389,7 @@
         return { response, contentType, payload: contentType.includes('json') ? await response.json() : null };
     };
     const extractVoices = (payload) => [payload?.voices, payload?.data?.voices, payload?.data?.items, Array.isArray(payload?.data) ? payload.data : null].find(Array.isArray) || [];
+    const extractClones = (payload) => (Array.isArray(payload?.clones) ? payload.clones : (Array.isArray(payload?.data) ? payload.data : [])).map((clone) => ({ ...clone, voice_id: clone.voice_id || clone.voiceId || clone.id, name: clone.name || clone.display_name || 'Voice clone', provider: 'clone', description: clone.description || 'Custom cloned voice' })).filter((clone) => clone.voice_id);
     const idOf = (item) => String(item?.voice_id || item?.voiceId || item?.id || '');
     const nameOf = (item) => String(item?.name || item?.voice_name || item?.display_name || idOf(item));
     const labelsOf = (item) => item?.labels || item?.metadata || {};
@@ -475,6 +478,7 @@
 
     const loadFilterOptions = async () => {
         try {
+            if (activeProvider === 'cloned') return;
             const provider = ({ favorites: 'all', cloned: 'clone', fire_tts: 'minimax', edge_tts: 'edge', fish_audio: 'fishaudio' })[activeProvider] || activeProvider;
             const params = new URLSearchParams({ page: '1', page_size: '100' });
             if (provider) params.set('provider', provider);
@@ -492,6 +496,17 @@
     const loadVoices = async (query = '', requestedPage = 1, retry = 0) => {
         setStatus('@lang('Loading voice library...')');
         try {
+            if (activeProvider === 'cloned') {
+                const response = await jsonRequest(clonesUrl);
+                clonedVoices = extractClones(response.payload);
+                const needle = query.toLowerCase();
+                library = needle ? clonedVoices.filter((item) => (nameOf(item) + ' ' + idOf(item)).toLowerCase().includes(needle)) : clonedVoices;
+                page = 1; totalVoices = library.length; totalPages = 1;
+                if (totalLabel) totalLabel.textContent = totalVoices.toLocaleString();
+                renderLibrary();
+                setStatus(library.length ? '' : '@lang('No cloned voices yet.')');
+                return;
+            }
             const requestSize = Object.values(filters).some((select) => select.value) ? 100 : PAGE_SIZE;
             const activeParams = activeFilterParams();
             const providerForRequest = ({ favorites: 'all', cloned: 'clone', fire_tts: 'minimax', edge_tts: 'edge', fish_audio: 'fishaudio' })[activeProvider] || activeProvider;
@@ -537,7 +552,7 @@
         if (use) selectVoice(use.dataset.voiceId, use.dataset.voiceName, library.find((item) => idOf(item) === use.dataset.voiceId) || null);
         if (preview) playPreview(preview);
     });
-    providerTabs.forEach((tab) => tab.addEventListener('click', () => { activeProvider = tab.dataset.provider || 'elevenlabs'; providerTabs.forEach((item) => item.classList.toggle('is-active', item === tab)); page = 1; loadFilterOptions(); loadVoices(searchInput.value.trim(), 1); }));
+    providerTabs.forEach((tab) => tab.addEventListener('click', () => { activeProvider = tab.dataset.provider || 'elevenlabs'; providerTabs.forEach((item) => item.classList.toggle('is-active', item === tab)); page = 1; Object.values(filters).forEach((select) => { select.value = ''; }); loadFilterOptions(); loadVoices(searchInput.value.trim(), 1); }));
     pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-page]'); if (button && !button.disabled) { loadVoices(searchInput.value.trim(), Number(button.dataset.page)); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
     Object.values(filters).forEach((select) => select.addEventListener('change', () => { page = 1; loadVoices(searchInput.value.trim(), 1); }));
     searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadVoices(searchInput.value.trim()), 350); });
