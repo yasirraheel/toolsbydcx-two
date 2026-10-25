@@ -195,17 +195,6 @@
                                             <strong class="text-white">
                                                 <i class="las la-calendar-alt text--warning"></i> @lang('Account Validity & Expiration Date')
                                             </strong>
-                                            <span class="text-muted ms-2 small">
-                                                @if($user->expires_at)
-                                                    @if($isExpired)
-                                                        <span class="text--danger fw-bold"><i class="las la-times-circle"></i> @lang('Expired on') {{ showDateTime($user->expires_at, 'd M Y, h:i A') }} ({{ diffForHumans($user->expires_at) }})</span>
-                                                    @else
-                                                        <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Active until') {{ showDateTime($user->expires_at, 'd M Y, h:i A') }} ({{ $daysRemaining }} @lang('days left'))</span>
-                                                    @endif
-                                                @else
-                                                    <span class="text--warning"><i class="las la-info-circle"></i> @lang('No expiry set')</span>
-                                                @endif
-                                            </span>
                                         </div>
                                     </div>
 
@@ -219,9 +208,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <small class="text-muted mt-2 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Extending an expired account into the future automatically unbans/activates the account and updates all active Google Flow pairing sessions.')
-                                    </small>
                                 </div>
                             </div>
 
