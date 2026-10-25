@@ -13,9 +13,13 @@
     </a>
 
     @if(auth()->user()?->tts_access)
-        <a href="{{ route('user.tts.index') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.tts*') }}">
+        <a href="{{ route('user.tts.index') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.tts.index') }}">
             <i class="las la-microphone fs-5"></i>
             <span>@lang('Text to Speech')</span>
+        </a>
+        <a href="{{ route('user.tts.library') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.tts.library') }}">
+            <i class="las la-list fs-5"></i>
+            <span>@lang('Voice Library')</span>
         </a>
     @endif
 
