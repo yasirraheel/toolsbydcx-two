@@ -96,7 +96,10 @@
         transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
     }
     .dcx-tts .tts-voice-card:hover { border-color: rgba(129, 140, 248, .7); transform: translateY(-2px); box-shadow: 0 10px 22px rgba(2, 6, 23, .28); }
-    .dcx-tts .tts-voice-card__top { display: flex; align-items: center; gap: .65rem; }
+    .dcx-tts .tts-voice-card__top { display: flex; align-items: flex-start; gap: .75rem; }
+    .dcx-tts .tts-voice-card__identity { min-width: 0; flex: 1; }
+    .dcx-tts .tts-voice-card__name-row { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem; }
+    .dcx-tts .tts-voice-badge { display: inline-flex; align-items: center; gap: .2rem; padding: .2rem .52rem; border: 1px solid #fed7aa; border-radius: 999px; color: #ea580c; background: #fff7ed; font-size: .68rem; font-weight: 600; white-space: nowrap; }
     .dcx-tts .tts-voice-avatar { display: inline-flex; align-items: center; justify-content: center; width: 2.35rem; height: 2.35rem; flex: 0 0 auto; border-radius: 9px; color: #fff; background: linear-gradient(135deg, #4f46e5, #7c3aed); font-size: 1rem; font-weight: 700; }
     .dcx-tts .tts-voice-card h5 { overflow: hidden; margin: 0; color: #f8fafc; font-size: .92rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts .tts-voice-card__meta { margin-top: .16rem; color: #94a3b8; font-size: .72rem; }
@@ -187,15 +190,18 @@
     .dcx-tts .tts-voice-avatar { width: 3rem; height: 3rem; border-radius: 13px; color: #fff; background: #ff7900; font-size: 1.05rem; }
     .dcx-tts .tts-voice-card h5 { color: #0f172a; font-size: 1rem; }
     .dcx-tts .tts-voice-card__meta { color: #f97316; font-size: .78rem; }
-    .dcx-tts .tts-voice-card__description { display: block; overflow: visible; min-height: 4rem; margin: .9rem 0; color: #64748b; font-size: .82rem; line-height: 1.5; -webkit-box-orient: initial; -webkit-line-clamp: unset; }
+    .dcx-tts .tts-voice-card__description { display: -webkit-box; overflow: hidden; min-height: 3.3rem; margin: .9rem 0; color: #64748b; font-size: .82rem; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
     .dcx-tts .tts-tags { gap: .4rem; }
     .dcx-tts .tts-tag { padding: .3rem .58rem; border-color: #dbe4ef; color: #475569; background: #f8fafc; font-size: .7rem; }
     .dcx-tts .tts-tag:first-child { border-color: #fed7aa; color: #ea580c; background: #fff7ed; }
-    .dcx-tts .tts-voice-card__actions { gap: .55rem; margin-top: 1rem; padding-top: .8rem; border-top-color: #edf2f7; }
+    .dcx-tts .tts-voice-card__actions { gap: .5rem; margin-top: 1rem; padding-top: .8rem; border-top-color: #edf2f7; }
+    .dcx-tts .tts-card-language-pill { display: inline-flex; align-items: center; gap: .25rem; margin-right: auto; padding: .28rem .55rem; border: 1px solid #dbe4ef; border-radius: 999px; color: #334155; background: #f8fafc; font-size: .7rem; white-space: nowrap; }
+    .dcx-tts .tts-card-language-pill strong { color: #334155; font-weight: 600; }
+    .dcx-tts .tts-card-language-pill em { padding: .05rem .28rem; border-radius: 999px; color: #ea580c; background: #ffedd5; font-size: .65rem; font-style: normal; font-weight: 700; }
     .dcx-tts .tts-voice-action { min-height: 34px; border-radius: 999px; font-size: .75rem; }
     .dcx-tts .tts-icon-action { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; color: #64748b; background: transparent; font-size: 1rem; cursor: pointer; }
     .dcx-tts .tts-icon-action:hover, .dcx-tts .tts-icon-action.is-favorite { color: #f97316; background: #fff7ed; }
-    .dcx-tts .tts-voice-action--use { padding-inline: .9rem; border-color: #ff7900; color: #fff; background: #ff7900; }
+    .dcx-tts .tts-voice-action--use { margin-left: 0; padding-inline: .9rem; border-color: #ff7900; color: #fff; background: #ff7900; }
     .dcx-tts .tts-voice-action--use:hover { background: #ea580c; }
     .dcx-tts .tts-voice-action--preview { padding-inline: .75rem; border-color: #fed7aa; color: #f97316; background: #fff; }
     .dcx-tts .tts-voice-action--preview:hover { background: #fff7ed; }
@@ -338,10 +344,12 @@
     const languageNames = (() => { try { return new Intl.DisplayNames(['en'], { type: 'language' }); } catch (error) { return null; } })();
     const languageLabelOf = (value) => { const code = String(value || '').trim().replace('_', '-'); if (!code) return ''; try { return languageNames?.of(code) || code; } catch (error) { return code; } };
     const apiLanguageLabels = new Map();
-    const descriptionOf = (item) => String(item?.description || item?.summary || detailOf(item, 'description') || 'A natural voice ready for your next project.');
+    const descriptionOf = (item) => { const description = String(item?.description || item?.summary || detailOf(item, 'description') || ''); return description && description !== String(item?.language || '') && description !== String(item?.locale || '') ? description : ''; };
     const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const initialsOf = (name) => name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'V';
     const previewOf = (item) => String(item?.preview_url || item?.previewUrl || item?.sample_url || item?.sampleUrl || '');
+    const prettyLabel = (value) => String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+    const flagOf = (language, locale = '') => { try { const region = new Intl.Locale(String(locale || language || '').replace('_', '-')).maximize().region; return region ? [...region].map((character) => String.fromCodePoint(127397 + character.charCodeAt(0))).join('') : ''; } catch (error) { return ''; } };
 
     const addFilterOptions = (items) => {
         items.forEach((item) => {
@@ -381,11 +389,12 @@
     });
 
     const cardFor = (item) => {
-        const id = escapeHtml(idOf(item)); const fullName = nameOf(item); const nameParts = fullName.split(/\s+-\s+/); const displayName = nameParts.shift()?.trim() || fullName; const descriptor = nameParts.join(' - ').trim(); const name = escapeHtml(fullName); const safeDisplayName = escapeHtml(displayName); const preview = escapeHtml(previewOf(item));
-        const language = escapeHtml(item?.language_label || languageLabelOf(detailOf(item, 'language'))); const accent = escapeHtml(detailOf(item, 'accent')); const gender = escapeHtml(detailOf(item, 'gender')); const age = escapeHtml(detailOf(item, 'age')); const category = escapeHtml(detailOf(item, 'category'));
-        const tags = [language, accent, gender, age].filter(Boolean).slice(0, 4).map((tag) => '<span class="tts-tag">' + tag + '</span>').join('');
+        const id = escapeHtml(idOf(item)); const fullName = nameOf(item); const nameParts = fullName.split(/\s+-\s+/); const displayName = nameParts.shift()?.trim() || fullName; const descriptor = nameParts.join(' - ').trim() || (fullName.match(/\(([^)]+)\)/)?.[1] || ''); const name = escapeHtml(fullName); const safeDisplayName = escapeHtml(displayName); const preview = escapeHtml(previewOf(item));
+        const languageCode = detailOf(item, 'language') || item?.languages?.[0]?.language || ''; const locale = item?.locale || item?.languages?.[0]?.locale || ''; const accentValue = detailOf(item, 'accent') || item?.languages?.[0]?.accent || ''; const accent = prettyLabel(accentValue || item?.language_label || languageLabelOf(languageCode)); const gender = prettyLabel(detailOf(item, 'gender')); const age = prettyLabel(detailOf(item, 'age')); const rawCategory = detailOf(item, 'category'); const category = escapeHtml(rawCategory); const topBadge = '<span class="tts-voice-badge">' + flagOf(languageCode, locale) + ' ' + escapeHtml(accent) + '</span>';
+        const tags = [accent, gender, age].filter(Boolean).slice(0, 3).map((tag) => '<span class="tts-tag">' + escapeHtml(tag) + '</span>').join('');
+        const languageEntries = Array.isArray(item?.languages) && item.languages.length ? item.languages : [{ language: languageCode, locale }]; const languageFlags = languageEntries.slice(0, 2).map((language) => flagOf(language?.language, language?.locale)).filter(Boolean).join(' '); const extraLanguages = Math.max(0, languageEntries.length - 2); const coverageLabel = prettyLabel(accentValue || item?.language_label || languageLabelOf(languageCode)); const coverage = '<span class="tts-card-language-pill">' + (languageFlags || flagOf(languageCode, locale)) + ' <strong>' + escapeHtml(coverageLabel) + '</strong>' + (extraLanguages ? ' <em>+' + extraLanguages + '</em>' : '') + '</span>';
         const favorite = favoriteVoiceIds.has(String(idOf(item)));
-        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(displayName)) + '</span><div><h5 title="' + name + '">' + safeDisplayName + '</h5><div class="tts-voice-card__meta">' + escapeHtml(descriptor || category || '@lang('OpenRadio voice')') + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions"><button type="button" class="tts-icon-action ' + (favorite ? 'is-favorite' : '') + '" data-favorite-id="' + id + '" aria-label="@lang('Favorite voice')" aria-pressed="' + (favorite ? 'true' : 'false') + '"><i class="las la-heart"></i></button><button type="button" class="tts-icon-action" data-copy-id="' + id + '" data-copy-name="' + name + '" aria-label="@lang('Copy voice ID')"><i class="las la-copy"></i></button><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play"></i><span class="visually-hidden">@lang('Preview')</span></button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
+        return '<article class="tts-voice-card"><div class="tts-voice-card__top"><span class="tts-voice-avatar">' + escapeHtml(initialsOf(displayName)) + '</span><div class="tts-voice-card__identity"><div class="tts-voice-card__name-row"><h5 title="' + name + '">' + safeDisplayName + '</h5>' + topBadge + '</div><div class="tts-voice-card__meta">' + escapeHtml(descriptor || rawCategory || (Array.isArray(item?.use_cases) ? item.use_cases[0] : '')) + '</div></div></div><p class="tts-voice-card__description">' + escapeHtml(descriptionOf(item)) + '</p><div class="tts-tags">' + tags + '</div><div class="tts-voice-card__actions">' + coverage + '<button type="button" class="tts-icon-action ' + (favorite ? 'is-favorite' : '') + '" data-favorite-id="' + id + '" aria-label="@lang('Favorite voice')" aria-pressed="' + (favorite ? 'true' : 'false') + '"><i class="las la-heart"></i></button><button type="button" class="tts-icon-action" data-copy-id="' + id + '" data-copy-name="' + name + '" aria-label="@lang('Copy voice ID')"><i class="las la-copy"></i></button><button type="button" class="tts-voice-action tts-voice-action--preview" data-preview="' + preview + '" ' + (preview ? '' : 'disabled') + '><i class="las la-play"></i><span class="visually-hidden">@lang('Preview')</span></button><button type="button" class="tts-voice-action tts-voice-action--use" data-voice-id="' + id + '" data-voice-name="' + name + '">@lang('Use voice')</button></div></article>';
     };
 
     const resetPreviewButton = (button) => { if (button) button.innerHTML = '<i class="las la-play me-1"></i>@lang('Preview')'; };
