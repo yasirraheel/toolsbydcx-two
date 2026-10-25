@@ -21,9 +21,6 @@
                         <i class="las la-undo"></i> @lang('Unban User')
                     </button>
                 @endif
-                <button type="button" class="btn btn-sm btn--warning text-dark text-nowrap px-2 px-xl-3 py-1 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#adjustExpiryModal">
-                    <i class="las la-calendar-plus"></i> @lang('Extend / Adjust Expiry')
-                </button>
                 <button type="button" class="btn btn-sm btn--success text-white text-nowrap px-2 px-xl-3 py-1 shadow-sm copyWelcomeDetailsTrigger" id="copyWelcomeDetailsBtn" title="@lang('Copy User Details')">
                     <i class="las la-clipboard-check"></i> @lang('Copy Details')
                 </button>
@@ -205,35 +202,15 @@
                                                 @endif
                                             </span>
                                         </div>
-                                        <button type="button" class="btn btn-xs btn--warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#adjustExpiryModal">
-                                            <i class="las la-bolt"></i> @lang('Quick Extend Modal')
-                                        </button>
                                     </div>
 
                                     <input type="hidden" name="expires_at_submitted" value="1">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-md-5 col-12">
+                                        <div class="col-md-6 col-12">
                                             <div class="input-group">
                                                 <span class="input-group-text bg--dark border-secondary text-white"><i class="las la-calendar"></i></span>
                                                 <input type="datetime-local" class="form-control" name="expires_at" id="detailExpiresAtInput"
                                                        value="{{ $user->expires_at ? $user->expires_at->format('Y-m-d\TH:i') : '' }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7 col-12">
-                                            <div class="d-flex flex-wrap gap-1 align-items-center">
-                                                <span class="text-muted small me-1">@lang('Quick Add:'):</span>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="7">+7d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="15">+15d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="30">+30d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="60">+60d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="90">+90d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--success btn-adjust-days" data-days="365">+1 Yr</button>
-
-                                                <span class="text-muted small ms-2 me-1">@lang('Decrease:'):</span>
-                                                <button type="button" class="btn btn-xs btn-outline--danger btn-adjust-days" data-days="-7">-7d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--danger btn-adjust-days" data-days="-15">-15d</button>
-                                                <button type="button" class="btn btn-xs btn-outline--danger btn-adjust-days" data-days="-30">-30d</button>
-                                                <button type="button" class="btn btn-xs btn--danger text-white ms-1" id="btnExpireNowDirect">@lang('Expire Now')</button>
                                             </div>
                                         </div>
                                     </div>
