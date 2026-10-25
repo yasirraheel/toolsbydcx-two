@@ -100,6 +100,7 @@ Route::middleware('auth')->name('user.')->group(function () {
             // Server-side OpenRadio Text-to-Speech proxy
             Route::controller('TextToSpeechController')->prefix('tts')->name('tts.')->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('/studio-data', 'studioData')->middleware('throttle:30,1')->name('studio.data');
                 Route::get('/library', 'library')->name('library');
                 Route::get('/voices', 'voices')->middleware('throttle:30,1')->name('voices');
                 Route::get('/history', 'history')->name('history');

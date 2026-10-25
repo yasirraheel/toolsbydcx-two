@@ -114,6 +114,15 @@ class OpenRadioTtsService
         return $this->client()->get($this->url('tasks/' . rawurlencode($taskId)));
     }
 
+    /**
+     * The only account endpoint exposed by OpenRadio's developer API. The
+     * caller must whitelist fields before returning anything to a browser.
+     */
+    public function account(): Response
+    {
+        return $this->client()->get($this->url('me'));
+    }
+
     private function client()
     {
         $setting = $this->setting();

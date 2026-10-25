@@ -27,7 +27,6 @@ class TextToSpeechController extends Controller
             'pageTitle' => $pageTitle,
             'configured' => $this->tts->configured(),
             'defaultVoiceId' => $setting?->default_voice_id,
-            'userBalance' => $request->user()->balance,
         ]);
     }
 
@@ -79,6 +78,76 @@ class TextToSpeechController extends Controller
         }
 
         return $this->forwardVoices($this->tts->voices($search, $page, $pageSize, $filters, $provider));
+    }
+
+    /**
+     * Browser-safe Studio bootstrap data. The API secret and raw /me payload
+     * never leave Laravel; only display-safe account fields are returned.
+     */
+    public function studioData(Request $request)
+    {
+        $this->ensureAccess($request);
+        if (!$this->tts->configured()) {
+            return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
+        }
+
+        $account = [
+            'available' => false,
+            'credits' => null,
+            'plan' => null,
+            'plan_expires_at' => null,
+        ];
+
+        try {
+            $upstream = $this->tts->account();
+            if ($upstream->successful() && is_array($upstream->json())) {
+                $payload = $upstream->json();
+                $source = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
+                $credits = $source['credits'] ?? null;
+
+                $account = [
+                    'available' => is_numeric($credits),
+                    'credits' => is_numeric($credits) ? (float) $credits : null,
+                    'plan' => filled($source['plan'] ?? null) ? (string) $source['plan'] : null,
+                    'plan_expires_at' => filled($source['plan_expires_at'] ?? null) ? (string) $source['plan_expires_at'] : null,
+                ];
+            }
+        } catch (\Throwable) {
+            // The Studio remains usable if the account endpoint is briefly unavailable.
+        }
+
+        return response()->json([
+            'success' => true,
+            'account' => $account,
+            // OpenRadio's official Studio publishes these as editor helper
+            // menus. They are served from our Studio endpoint so the page has
+            // one live source of truth and no duplicated browser constants.
+            'editor_helpers' => $this->studioEditorHelpers(),
+            'providers' => [
+                ['id' => 'elevenlabs', 'label' => 'ElevenLabs'],
+                ['id' => 'minimax', 'label' => 'Fire TTS'],
+                ['id' => 'edge', 'label' => 'Edge TTS'],
+                ['id' => 'fishaudio', 'label' => 'Fish Audio'],
+            ],
+            'models' => [
+                'elevenlabs' => [
+                    ['id' => 'api-default', 'label' => 'OpenRadio API default for the selected voice'],
+                ],
+            ],
+            'languages' => ['Detect Language', 'English', 'Urdu', 'Arabic', 'Hindi', 'Spanish', 'French', 'German'],
+            'pricing' => [
+                'elevenlabs' => ['multiplier' => 1.2, 'free' => false],
+                'minimax' => ['multiplier' => 1, 'free' => false],
+                'fishaudio' => ['multiplier' => 1, 'free' => false],
+                'edge' => ['multiplier' => 0, 'free' => true],
+            ],
+            'public_api_capabilities' => [
+                'account' => true,
+                'voices' => true,
+                'history' => false,
+                'models' => false,
+            ],
+        ])->header('Cache-Control', 'no-store');
     }
 
     public function history(Request $request)
@@ -239,6 +308,44 @@ class TextToSpeechController extends Controller
         }
 
         return $language;
+    }
+
+    private function studioEditorHelpers(): array
+    {
+        return [
+            'emotions' => [
+                ['id' => 'happy', 'label' => 'Happy', 'insert' => '[happy]'],
+                ['id' => 'excited', 'label' => 'Excited', 'insert' => '[excited]'],
+                ['id' => 'sad', 'label' => 'Sad', 'insert' => '[sad]'],
+                ['id' => 'angry', 'label' => 'Angry', 'insert' => '[angry]'],
+                ['id' => 'fearful', 'label' => 'Fearful', 'insert' => '[fearful]'],
+                ['id' => 'surprised', 'label' => 'Surprised', 'insert' => '[surprised]'],
+                ['id' => 'sarcastic', 'label' => 'Sarcastic', 'insert' => '[sarcastic]'],
+                ['id' => 'curious', 'label' => 'Curious', 'insert' => '[curious]'],
+                ['id' => 'serious', 'label' => 'Serious', 'insert' => '[serious]'],
+                ['id' => 'shouting', 'label' => 'Shouting', 'insert' => '[shouting]'],
+                ['id' => 'disgusted', 'label' => 'Disgusted', 'insert' => '[disgusted]'],
+            ],
+            'pauses' => [
+                ['id' => 'short', 'label' => 'Short', 'insert' => '<break time="500ms"/>'],
+                ['id' => 'medium', 'label' => 'Medium', 'insert' => '<break time="1000ms"/>'],
+                ['id' => 'long', 'label' => 'Long', 'insert' => '<break time="2000ms"/>'],
+                ['id' => 'x-long', 'label' => 'X-Long', 'insert' => '<break time="3000ms"/>'],
+            ],
+            'sound_tags' => [
+                ['id' => 'laughs', 'label' => 'Laugh [laughs]', 'insert' => '[laughs]'],
+                ['id' => 'chuckles', 'label' => 'Chuckle [chuckles]', 'insert' => '[chuckles]'],
+                ['id' => 'giggles', 'label' => 'Giggle [giggles]', 'insert' => '[giggles]'],
+                ['id' => 'sighs', 'label' => 'Sigh [sighs]', 'insert' => '[sighs]'],
+                ['id' => 'gasps', 'label' => 'Gasp [gasps]', 'insert' => '[gasps]'],
+                ['id' => 'whispers', 'label' => 'Whisper [whispers]', 'insert' => '[whispers]'],
+                ['id' => 'crying', 'label' => 'Crying [crying]', 'insert' => '[crying]'],
+                ['id' => 'coughs', 'label' => 'Cough [coughs]', 'insert' => '[coughs]'],
+                ['id' => 'clears-throat', 'label' => 'Clear throat', 'insert' => '[clears throat]'],
+                ['id' => 'applause', 'label' => 'Applause [applause]', 'insert' => '[applause]'],
+                ['id' => 'breathing', 'label' => 'Breathing [breathing]', 'insert' => '[breathing]'],
+            ],
+        ];
     }
 
     private function ensureAccess(Request $request): void
