@@ -31,6 +31,23 @@ class TextToSpeechController extends Controller
         ]);
     }
 
+    /**
+     * Keep the complete API-backed voice library available as its own page.
+     * The Studio editor lives at /user/tts; this page preserves the original
+     * searchable, filterable, paginated library experience.
+     */
+    public function library(Request $request)
+    {
+        $this->ensureAccess($request);
+        $setting = $this->tts->setting();
+
+        return view('templates.basic.user.tts', [
+            'pageTitle' => 'Voice Library',
+            'configured' => $this->tts->configured(),
+            'defaultVoiceId' => $setting?->default_voice_id,
+        ]);
+    }
+
     public function voices(Request $request)
     {
         $this->ensureAccess($request);

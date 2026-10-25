@@ -72,6 +72,7 @@
     .dcx-studio__modal-card { width:min(1040px,100%); max-height:90vh; overflow:auto; border-radius:14px; background:#fff; box-shadow:0 24px 80px rgba(15,23,42,.35); }
     .dcx-studio__modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--studio-line); }
     .dcx-studio__modal-head h3 { margin:0; font-size:17px; }
+    .dcx-studio__full-library { margin-left:auto; margin-right:14px; color:var(--studio-orange); font-size:11px; text-decoration:none; }
     .dcx-studio__modal-close { border:0; background:transparent; color:#6b7280; font-size:22px; cursor:pointer; }
     .dcx-studio__modal-tools { display:grid; grid-template-columns:minmax(180px,1.6fr) repeat(3,1fr); gap:8px; padding:14px 20px; background:#fafbfc; border-bottom:1px solid var(--studio-line); }
     .dcx-studio__modal-tools input,.dcx-studio__modal-tools select { min-width:0; border:1px solid var(--studio-line); border-radius:7px; padding:9px 10px; color:#526074; background:#fff; font-size:11px; }
@@ -100,16 +101,16 @@
             <div class="dcx-studio__brand"><span class="dcx-studio__brand-mark"><i class="las la-layer-group"></i></span>ToolsByDcx</div>
             <a href="{{ route('user.home') }}"><i class="las la-home"></i>Home</a>
             <a href="{{ route('user.tts.index') }}" class="is-active"><i class="las la-wand-magic-sparkles"></i>Text to Speech</a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-list"></i>Voice Library</a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-list"></i>Voice Library</a>
             <div class="dcx-studio__nav-label">Products</div>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-comments"></i>Text to Dialogue <small>New</small></a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-wave-square"></i>Voice Changer</a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-file-audio"></i>Speech to Text</a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-comments"></i>Text to Dialogue <small>New</small></a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-wave-square"></i>Voice Changer</a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-file-audio"></i>Speech to Text</a>
             <div class="dcx-studio__nav-label">AI Tools</div>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-layer-group"></i>Bulk TTS <small>New</small></a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-pen"></i>Script Writer</a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-microphone"></i>Voice Cloning</a>
-            <a href="{{ route('user.tts.index') }}#voice-library"><i class="las la-music"></i>Sound Effects <small>New</small></a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-layer-group"></i>Bulk TTS <small>New</small></a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-pen"></i>Script Writer</a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-microphone"></i>Voice Cloning</a>
+            <a href="{{ route('user.tts.library') }}"><i class="las la-music"></i>Sound Effects <small>New</small></a>
             <a class="dcx-studio__upgrade" href="{{ route('plans') }}"><i class="las la-bolt"></i>Upgrade</a>
         </aside>
         <main class="dcx-studio__main">
@@ -146,7 +147,7 @@
 </div>
 
 <div id="studio-library-modal" class="dcx-studio__modal" aria-hidden="true">
-    <div class="dcx-studio__modal-card"><div class="dcx-studio__modal-head"><h3>Voice Library</h3><button type="button" class="dcx-studio__modal-close" data-studio-modal-close>&times;</button></div><div class="dcx-studio__modal-tools"><input id="studio-library-search" type="search" placeholder="Search by voice name, accent, or language"><select id="studio-library-language"><option value="">All languages</option></select><select id="studio-library-gender"><option value="">All genders</option></select><select id="studio-library-category"><option value="">All categories</option></select></div><div id="studio-library-count" class="dcx-studio__modal-count">Loading voice library…</div><div id="studio-library-grid" class="dcx-studio__voice-grid"><div class="dcx-studio__modal-empty">Loading voices…</div></div></div>
+    <div class="dcx-studio__modal-card"><div class="dcx-studio__modal-head"><h3>Voice Library</h3><a class="dcx-studio__full-library" href="{{ route('user.tts.library') }}">Open full library <i class="las la-external-link-alt"></i></a><button type="button" class="dcx-studio__modal-close" data-studio-modal-close>&times;</button></div><div class="dcx-studio__modal-tools"><input id="studio-library-search" type="search" placeholder="Search by voice name, accent, or language"><select id="studio-library-language"><option value="">All languages</option></select><select id="studio-library-gender"><option value="">All genders</option></select><select id="studio-library-category"><option value="">All categories</option></select></div><div id="studio-library-count" class="dcx-studio__modal-count">Loading voice library…</div><div id="studio-library-grid" class="dcx-studio__voice-grid"><div class="dcx-studio__modal-empty">Loading voices…</div></div></div>
 </div>
 @endsection
 
