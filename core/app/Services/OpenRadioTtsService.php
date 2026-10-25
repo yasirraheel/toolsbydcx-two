@@ -97,6 +97,7 @@ class OpenRadioTtsService
             'page' => $page,
             'page_size' => $pageSize,
             'total' => $total,
+            'provider_totals' => $counts,
         ];
     }
 

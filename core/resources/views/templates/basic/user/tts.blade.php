@@ -157,6 +157,7 @@
     .dcx-tts .tts-heading__icon { width: 3.25rem; height: 3.25rem; border-radius: 14px; color: #fff; background: #ff7900; font-size: 1.55rem; }
     .dcx-tts .tts-panel h4 { color: #0f172a; font-size: 1.65rem; letter-spacing: -.02em; }
     .dcx-tts .tts-panel__header p { color: #64748b; font-size: .95rem; }
+    .dcx-tts .tts-panel__header p strong { color: #f97316; font-weight: 700; }
     .dcx-tts .tts-status-chip { border-color: #22c55e; color: #16a34a; background: #f0fdf4; font-size: .78rem; }
     .dcx-tts .tts-library { padding: 1.45rem 2.25rem 2rem; }
     .dcx-tts .tts-provider-tabs { display: flex; align-items: center; gap: .2rem; max-width: 100%; margin-bottom: 1.5rem; padding: .25rem; overflow-x: auto; border: 1px solid #dbe4ef; border-radius: 999px; background: #f1f5f9; scrollbar-width: none; }
@@ -221,7 +222,7 @@
     @else
         <section class="tts-panel">
             <div class="tts-panel__header">
-                <div class="tts-heading"><span class="tts-heading__icon"><i class="las la-layer-group"></i></span><div><h4>@lang('Voice Library')</h4><p>@lang('Browse and choose a voice for your next generation.')</p></div></div>
+                <div class="tts-heading"><span class="tts-heading__icon"><i class="las la-layer-group"></i></span><div><h4>@lang('Voice Library')</h4><p><strong id="tts-library-total">—</strong> @lang('expressive studio voices across all engines')</p></div></div>
                 <span class="tts-status-chip"><i class="las la-check-circle"></i>@lang('Ready')</span>
             </div>
             <div class="tts-library">
@@ -284,6 +285,7 @@
     const grid = document.getElementById('tts-library-grid');
     const countLabel = document.getElementById('tts-library-count');
     const pageLabel = document.getElementById('tts-library-page-label');
+    const totalLabel = document.getElementById('tts-library-total');
     const pagination = document.getElementById('tts-pagination');
     const searchInput = document.getElementById('tts-library-search');
     const reset = document.getElementById('tts-library-reset');
@@ -445,6 +447,9 @@
             page = Number(response.payload?.page || requestedPage || 1);
             const pageSize = Number(response.payload?.page_size || PAGE_SIZE);
             totalVoices = Number(response.payload?.total || library.length);
+            if (totalLabel) totalLabel.textContent = totalVoices.toLocaleString();
+            const providerLabels = { elevenlabs: 'elevenlabs', minimax: 'fire_tts', edge: 'edge_tts', fishaudio: 'fish_audio' };
+            Object.entries(response.payload?.provider_totals || {}).forEach(([provider, total]) => updateProviderCount(providerLabels[provider] || provider, total));
             updateProviderCount(activeProvider === 'favorites' ? 'elevenlabs' : activeProvider, totalVoices);
             totalPages = Math.max(1, Math.ceil(totalVoices / pageSize));
             renderLibrary();
