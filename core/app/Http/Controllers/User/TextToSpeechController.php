@@ -64,7 +64,7 @@ class TextToSpeechController extends Controller
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
 
-        return $this->forward($this->tts->voiceClones());
+        return $this->forwardClone($this->tts->voiceClones());
     }
 
     public function createClone(Request $request)
@@ -80,7 +80,7 @@ class TextToSpeechController extends Controller
             'consent' => ['accepted'],
         ]);
 
-        return $this->forward($this->tts->createVoiceClone(
+        return $this->forwardClone($this->tts->createVoiceClone(
             $validated['audio'],
             trim($validated['name'])
         ));
@@ -95,7 +95,7 @@ class TextToSpeechController extends Controller
 
         abort_unless(preg_match('/^[A-Za-z0-9_-]{1,180}$/', $clone), 404);
 
-        return $this->forward($this->tts->deleteVoiceClone($clone));
+        return $this->forwardClone($this->tts->deleteVoiceClone($clone));
     }
 
     public function voices(Request $request)
@@ -315,6 +315,18 @@ class TextToSpeechController extends Controller
 
         return response()->json($payload, $upstream->status())
             ->header('Cache-Control', 'no-store');
+    }
+
+    private function forwardClone(Response $upstream)
+    {
+        if ($upstream->status() === 404) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Voice cloning is not available for the configured OpenRadio API key. Ask OpenRadio for a voice-cloning-enabled API endpoint or plan.',
+            ], 501)->header('Cache-Control', 'no-store');
+        }
+
+        return $this->forward($upstream);
     }
 
     private function forwardVoices(Response $upstream)
