@@ -23,10 +23,11 @@ class TextToSpeechController extends Controller
         $pageTitle = 'Text to Speech';
         $setting = $this->tts->setting();
 
-        return view('templates.basic.user.tts', [
+        return view('templates.basic.user.tts-studio', [
             'pageTitle' => $pageTitle,
             'configured' => $this->tts->configured(),
             'defaultVoiceId' => $setting?->default_voice_id,
+            'userBalance' => $request->user()->balance,
         ]);
     }
 
@@ -106,7 +107,7 @@ class TextToSpeechController extends Controller
 
         $validated = $request->validate([
             'audio_url' => ['required', 'url', 'max:2000'],
-            'text' => ['required', 'string', 'max:10000'],
+            'text' => ['required', 'string', 'max:60000'],
             'voice_id' => ['required', 'string', 'max:160'],
         ]);
 
@@ -130,7 +131,7 @@ class TextToSpeechController extends Controller
         }
 
         $validated = $request->validate([
-            'text' => ['required', 'string', 'max:10000'],
+            'text' => ['required', 'string', 'max:60000'],
             'voice_id' => ['nullable', 'string', 'max:160'],
         ]);
 
