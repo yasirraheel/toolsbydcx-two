@@ -2,7 +2,7 @@
 
 @section('panel')
     <div class="row">
-        <div class="col-xl-8 col-lg-10">
+        <div class="col-12">
             <div class="card custom--card dcx-tts-admin">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between gap-3 pb-3 mb-4 border-bottom">
@@ -27,31 +27,39 @@
 
                     <form method="POST" action="{{ route('admin.tts.update') }}">
                         @csrf
-                        <div class="form-group">
-                            <label for="api_key" class="required">@lang('OpenRadio API key')</label>
-                            <input type="password" id="api_key" name="api_key" class="form-control" autocomplete="new-password" placeholder="{{ $maskedApiKey ? __('Saved key: ') . $maskedApiKey . __(' — leave blank to keep it') : __('Paste the OpenRadio API key') }}">
-                            <small class="dcx-tts-help">@lang('Leave blank to keep the current key. The key is never displayed in full.')</small>
+                        <div class="row g-3 dcx-tts-grid">
+                            <div class="col-lg-4 col-md-6 col-12">
+                                <div class="form-group h-100">
+                                    <label for="api_key" class="required">@lang('OpenRadio API key')</label>
+                                    <input type="password" id="api_key" name="api_key" class="form-control" autocomplete="new-password" placeholder="{{ $maskedApiKey ? __('Saved key: ') . $maskedApiKey . __(' — leave blank to keep it') : __('Paste the OpenRadio API key') }}">
+                                    <small class="dcx-tts-help">@lang('Leave blank to keep the current key. The key is never displayed in full.')</small>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4 col-md-6 col-12">
+                                <div class="form-group h-100">
+                                    <label for="default_voice_id">@lang('Default voice ID') <span class="dcx-tts-optional">(@lang('optional'))</span></label>
+                                    <input type="text" id="default_voice_id" name="default_voice_id" class="form-control" maxlength="160" value="{{ old('default_voice_id', $setting?->default_voice_id) }}" placeholder="@lang('Used when the user does not choose a voice')">
+                                    <small class="dcx-tts-help">@lang('This voice is selected automatically when a user does not choose one.')</small>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4 col-md-6 col-12">
+                                <label class="dcx-tts-option dcx-tts-option-enabled h-100">
+                                    <input type="checkbox" name="enabled" value="1" @checked(old('enabled', $setting?->enabled ?? false))>
+                                    <span><strong>@lang('Enable Text-to-Speech for users')</strong><small>@lang('Allow users to generate speech through the configured server API.')</small></span>
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="default_voice_id">@lang('Default voice ID') <span class="dcx-tts-optional">(@lang('optional'))</span></label>
-                            <input type="text" id="default_voice_id" name="default_voice_id" class="form-control" maxlength="160" value="{{ old('default_voice_id', $setting?->default_voice_id) }}" placeholder="@lang('Used when the user does not choose a voice')">
-                            <small class="dcx-tts-help">@lang('This voice is selected automatically when a user does not choose one.')</small>
-                        </div>
-
-                        <div class="dcx-tts-options">
-                            <label class="dcx-tts-option">
-                                <input type="checkbox" name="enabled" value="1" @checked(old('enabled', $setting?->enabled ?? false))>
-                                <span><strong>@lang('Enable Text-to-Speech for users')</strong><small>@lang('Allow users to generate speech through the configured server API.')</small></span>
-                            </label>
-
-                            @if($setting?->hasApiKey())
+                        @if($setting?->hasApiKey())
+                            <div class="dcx-tts-options mt-3">
                                 <label class="dcx-tts-option dcx-tts-option-danger">
                                     <input type="checkbox" name="clear_api_key" value="1">
                                     <span><strong>@lang('Remove the saved API key and disable TTS')</strong><small>@lang('The encrypted key will be permanently removed.')</small></span>
                                 </label>
-                            @endif
-                        </div>
+                            </div>
+                        @endif
 
                         <div class="mt-4">
                             <button type="submit" class="btn btn--primary dcx-tts-save"><i class="las la-save"></i>@lang('Save TTS Settings')</button>
@@ -81,6 +89,11 @@
         .dcx-tts-admin .form-group { margin-bottom: 1.25rem; }
         .dcx-tts-admin .form-group label { display: block; margin-bottom: .45rem; font-size: .8125rem; font-weight: 600; }
         .dcx-tts-admin .form-control { min-height: 42px; padding: .6rem .8rem; font-size: .8125rem; }
+        .dcx-tts-grid > [class*="col-"] { min-width: 0; }
+        .dcx-tts-grid .form-group { width: 100%; margin-bottom: 0; }
+        .dcx-tts-grid .form-control { min-height: 54px; border-radius: 10px; }
+        .dcx-tts-grid .dcx-tts-option { width: 100%; min-height: 54px; align-items: center; }
+        .dcx-tts-grid .dcx-tts-option span { min-width: 0; }
         .dcx-tts-admin .form-control::placeholder { color: #94a3b8; opacity: .85; }
         .dcx-tts-help { display: block; margin-top: .4rem; font-size: .75rem; color: #94a3b8; }
         .dcx-tts-optional { color: #94a3b8; font-weight: 400; }
