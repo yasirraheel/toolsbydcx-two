@@ -47,6 +47,57 @@ class TextToSpeechController extends Controller
         ]);
     }
 
+    public function cloning(Request $request)
+    {
+        $this->ensureAccess($request);
+
+        return view('templates.basic.user.voice-cloning', [
+            'pageTitle' => 'Voice Cloning',
+            'configured' => $this->tts->configured(),
+        ]);
+    }
+
+    public function clones(Request $request)
+    {
+        $this->ensureAccess($request);
+        if (!$this->tts->configured()) {
+            return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
+        }
+
+        return $this->forward($this->tts->voiceClones());
+    }
+
+    public function createClone(Request $request)
+    {
+        $this->ensureAccess($request);
+        if (!$this->tts->configured()) {
+            return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+            'audio' => ['required', 'file', 'mimes:mp3,wav,m4a,aac', 'max:10240'],
+            'consent' => ['accepted'],
+        ]);
+
+        return $this->forward($this->tts->createVoiceClone(
+            $validated['audio'],
+            trim($validated['name'])
+        ));
+    }
+
+    public function deleteClone(Request $request, string $clone)
+    {
+        $this->ensureAccess($request);
+        if (!$this->tts->configured()) {
+            return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
+        }
+
+        abort_unless(preg_match('/^[A-Za-z0-9_-]{1,180}$/', $clone), 404);
+
+        return $this->forward($this->tts->deleteVoiceClone($clone));
+    }
+
     public function voices(Request $request)
     {
         $this->ensureAccess($request);

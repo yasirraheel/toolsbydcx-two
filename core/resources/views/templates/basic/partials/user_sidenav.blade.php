@@ -21,6 +21,10 @@
             <i class="las la-list fs-5"></i>
             <span>@lang('Voice Library')</span>
         </a>
+        <a href="{{ route('user.tts.cloning') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.tts.cloning') }}">
+            <i class="las la-magic fs-5"></i>
+            <span>@lang('Voice Cloning')</span>
+        </a>
     @endif
 
     {{-- Subscription Plans --}}

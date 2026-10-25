@@ -102,7 +102,11 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::get('/studio-data', 'studioData')->middleware('throttle:30,1')->name('studio.data');
                 Route::get('/library', 'library')->name('library');
+                Route::get('/voice-cloning', 'cloning')->name('cloning');
                 Route::get('/voices', 'voices')->middleware('throttle:30,1')->name('voices');
+                Route::get('/clones', 'clones')->middleware('throttle:30,1')->name('clones');
+                Route::post('/clone', 'createClone')->middleware('throttle:5,1')->name('clone.create');
+                Route::delete('/clones/{clone}', 'deleteClone')->middleware('throttle:20,1')->name('clone.delete');
                 Route::get('/history', 'history')->name('history');
                 Route::get('/audio/{audio}', 'audio')->name('audio');
                 Route::post('/persist', 'persist')->middleware('throttle:20,1')->name('persist');

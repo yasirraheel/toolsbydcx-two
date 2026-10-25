@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TtsSetting;
 use Illuminate\Http\Client\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -121,6 +122,43 @@ class OpenRadioTtsService
     public function account(): Response
     {
         return $this->client()->get($this->url('me'));
+    }
+
+    /**
+     * Return the authenticated account's reusable voice clones. Clone
+     * management stays server-side so the OpenRadio token is never exposed
+     * to a browser.
+     */
+    public function voiceClones(): Response
+    {
+        return $this->client()->get($this->url('voice-clones'));
+    }
+
+    /**
+     * Create a clone from a short consented sample. The endpoint accepts the
+     * same multipart fields used by OpenRadio's Voice Cloning tool.
+     */
+    public function createVoiceClone(UploadedFile $audio, string $name): Response
+    {
+        $stream = fopen($audio->getRealPath(), 'rb');
+
+        try {
+            return $this->client()
+                ->attach('audio', $stream, $audio->getClientOriginalName())
+                ->post($this->url('voice-clone'), [
+                    'name' => $name,
+                    'consent' => 'true',
+                ]);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+    }
+
+    public function deleteVoiceClone(string $clone): Response
+    {
+        return $this->client()->delete($this->url('voice-clones/' . rawurlencode($clone)));
     }
 
     private function client()
