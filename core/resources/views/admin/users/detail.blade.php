@@ -193,7 +193,7 @@
                                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
                                         <div>
                                             <strong class="text-white">
-                                                <i class="las la-calendar-alt text--warning"></i> @lang('Account Validity & Expiration Date')
+                                                <i class="las la-calendar-alt text--warning"></i> @lang('Expiration Date')
                                             </strong>
                                         </div>
                                     </div>
