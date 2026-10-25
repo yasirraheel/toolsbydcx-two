@@ -116,7 +116,7 @@
                             </div>
 
                             {{-- Assign Available Accounts --}}
-                            <div class="col-12">
+                            <div class="col-lg-6 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
@@ -492,14 +492,21 @@
     .user-edit-grid .form-control,
     .user-edit-grid .select2-container--default .select2-selection--single,
     .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 54px; border-radius: 10px; }
+    .user-edit-grid .select2-container { width: 100% !important; }
     .user-edit-grid .select2-container--default .select2-selection--single { display: flex; align-items: center; }
     .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 7px; }
-    .dcx-tts-assignment { min-height: 54px; border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .dcx-tts-assignment { height: 54px; min-height: 54px; align-items: center !important; border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .dcx-tts-assignment > span { min-width: 0; flex-direction: row !important; align-items: center; gap: 12px !important; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
+    .dcx-tts-assignment strong, .dcx-tts-assignment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
     .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
     .dcx-expiry-panel { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
     .dcx-expiry-panel #detailExpiresAtInput { min-height: 54px; }
+    @media (max-width: 767px) {
+        .dcx-tts-assignment { height: auto; }
+        .dcx-tts-assignment > span { align-items: flex-start; flex-direction: column !important; gap: 2px !important; }
+    }
 </style>
 @endpush
 
