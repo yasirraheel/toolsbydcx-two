@@ -216,6 +216,51 @@
     @media (max-width: 1199px) { .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 3; } }
     @media (max-width: 767px) { .dcx-tts .tts-panel__header { padding: 1.35rem 1rem; } .dcx-tts .tts-panel h4 { font-size: 1.35rem; } .dcx-tts .tts-library { padding: 1rem; } .dcx-tts .tts-library__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dcx-tts .tts-search-wrap { grid-column: span 2; } }
     @media (max-width: 575px) { .dcx-tts .tts-voice-card__actions { grid-template-columns: minmax(0, 1fr) 2rem 2rem 78px; } .dcx-tts .tts-voice-action--use { grid-column: 1 / -1; width: 100%; } }
+
+    /* Keep the reference orange accent while matching the ToolsByDcx dark theme. */
+    .dcx-tts { color: #cbd5e1; }
+    .dcx-tts .tts-panel { border-color: rgba(148, 163, 184, .16); background: #111827; box-shadow: 0 8px 24px rgba(2, 6, 23, .22); }
+    .dcx-tts .tts-panel__header { border-bottom-color: rgba(148, 163, 184, .14); background: #111827; }
+    .dcx-tts .tts-panel h4 { color: #f8fafc; }
+    .dcx-tts .tts-panel__header p { color: #94a3b8; }
+    .dcx-tts .tts-panel__header p strong { color: #ff7900; }
+    .dcx-tts .tts-provider-tabs { border-color: rgba(148, 163, 184, .2); background: #1e293b; }
+    .dcx-tts .tts-provider-tab { color: #cbd5e1; }
+    .dcx-tts .tts-provider-tab i { color: #94a3b8; }
+    .dcx-tts .tts-provider-tab span { color: #fb923c; background: rgba(249, 115, 22, .16); }
+    .dcx-tts .tts-provider-tab:hover { color: #fdba74; background: rgba(249, 115, 22, .1); }
+    .dcx-tts .tts-provider-tab.is-active { color: #fff; background: #ff7900; }
+    .dcx-tts .tts-provider-tab.is-active i, .dcx-tts .tts-provider-tab.is-active span { color: #fff; background: transparent; }
+    .dcx-tts .tts-library__toolbar { border-color: rgba(148, 163, 184, .18); background: #111827; box-shadow: 0 4px 14px rgba(2, 6, 23, .18); }
+    .dcx-tts .tts-filter-field label { color: #94a3b8; }
+    .dcx-tts .tts-library input, .dcx-tts .tts-library select, .dcx-tts .tts-composer textarea { border-color: rgba(148, 163, 184, .2) !important; color: #f8fafc !important; background: #1e293b !important; }
+    .dcx-tts .tts-library input::placeholder { color: #64748b; }
+    .dcx-tts .tts-library input:focus, .dcx-tts .tts-library select:focus, .dcx-tts .tts-composer textarea:focus { border-color: #ff7900 !important; box-shadow: 0 0 0 .18rem rgba(255, 121, 0, .18) !important; }
+    .dcx-tts .tts-reset { border-color: rgba(255, 121, 0, .55); color: #fdba74; background: rgba(249, 115, 22, .08); }
+    .dcx-tts .tts-reset:hover { color: #fff; background: rgba(249, 115, 22, .18); }
+    .dcx-tts .tts-library__summary { color: #94a3b8; }
+    .dcx-tts .tts-library__summary strong { color: #fb923c; }
+    .dcx-tts .tts-voice-card { border-color: rgba(148, 163, 184, .18); background: #172033; box-shadow: 0 4px 14px rgba(2, 6, 23, .2); }
+    .dcx-tts .tts-voice-card:hover { border-color: rgba(255, 121, 0, .75); box-shadow: 0 12px 24px rgba(2, 6, 23, .3); }
+    .dcx-tts .tts-voice-card h5, .dcx-tts .tts-voice-card__name { color: #f8fafc !important; }
+    .dcx-tts .tts-voice-card__meta { color: #fb923c; }
+    .dcx-tts .tts-voice-card__description { color: #aebbd0; }
+    .dcx-tts .tts-voice-badge { border-color: rgba(255, 121, 0, .45); color: #fdba74; background: rgba(249, 115, 22, .1); }
+    .dcx-tts .tts-tag { border-color: rgba(148, 163, 184, .24); color: #cbd5e1; background: #1e293b; }
+    .dcx-tts .tts-tag:first-child { border-color: rgba(255, 121, 0, .45); color: #fdba74; background: rgba(249, 115, 22, .1); }
+    .dcx-tts .tts-voice-card__actions { border-top-color: rgba(148, 163, 184, .14); }
+    .dcx-tts .tts-card-language-pill { border-color: rgba(148, 163, 184, .24); color: #cbd5e1; background: #1e293b; }
+    .dcx-tts .tts-card-language-pill strong { color: #e2e8f0; }
+    .dcx-tts .tts-card-language-pill em { color: #fdba74; background: rgba(249, 115, 22, .16); }
+    .dcx-tts .tts-icon-action { color: #94a3b8; }
+    .dcx-tts .tts-icon-action:hover, .dcx-tts .tts-icon-action.is-favorite { color: #fdba74; background: rgba(249, 115, 22, .14); }
+    .dcx-tts .tts-voice-action--preview { border-color: rgba(255, 121, 0, .55); color: #fdba74; background: transparent; }
+    .dcx-tts .tts-voice-action--preview:hover { background: rgba(249, 115, 22, .12); }
+    .dcx-tts .tts-library__empty { border-color: rgba(148, 163, 184, .22); color: #94a3b8; }
+    .dcx-tts .tts-pagination { border-top-color: rgba(148, 163, 184, .14); }
+    .dcx-tts .tts-page { border-color: rgba(148, 163, 184, .24); color: #cbd5e1; background: #172033; }
+    .dcx-tts .tts-page:hover:not(:disabled) { color: #fff; border-color: rgba(255, 121, 0, .65); background: rgba(249, 115, 22, .14); }
+    .dcx-tts .tts-page__label { color: #f8fafc; background: transparent; }
 </style>
 @endpush
 
