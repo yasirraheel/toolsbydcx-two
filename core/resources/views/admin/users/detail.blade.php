@@ -221,11 +221,11 @@
                             </div>
 
                             {{-- Save Changes & Copy Details Buttons --}}
-                            <div class="col-12 mt-3 d-flex flex-wrap gap-2">
-                                <button type="submit" class="btn btn--primary btn-lg flex-grow-1 h-45 shadow-sm fw-bold">
+                            <div class="col-12 mt-3 d-flex flex-wrap justify-content-end gap-2">
+                                <button type="submit" class="btn btn--primary px-4 py-2 shadow-sm fw-bold">
                                     <i class="las la-save me-1"></i> @lang('Save Changes')
                                 </button>
-                                <button type="button" class="btn btn--success btn-lg h-45 shadow-sm fw-bold text-nowrap text-white px-4 copyWelcomeDetailsTrigger">
+                                <button type="button" class="btn btn--success px-4 py-2 shadow-sm fw-bold text-nowrap text-white copyWelcomeDetailsTrigger">
                                     <i class="las la-clipboard-check me-1"></i> @lang('Copy Details')
                                 </button>
                             </div>
