@@ -261,6 +261,8 @@
     .dcx-tts .tts-page { border-color: rgba(148, 163, 184, .24); color: #cbd5e1; background: #172033; }
     .dcx-tts .tts-page:hover:not(:disabled) { color: #fff; border-color: rgba(255, 121, 0, .65); background: rgba(249, 115, 22, .14); }
     .dcx-tts .tts-page__label { color: #f8fafc; background: transparent; }
+    .dcx-tts .tts-library__grid.tts-library__grid--balanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 767px) { .dcx-tts .tts-library__grid.tts-library__grid--balanced { grid-template-columns: 1fr; } }
 </style>
 @endpush
 
@@ -463,6 +465,7 @@
     const renderLibrary = () => {
         if (activePreviewButton && !document.body.contains(activePreviewButton)) stopPreview();
         const items = activeProvider === 'favorites' ? filteredVoices().filter((item) => favoriteVoiceIds.has(String(idOf(item)))) : filteredVoices();
+        grid.classList.toggle('tts-library__grid--balanced', items.length === 4);
         const hasFilters = Object.values(filters).some((select) => select.value);
         countLabel.textContent = (hasFilters ? items.length : (totalVoices || items.length)).toLocaleString();
         pageLabel.textContent = totalVoices ? '@lang('Page') ' + page + ' @lang('of') ' + totalPages : '';
