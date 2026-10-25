@@ -173,17 +173,22 @@
                             {{-- Assign Text-to-Speech access --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
-                                <label class="dcx-tts-assignment d-flex align-items-start gap-2 p-3 rounded mb-0 h-100">
-                                    <input type="checkbox" name="tts_access" value="1" class="mt-1" @checked(old('tts_access', $user->tts_access))>
-                                    <span class="d-flex flex-column gap-1">
-                                        <strong><i class="las la-microphone text--primary"></i> @lang('Assign Text-to-Speech access')</strong>
-                                        <small class="text-muted">@lang('Allow this user to use the server-side OpenRadio voice tool.')</small>
-                                    </span>
-                                </label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold mb-2">
+                                        <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
+                                    </label>
+                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-0">
+                                        <input type="checkbox" name="tts_access" value="1" @checked(old('tts_access', $user->tts_access))>
+                                        <span>@lang('Enable access')</span>
+                                    </label>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
+                                        <i class="las la-info-circle"></i> @lang('Allow this user to use the server-side OpenRadio voice tool.')
+                                    </small>
+                                </div>
                             </div>
 
                             {{-- Account Validity & Expiration Date --}}
-                            <div class="col-12">
+                            <div class="col-lg-4 col-md-6 col-12">
                                 <div class="dcx-expiry-panel p-3 rounded">
                                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
                                         <div>
@@ -495,8 +500,8 @@
     .user-edit-grid .select2-container { width: 100% !important; }
     .user-edit-grid .select2-container--default .select2-selection--single { display: flex; align-items: center; }
     .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 7px; }
-    .dcx-tts-assignment { height: 54px; min-height: 54px; align-items: center !important; border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
-    .dcx-tts-assignment > span { min-width: 0; flex-direction: row !important; align-items: center; gap: 12px !important; }
+    .dcx-tts-assignment { height: 54px; min-height: 54px; align-items: center !important; padding: 0 14px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .dcx-tts-assignment > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment strong, .dcx-tts-assignment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
