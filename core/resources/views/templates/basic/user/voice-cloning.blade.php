@@ -39,6 +39,9 @@
     .dcx-clone-submit i, .dcx-clone-submit span { color:#0b1220 !important; }
     .dcx-clone-submit:hover:not(:disabled) { color:#0b1220 !important; background:#ff8a1f; border-color:#ff8a1f; }
     .dcx-clone-submit:disabled { color:#0b1220 !important; background:#a85a19; border-color:#a85a19; opacity:1; cursor:not-allowed; }
+    .dcx-clone-submit__spinner { display:none; width:14px; height:14px; flex:0 0 auto; border:2px solid rgba(11,18,32,.28); border-top-color:#0b1220; border-radius:50%; animation:dcx-clone-spin .7s linear infinite; }
+    .dcx-clone-submit.is-loading .dcx-clone-submit__spinner { display:inline-block; }
+    @keyframes dcx-clone-spin { to { transform:rotate(360deg); } }
     .dcx-clone-message { min-height:1.2rem; margin-top:.65rem; color:#4ade80; font-size:.74rem; }
     .dcx-clone-message.is-error { color:#fca5a5; }
     .dcx-clone-list-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.9rem; }
@@ -99,7 +102,7 @@
                 </div>
                 <label class="dcx-clone-consent"><input id="dcx-clone-consent" type="checkbox" name="consent" value="1" required><span>@lang('I confirm this is my own voice, or I have explicit permission from the voice owner to clone it. I will not use it to impersonate, deceive or harm anyone.')</span></label>
                 <div class="dcx-clone-cost"><strong><i class="las la-coins me-1"></i>@lang('Estimated cost: Free')</strong><span>@lang('Creating a clone is free. Credits are only charged when you generate audio with it in Text to Speech.')</span></div>
-                <button id="dcx-clone-submit" class="dcx-clone-submit" type="submit" disabled><i class="las la-magic"></i><span>@lang('Create Voice Clone')</span></button>
+                <button id="dcx-clone-submit" class="dcx-clone-submit" type="submit" disabled aria-busy="false"><i class="las la-magic"></i><span data-submit-label>@lang('Create Voice Clone')</span><span class="dcx-clone-submit__spinner" aria-hidden="true"></span></button>
                 <div id="dcx-clone-message" class="dcx-clone-message" role="status"></div>
             </form>
         </section>
@@ -126,6 +129,7 @@
     const message = document.getElementById('dcx-clone-message');
     const list = document.getElementById('dcx-clone-list');
     const count = document.getElementById('dcx-clone-count');
+    const submitLabel = submit.querySelector('[data-submit-label]');
     const clonesUrl = @json(route('user.tts.clones'));
     const createUrl = @json(route('user.tts.clone.create'));
     const deleteUrl = @json(route('user.tts.clone.delete', ['clone' => '__CLONE__']));
@@ -135,6 +139,7 @@
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
     const setMessage = (text, error = false) => { message.textContent = text || ''; message.classList.toggle('is-error', error); };
     const updateSubmit = () => { submit.disabled = !name.value.trim() || !audio.files?.[0] || !consent.checked; };
+    const setSubmitting = (loading) => { submit.classList.toggle('is-loading', loading); submit.setAttribute('aria-busy', loading ? 'true' : 'false'); submitLabel.textContent = loading ? '@lang('Creating…')' : '@lang('Create Voice Clone')'; };
     const normalize = (payload) => {
         const rows = Array.isArray(payload?.clones) ? payload.clones : (Array.isArray(payload?.data) ? payload.data : []);
         return rows.map((clone) => ({ id: clone.id ?? clone.voice_id ?? clone.voiceId, name: clone.name ?? clone.display_name ?? 'Voice clone', voiceId: clone.voice_id ?? clone.voiceId ?? clone.id, description: clone.description ?? '' })).filter((clone) => clone.id);
@@ -148,7 +153,7 @@
     const load = async () => { try { clones = normalize(await apiJson(clonesUrl)); render(); } catch (error) { list.innerHTML = '<div class="dcx-clone-empty">' + escapeHtml(error.message) + '</div>'; } };
     audio.addEventListener('change', () => { const selected = audio.files?.[0]; fileLabel.textContent = selected ? selected.name : '@lang('Click to upload audio')'; upload.classList.toggle('is-selected', !!selected); updateSubmit(); });
     name.addEventListener('input', updateSubmit); consent.addEventListener('change', updateSubmit);
-    form.addEventListener('submit', async (event) => { event.preventDefault(); if (submit.disabled) return; submit.disabled = true; setMessage('@lang('Creating your voice clone…')'); const data = new FormData(form); try { await apiJson(createUrl, { method: 'POST', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}, body: data }); form.reset(); fileLabel.textContent = '@lang('Click to upload audio')'; upload.classList.remove('is-selected'); setMessage('@lang('Voice clone created successfully.')'); await load(); } catch (error) { setMessage(error.message, true); } finally { updateSubmit(); } });
+    form.addEventListener('submit', async (event) => { event.preventDefault(); if (submit.disabled) return; submit.disabled = true; setSubmitting(true); setMessage('@lang('Creating your voice clone…')'); const data = new FormData(form); try { await apiJson(createUrl, { method: 'POST', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}, body: data }); form.reset(); fileLabel.textContent = '@lang('Click to upload audio')'; upload.classList.remove('is-selected'); setMessage('@lang('Voice clone created successfully.')'); await load(); } catch (error) { setMessage(error.message, true); } finally { setSubmitting(false); updateSubmit(); } });
     list.addEventListener('click', async (event) => { const button = event.target.closest('[data-delete-clone]'); if (!button) return; const id = button.dataset.deleteClone; if (!id || !window.confirm('@lang('Delete this voice clone permanently?')')) return; button.disabled = true; try { await apiJson(deleteUrl.replace('__CLONE__', encodeURIComponent(id)), { method: 'DELETE', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'} }); clones = clones.filter((clone) => String(clone.id) !== String(id)); render(); setMessage('@lang('Voice clone deleted.')'); } catch (error) { button.disabled = false; setMessage(error.message, true); } });
     load();
 }());
