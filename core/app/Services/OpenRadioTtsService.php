@@ -131,7 +131,11 @@ class OpenRadioTtsService
      */
     public function voiceClones(): Response
     {
-        return $this->client()->get($this->url('voice-clones'));
+        // OpenRadio exposes user-owned clones through the regular voice
+        // catalog. There is no public `/voice-clones` resource in the v1
+        // developer API; requesting it returns 404, which made the cloned
+        // tab appear empty even when a clone existed in OpenRadio.
+        return $this->voices(null, 1, 100, [], 'clone');
     }
 
     /**
