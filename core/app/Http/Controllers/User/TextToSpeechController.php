@@ -381,11 +381,20 @@ class TextToSpeechController extends Controller
 
     private function forwardClone(Response $upstream)
     {
-        if ($upstream->status() === 404) {
+        if (!$upstream->successful()) {
+            $payload = $upstream->json();
+            $message = is_array($payload)
+                ? ($payload['message'] ?? $payload['error'] ?? null)
+                : null;
+
+            if (!$message || $upstream->status() === 404 || str_contains($upstream->body(), 'Cannot POST')) {
+                $message = 'OpenRadio does not expose voice-clone creation through the configured developer API. Create the clone in OpenRadio Studio, then use an API-supported clone voice or ask OpenRadio for clone API access.';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Voice cloning is not available for the configured OpenRadio API key. Ask OpenRadio for a voice-cloning-enabled API endpoint or plan.',
-            ], 501)->header('Cache-Control', 'no-store');
+                'message' => $message,
+            ], 502)->header('Cache-Control', 'no-store');
         }
 
         return $this->forward($upstream);
