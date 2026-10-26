@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\TtsAudio;
+use App\Models\TtsVoiceClone;
 use App\Services\OpenRadioTtsService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -64,7 +65,42 @@ class TextToSpeechController extends Controller
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
 
-        return $this->forwardClone($this->tts->voiceClones());
+        $upstream = $this->tts->voiceClones();
+        if (!$upstream->successful()) {
+            return $this->forwardClone($upstream);
+        }
+
+        $payload = $upstream->json();
+        $payload = is_array($payload) ? $payload : [];
+        $remote = $this->cloneRows($payload);
+        $local = TtsVoiceClone::query()
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get()
+            ->map(fn (TtsVoiceClone $clone) => [
+                'id' => $clone->clone_id,
+                'voice_id' => $clone->clone_id,
+                'name' => $clone->name,
+                'description' => $clone->description,
+                'provider' => 'clone',
+            ])
+            ->all();
+
+        $merged = collect(array_merge($local, $remote))
+            ->filter(fn ($clone) => filled($clone['voice_id'] ?? null))
+            ->unique(fn ($clone) => (string) ($clone['voice_id'] ?? $clone['id'] ?? ''))
+            ->values()
+            ->all();
+
+        if (array_key_exists('data', $payload)) {
+            $payload['data'] = $merged;
+        } else {
+            $payload['clones'] = $merged;
+        }
+        $payload['total'] = count($merged);
+
+        return response()->json($payload, $upstream->status())
+            ->header('Cache-Control', 'no-store');
     }
 
     public function createClone(Request $request)
@@ -80,10 +116,28 @@ class TextToSpeechController extends Controller
             'consent' => ['accepted'],
         ]);
 
-        return $this->forwardClone($this->tts->createVoiceClone(
+        $upstream = $this->tts->createVoiceClone(
             $validated['audio'],
             trim($validated['name'])
-        ));
+        );
+
+        if ($upstream->successful()) {
+            $payload = $upstream->json();
+            $rows = is_array($payload) ? $this->cloneRows($payload) : [];
+            $clone = $rows[0] ?? null;
+            if ($clone && filled($clone['voice_id'] ?? null)) {
+                TtsVoiceClone::updateOrCreate(
+                    ['user_id' => $request->user()->id, 'clone_id' => (string) $clone['voice_id']],
+                    [
+                        'name' => (string) ($clone['name'] ?? $validated['name']),
+                        'description' => $clone['description'] ?? null,
+                        'metadata' => is_array($payload) ? $payload : null,
+                    ]
+                );
+            }
+        }
+
+        return $this->forwardClone($upstream);
     }
 
     public function deleteClone(Request $request, string $clone)
@@ -95,7 +149,15 @@ class TextToSpeechController extends Controller
 
         abort_unless(preg_match('/^[A-Za-z0-9_-]{1,180}$/', $clone), 404);
 
-        return $this->forwardClone($this->tts->deleteVoiceClone($clone));
+        $upstream = $this->tts->deleteVoiceClone($clone);
+        if ($upstream->successful()) {
+            TtsVoiceClone::query()
+                ->where('user_id', $request->user()->id)
+                ->where('clone_id', $clone)
+                ->delete();
+        }
+
+        return $this->forwardClone($upstream);
     }
 
     public function voices(Request $request)
@@ -327,6 +389,51 @@ class TextToSpeechController extends Controller
         }
 
         return $this->forward($upstream);
+    }
+
+    /**
+     * Normalize the different clone response envelopes used by OpenRadio.
+     * The developer API has returned `data`, `clones`, and `clone` envelopes
+     * over time, so the application keeps one browser-safe shape.
+     */
+    private function cloneRows(array $payload): array
+    {
+        $rows = $payload['clones'] ?? $payload['data'] ?? null;
+        if (is_array($payload['clone'] ?? null)) {
+            $rows = [$payload['clone']];
+        }
+        if (!is_array($rows)) {
+            $rows = $this->cloneId($payload) ? [$payload] : [];
+        } elseif (array_is_list($rows) === false && $this->cloneId($rows)) {
+            $rows = [$rows];
+        }
+
+        return collect($rows)
+            ->filter('is_array')
+            ->map(function (array $clone) {
+                $id = $this->cloneId($clone);
+                return [
+                    'id' => $id,
+                    'voice_id' => $id,
+                    'name' => (string) ($clone['name'] ?? $clone['display_name'] ?? $clone['label'] ?? 'Voice clone'),
+                    'description' => $clone['description'] ?? null,
+                    'provider' => 'clone',
+                ];
+            })
+            ->filter(fn (array $clone) => filled($clone['voice_id']))
+            ->values()
+            ->all();
+    }
+
+    private function cloneId(array $clone): ?string
+    {
+        foreach (['voice_id', 'voiceId', 'clone_id', 'cloneId', 'id'] as $key) {
+            if (filled($clone[$key] ?? null)) {
+                return (string) $clone[$key];
+            }
+        }
+
+        return null;
     }
 
     private function forwardVoices(Response $upstream)
