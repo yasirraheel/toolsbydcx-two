@@ -102,12 +102,17 @@ class OpenRadioTtsService
         ];
     }
 
-    public function synthesize(string $text, string $voiceId): Response
+    public function synthesize(string $text, string $voiceId, ?string $model = null): Response
     {
-        return $this->client()->post($this->url('tts'), [
+        $payload = [
             'text' => $text,
             'voice_id' => $voiceId,
-        ]);
+        ];
+        if (filled($model)) {
+            $payload['model'] = $model;
+        }
+
+        return $this->client()->post($this->url('tts'), $payload);
     }
 
     public function task(string $taskId): Response

@@ -244,7 +244,10 @@ class TextToSpeechController extends Controller
             ],
             'models' => [
                 'elevenlabs' => [
-                    ['id' => 'api-default', 'label' => 'Automatic compatible model for the selected voice'],
+                    ['id' => 'eleven_v4', 'label' => 'ElevenLabs V4 — fastest & most emotive (New)'],
+                    ['id' => 'eleven_v4_turbo', 'label' => 'ElevenLabs V4 Turbo — ultra-fast emotive'],
+                    ['id' => 'eleven_v3', 'label' => 'ElevenLabs V3 — expressive'],
+                    ['id' => 'eleven_turbo_v2_5', 'label' => 'ElevenLabs V2.5 — classic fast'],
                 ],
             ],
             'languages' => ['Detect Language', 'English', 'Urdu', 'Arabic', 'Hindi', 'Spanish', 'French', 'German'],
@@ -332,6 +335,7 @@ class TextToSpeechController extends Controller
         $validated = $request->validate([
             'text' => ['required', 'string', 'max:60000'],
             'voice_id' => ['nullable', 'string', 'max:160'],
+            'model' => ['nullable', 'string', 'in:eleven_v4,eleven_v4_turbo,eleven_v3,eleven_turbo_v2_5'],
         ]);
 
         $voiceId = trim((string) ($validated['voice_id'] ?? ''));
@@ -342,7 +346,7 @@ class TextToSpeechController extends Controller
             return response()->json(['success' => false, 'message' => 'Choose a voice before generating audio.'], 422);
         }
 
-        $upstream = $this->tts->synthesize(trim($validated['text']), $voiceId);
+        $upstream = $this->tts->synthesize(trim($validated['text']), $voiceId, $validated['model'] ?? null);
         if ($upstream->successful() && str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
             return $this->saveAudio($request->user(), trim($validated['text']), $voiceId, $upstream->body(), (string) $upstream->header('Content-Type'));
         }
