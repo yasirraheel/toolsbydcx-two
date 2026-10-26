@@ -244,7 +244,7 @@ class TextToSpeechController extends Controller
             ],
             'models' => [
                 'elevenlabs' => [
-                    ['id' => 'api-default', 'label' => 'OpenRadio API default for the selected voice'],
+                    ['id' => 'api-default', 'label' => 'Automatic compatible model for the selected voice'],
                 ],
             ],
             'languages' => ['Detect Language', 'English', 'Urdu', 'Arabic', 'Hindi', 'Spanish', 'French', 'German'],
@@ -370,9 +370,22 @@ class TextToSpeechController extends Controller
                 ->header('Cache-Control', 'no-store');
         }
 
+        if (!$upstream->successful()) {
+            $payload = $upstream->json();
+            $message = is_array($payload)
+                ? ($payload['message'] ?? $payload['error'] ?? null)
+                : null;
+
+            return response()->json([
+                'success' => false,
+                'message' => filled($message) ? 'The speech request could not be completed.' : 'The speech service is temporarily unavailable.',
+            ], $upstream->status())
+                ->header('Cache-Control', 'no-store');
+        }
+
         $payload = $upstream->json();
         if (!is_array($payload)) {
-            $payload = ['success' => false, 'message' => 'OpenRadio returned an invalid response.'];
+            $payload = ['success' => false, 'message' => 'The speech service returned an invalid response.'];
         }
 
         return response()->json($payload, $upstream->status())
@@ -388,7 +401,7 @@ class TextToSpeechController extends Controller
                 : null;
 
             if (!$message || $upstream->status() === 404 || str_contains($upstream->body(), 'Cannot POST')) {
-                $message = 'OpenRadio does not expose voice-clone creation through the configured developer API. Create the clone in OpenRadio Studio, then use an API-supported clone voice or ask OpenRadio for clone API access.';
+                $message = 'Voice-clone creation is not available through the current speech service integration. Please contact an administrator.';
             }
 
             return response()->json([
@@ -463,7 +476,7 @@ class TextToSpeechController extends Controller
     private function forwardVoicePayload(?array $payload): array
     {
         if (!is_array($payload)) {
-            return ['success' => false, 'message' => 'OpenRadio returned an invalid response.'];
+            return ['success' => false, 'message' => 'The speech service returned an invalid response.'];
         }
 
         foreach ($payload['data'] ?? [] as &$voice) {

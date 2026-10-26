@@ -273,7 +273,7 @@
             <div class="tts-panel__header">
                 <div class="tts-heading"><span class="tts-heading__icon"><i class="las la-microphone"></i></span><div><h4>@lang('Text to Speech')</h4><p>@lang('Create natural voice audio through the ToolsByDcx server connection.')</p></div></div>
             </div>
-            <div class="p-4"><div class="alert alert-warning bg-transparent border-warning text-warning mb-0"><i class="las la-info-circle me-1"></i>@lang('Text-to-Speech is not available yet. Ask an administrator to configure the OpenRadio API.')</div></div>
+            <div class="p-4"><div class="alert alert-warning bg-transparent border-warning text-warning mb-0"><i class="las la-info-circle me-1"></i>@lang('Text-to-Speech is not available yet. Ask an administrator to configure the speech service.')</div></div>
         </div>
     @else
         <section class="tts-panel">
@@ -561,7 +561,7 @@
 
     const findTaskId = (payload) => payload?.task_id || payload?.taskId || payload?.id || payload?.task?.id || payload?.data?.task_id || payload?.data?.taskId || payload?.data?.id || payload?.data?.task?.id || '';
     const findAudioUrl = (payload) => payload?.audio_url || payload?.audioUrl || payload?.url || payload?.data?.audio_url || payload?.data?.audioUrl || payload?.data?.url || payload?.result?.audio_url || payload?.result?.url || '';
-    const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The OpenRadio task failed.'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
+    const waitForTask = async (taskId) => { const url = taskUrlTemplate.replace('__TASK__', encodeURIComponent(taskId)); for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise((resolve) => setTimeout(resolve, 2000)); const response = await jsonRequest(url); const payload = response.payload || {}; const audioUrl = findAudioUrl(payload); const state = String(payload.status || payload.state || payload.data?.status || '').toLowerCase(); if (audioUrl) return audioUrl; if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) throw new Error(payload.message || 'The speech task failed.'); } throw new Error('@lang('The audio task timed out. Please try again.')'); };
     const loadHistory = async () => { try { const response = await jsonRequest(historyUrl); (response.payload?.audios || []).forEach((item) => { if (item.audio_url) addAudioPlayer(item.audio_url, '@lang('Saved audio')'); }); } catch (error) { /* History is optional and must not block the voice library. */ } };
     const formatTime = (seconds) => { if (!Number.isFinite(seconds)) return '0:00'; const minutes = Math.floor(seconds / 60); return minutes + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'); };
     const addAudioPlayer = (src, label = '@lang('Generated audio')') => {
