@@ -582,6 +582,7 @@ class TextToSpeechController extends Controller
             'success' => true,
             'audio_id' => $audio->id,
             'audio_url' => route('user.tts.audio', ['audio' => $audio]),
+            'remaining_credits' => $this->credits->remaining($user),
         ])->header('Cache-Control', 'no-store');
     }
 }
