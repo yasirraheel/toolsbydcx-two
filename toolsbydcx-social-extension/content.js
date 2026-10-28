@@ -96,22 +96,23 @@ window.addEventListener('message', (event) => {
 
 // The panel session is the authority for injected accounts. If the user logs
 // out of the panel (including a SPA logout that redirects without a reload),
-// ask the service worker to release its injection state immediately. The
-// third-party cookie jar is shared by the whole browser profile, so clearing
-// it here would also log out the browser owner's own ChatGPT/Google account.
+// ask the service worker to clear the injected platform cookies immediately.
+// This is local to the browser profile where the panel logout occurred; it
+// does not make a server-wide logout request or affect other browsers.
 (() => {
     const host = window.location.hostname.toLowerCase();
     const isPanel = host === 'toolsbydcx.com'
         || host.endsWith('.toolsbydcx.com')
         || host === 'shahabtech.com'
         || host.endsWith('.shahabtech.com');
-    if (!isPanel) return;
+    const isUserPanel = /^\/user(?:\/|$)/i.test(window.location.pathname || '');
+    if (!isPanel || !isUserPanel) return;
 
     let wipeRequested = false;
     const requestWipe = () => {
         if (wipeRequested) return;
         wipeRequested = true;
-        try { chrome.runtime.sendMessage({ type: 'RELEASE_INJECTION' }); } catch (_) {}
+        try { chrome.runtime.sendMessage({ type: 'WIPE_COOKIES' }); } catch (_) {}
     };
 
     const looksLikeLogout = (value) => /(?:^|\/)(?:user\/)?(?:login|logout|signout|sign-out)(?:[/?#]|$)/i.test(String(value || ''))

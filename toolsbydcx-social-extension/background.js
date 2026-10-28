@@ -6,7 +6,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    if (request.type === 'RELEASE_INJECTION' || request.type === 'WIPE_COOKIES') {
+    if (request.type === 'WIPE_COOKIES') {
+        wipeAllInjectedCookies()
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+
+    if (request.type === 'RELEASE_INJECTION') {
         releaseInjectedState()
             .then(() => sendResponse({ success: true }))
             .catch((error) => sendResponse({ success: false, error: error.message }));
@@ -160,16 +167,49 @@ async function verifyAuthAndWipeIfInvalid() {
     }
 }
 
-// A panel logout must not touch the browser's shared third-party cookie jar.
-// The browser has no per-ToolsByDcx-user namespace for ChatGPT cookies, so
-// deleting them would log out the account used by every user of that profile.
-// Releasing the extension state stops reinjection and leaves the host session
-// exactly as the browser owner left it.
+// Background auth expiry/revocation only stops reinjection. Explicit user-panel
+// logout uses WIPE_COOKIES above, which is handled separately and locally.
 async function releaseInjectedState() {
     await chrome.storage.local.set({ injectedDomains: [] });
     try { autoInjectedTabs.clear(); } catch (_) {}
     setUninstallCleanupUrl();
     console.log('[ToolsByDcx] Released extension injection state without touching platform cookies.');
+}
+
+// Explicit panel logout only: clear the platform cookies that this browser
+// received through ToolsByDcx injection. This runs locally in the user's
+// browser; it cannot clear cookies in another user's browser or on the server.
+async function wipeAllInjectedCookies() {
+    const result = await chrome.storage.local.get(['injectedDomains']);
+    const domains = result.injectedDomains || [];
+
+    for (const item of domains) {
+        const domainStr = typeof item === 'string' ? item : item.domain;
+        if (!domainStr) continue;
+        await clearCookiesForDomain(domainStr);
+    }
+
+    await chrome.storage.local.set({ injectedDomains: [] });
+    setUninstallCleanupUrl();
+    try { autoInjectedTabs.clear(); } catch (_) {}
+    console.log('[ToolsByDcx] Cleared injected platform cookies for this browser only.');
+}
+
+function clearCookiesForDomain(domainStr) {
+    return new Promise((resolve) => {
+        chrome.cookies.getAll({ domain: domainStr }, (cookies) => {
+            if (!cookies || cookies.length === 0) return resolve();
+            let pending = cookies.length;
+            cookies.forEach((cookie) => {
+                const cleanDomain = String(cookie.domain || domainStr).replace(/^\.+/, '');
+                const cookieUrl = `http${cookie.secure ? 's' : ''}://${cleanDomain}${cookie.path || '/'}`;
+                chrome.cookies.remove({ url: cookieUrl, name: cookie.name, storeId: cookie.storeId }, () => {
+                    pending -= 1;
+                    if (pending === 0) resolve();
+                });
+            });
+        });
+    });
 }
 
 // ─── SAQIB-GRADE COOKIE NORMALIZATION & 4-TIER RETRY ENGINE ──────────────────
