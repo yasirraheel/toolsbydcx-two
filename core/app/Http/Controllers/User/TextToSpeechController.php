@@ -347,7 +347,11 @@ class TextToSpeechController extends Controller
             $this->credits->refund($request->user(), $creditCost);
         } catch (\Throwable $e) {
             $this->credits->refund($request->user(), $creditCost);
-            throw $e;
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'The speech service is temporarily unavailable. Your credits were restored; please try again.',
+            ], 502)->header('Cache-Control', 'no-store');
         }
 
         return $this->forward($upstream);

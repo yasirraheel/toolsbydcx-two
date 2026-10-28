@@ -149,7 +149,11 @@ class MusicController extends Controller
             ])->header('Cache-Control', 'no-store');
         } catch (\Throwable $e) {
             $this->credits->refund($request->user(), self::GENERATION_COST);
-            throw $e;
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'The music service is temporarily unavailable. Your credits were restored; please try again.',
+            ], 502)->header('Cache-Control', 'no-store');
         }
     }
 
