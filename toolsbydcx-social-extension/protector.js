@@ -123,7 +123,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         // host application's complete sidebar flash on screen first.
         const hideNativeChatRows = () => {
             if (!isChatHost) return;
-            document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach((element) => {
+            document.querySelectorAll('a[href*="/c/"], [data-testid*="history-item" i]').forEach((element) => {
                 if (element.closest('[data-toolsbydcx-chat-row]') || element.dataset.toolsbydcxChatRow) return;
                 const container = element.closest('li') || element;
                 container.classList.add('toolsbydcx-chat-hidden');
@@ -252,7 +252,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 };
 
                 const chatIdFromLink = (link) => {
-                    const href = link?.getAttribute?.('href') || '';
+                    const href = link?.getAttribute?.('href') || link?.getAttribute?.('data-href') || '';
                     const match = href.match(/\/c\/([a-zA-Z0-9-]+)/);
                     return match && match[1] ? match[1] : null;
                 };
@@ -364,7 +364,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                     registerCurrentChat();
                     renderServerChatsInSidebar();
 
-                    document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
+                    document.querySelectorAll('a[href*="/c/"], [data-testid*="history-item" i]').forEach(el => {
                         const href = el.getAttribute('href') || el.querySelector('a')?.getAttribute('href') || '';
                         const match = href.match(/\/c\/([a-zA-Z0-9-]+)/);
                         if (!match || !match[1]) return;
