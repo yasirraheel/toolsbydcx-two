@@ -259,6 +259,12 @@ class MusicController extends Controller
                 if ($id) return $id;
             }
         }
+        foreach ($payload as $value) {
+            if (is_array($value)) {
+                $id = $this->findTaskId($value);
+                if ($id) return $id;
+            }
+        }
         return null;
     }
 
