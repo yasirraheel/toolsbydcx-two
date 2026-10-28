@@ -193,7 +193,7 @@
                 <form id="studio-form">
                     <textarea id="studio-text" class="studio-script" maxlength="60000" placeholder="Start typing here to unleash the power of speech synthesis to generate speech..." aria-label="Text to speech script"></textarea>
                     <div id="studio-helperbar" class="studio-helperbar"><span style="color:#97a1af;font-size:11px"><i class="las la-spinner la-spin"></i> Loading editor helpers…</span><span id="studio-count" class="studio-count">0 / 60,000</span></div>
-                    <div class="studio-cost"><div class="studio-cost__line"><span><i class="las la-coins"></i> Estimated cost: <strong id="studio-estimate">—</strong></span><span>Assigned credits: <strong id="studio-balance">Loading…</strong></span></div><small id="studio-cost-note">Loading assigned credit quota…</small></div>
+                    <div class="studio-cost"><div class="studio-cost__line"><span><i class="las la-coins"></i> Estimated cost: <strong id="studio-estimate">—</strong></span><span>Remaining credits: <strong id="studio-balance">Loading…</strong></span></div><small id="studio-cost-note">Loading your remaining credit quota…</small></div>
                     <div class="studio-bottom"><select id="studio-language" class="studio-language" aria-label="Generation language" disabled><option>Loading languages…</option></select><span class="studio-spacer"></span><button type="submit" id="studio-generate" class="studio-generate" disabled><i class="las la-play"></i> Generate</button></div>
                     <div id="studio-status" class="studio-status" role="status"></div>
                 </form>

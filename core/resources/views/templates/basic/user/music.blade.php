@@ -108,7 +108,7 @@
             </div>
 
             <div class="dcx-music__toggle-row"><div><strong>@lang('Instrumental')</strong><span>@lang('Generate music without vocals')</span></div><label class="dcx-music__toggle"><input id="dcx-music-instrumental" type="checkbox"><i></i></label></div>
-            <div class="dcx-music__cost"><div><strong><i class="las la-coins"></i>@lang('Estimated cost:') <span id="dcx-music-cost">—</span></strong><small>@lang('Final cost may differ; unused reserved credits are refunded.')</small></div><div class="dcx-music__balance">@lang('Assigned credits:') <strong id="dcx-music-balance">—</strong></div></div>
+            <div class="dcx-music__cost"><div><strong><i class="las la-coins"></i>@lang('Estimated cost:') <span id="dcx-music-cost">—</span></strong><small>@lang('Final cost may differ; unused reserved credits are refunded.')</small></div><div class="dcx-music__balance">@lang('Remaining credits:') <strong id="dcx-music-balance">—</strong></div></div>
             <button id="dcx-music-submit" class="dcx-music__submit" type="submit" disabled><i class="las la-wand-magic-sparkles"></i><span>@lang('Generate Music')</span><span class="dcx-music__spinner" aria-hidden="true"></span></button>
             <p class="dcx-music__note">@lang('Songs take a few minutes to generate. You can continue working while they process.')</p>
             <div id="dcx-music-message" class="dcx-music__message" role="status"></div>
