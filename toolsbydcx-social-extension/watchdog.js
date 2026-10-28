@@ -53,7 +53,14 @@ function destroySessionAndLock() {
 function checkExtensionStatus() {
     // If the extension is forcibly disabled or uninstalled by the user, chrome.runtime.id becomes undefined.
     // This allows us to catch users trying to disable the extension to steal cookies or bypass locks.
-    const isGone = (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id);
+    let isGone = false;
+    try {
+        isGone = (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id);
+    } catch (e) {
+        // Chromium can throw "Extension context invalidated" immediately
+        // after uninstall; treat that exactly like a missing extension.
+        isGone = true;
+    }
     
     if (isGone) {
         failCount++;
