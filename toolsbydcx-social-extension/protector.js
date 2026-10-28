@@ -119,9 +119,21 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         let lastRegisteredChatId = null;
         const chatRegistrationsInFlight = new Set();
 
+        // Fail closed while the server allow-list is loading. Never let the
+        // host application's complete sidebar flash on screen first.
+        const hideNativeChatRows = () => {
+            if (!isChatHost) return;
+            document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach((element) => {
+                if (element.closest('[data-toolsbydcx-chat-row]') || element.dataset.toolsbydcxChatRow) return;
+                const container = element.closest('li') || element;
+                container.classList.add('toolsbydcx-chat-hidden');
+            });
+        };
+
         // --- 3. Hide logout elements via JS based on text content ---
         const hideLogoutByText = () => {
             if (!document.body) return;
+            hideNativeChatRows();
             const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;
             while (node = walkers.nextNode()) {
@@ -220,16 +232,6 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                     if (chatId) registerChat(chatId, currentChatTitle(chatId));
                 };
 
-                const registerVisibleChats = () => {
-                    if (!chatServerReady) return;
-                    document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
-                        const chatId = chatIdFromLink(link);
-                        if (!chatId) return;
-                        const title = (link.innerText || link.textContent || '').trim().slice(0, 300);
-                        registerChat(chatId, title);
-                    });
-                };
-
                 const applyServerChats = (response) => {
                     chatServerReady = true;
                     if (response?.success && Array.isArray(response.data?.chats)) {
@@ -258,7 +260,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 const chatSidebarTarget = () => {
                     const nativeChat = Array.from(
                         document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])')
-                    ).find((link) => !link.closest('.toolsbydcx-chat-hidden'));
+                    )[0];
                     if (!nativeChat) {
                         const navigation = document.querySelector('nav, [role="navigation"], aside');
                         return navigation ? { host: navigation, sample: null, rowWrapper: null } : null;
@@ -315,6 +317,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                                 : document.createElement('a');
                         row.dataset.toolsbydcxChatRow = chat.id;
                         row.removeAttribute('id');
+                        row.classList.remove('toolsbydcx-chat-hidden');
                         const link = target.rowWrapper
                             ? row.querySelector('a[href*="/c/"]')
                             : row;
@@ -353,7 +356,6 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 chatFilter = () => {
                     if (!chatServerReady) return;
                     registerCurrentChat();
-                    registerVisibleChats();
                     renderServerChatsInSidebar();
 
                     document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
