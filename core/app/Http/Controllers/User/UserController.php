@@ -104,6 +104,31 @@ class UserController extends Controller
         return view('Template::user.chat_history', compact('pageTitle', 'chatHistory'));
     }
 
+    /**
+     * Delete one saved chat or the authenticated user's complete saved chat
+     * history. No other user's rows can be affected by this scoped query.
+     */
+    public function deleteChatHistory(Request $request)
+    {
+        $validated = $request->validate([
+            'chat_id' => ['nullable', 'string', 'max:128', 'regex:/^[A-Za-z0-9_-]{4,128}$/'],
+        ]);
+
+        $query = UserChatThread::query()
+            ->where('user_id', auth()->id())
+            ->where('provider', 'chatgpt');
+
+        if (!empty($validated['chat_id'])) {
+            $deleted = $query->where('chat_id', $validated['chat_id'])->delete();
+            $message = $deleted ? 'Chat removed from your history.' : 'That chat was already removed.';
+        } else {
+            $deleted = $query->delete();
+            $message = $deleted ? 'Your saved chat history was deleted.' : 'Your saved chat history is already empty.';
+        }
+
+        return redirect()->route('user.chat.history')->withNotify([['success', $message]]);
+    }
+
     public function subscribePlan(Request $request, $id)
     {
         $plan = \App\Models\Plan::active()->findOrFail($id);
