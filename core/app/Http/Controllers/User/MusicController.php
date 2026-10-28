@@ -122,7 +122,11 @@ class MusicController extends Controller
                 $generation->update(['credit_cost' => self::GENERATION_COST]);
                 $this->saveAudio($generation, $upstream->body(), (string) $upstream->header('Content-Type'));
 
-                return response()->json(['success' => true, 'generation' => $this->publicGeneration($generation)]);
+                return response()->json([
+                    'success' => true,
+                    'generation' => $this->publicGeneration($generation),
+                    'remaining_credits' => $this->credits->remaining($request->user()),
+                ]);
             }
 
             $responsePayload = $upstream->json();
@@ -146,6 +150,7 @@ class MusicController extends Controller
             return response()->json([
                 'success' => true,
                 'generation' => $this->publicGeneration($generation->fresh()),
+                'remaining_credits' => $this->credits->remaining($request->user()),
             ])->header('Cache-Control', 'no-store');
         } catch (\Throwable $e) {
             $this->credits->refund($request->user(), self::GENERATION_COST);
