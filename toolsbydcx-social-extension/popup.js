@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (res.status === 401 || res.status === 403 || !res.ok) {
                 if (res.status === 401 || res.status === 403) {
-                    chrome.runtime.sendMessage({ type: 'WIPE_COOKIES' });
+                    chrome.runtime.sendMessage({ type: 'RELEASE_INJECTION' });
                 }
                 showScreen('login');
                 return;
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await res.json();
             if (data.success && data.user) {
                 if (data.user.is_expired === true) {
-                    chrome.runtime.sendMessage({ type: 'WIPE_COOKIES' });
+                    chrome.runtime.sendMessage({ type: 'RELEASE_INJECTION' });
                     showScreen('login');
                     return;
                 }

@@ -6,8 +6,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    if (request.type === 'WIPE_COOKIES') {
-        wipeAllInjectedCookies()
+    if (request.type === 'RELEASE_INJECTION' || request.type === 'WIPE_COOKIES') {
+        releaseInjectedState()
             .then(() => sendResponse({ success: true }))
             .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
@@ -126,11 +126,12 @@ async function verifyAuthAndWipeIfInvalid() {
         });
         
         // A definitive panel 401/403 means the ToolsByDcx user session is no
-        // longer authenticated/eligible. Remove the copied platform session.
+        // longer authenticated/eligible. Stop extension injection, but leave
+        // the browser's shared platform cookie jar untouched.
         // Network failures are deliberately ignored so a transient outage
         // cannot log the user out of a platform.
         if (res.status === 401 || res.status === 403) {
-            await wipeAllInjectedCookies();
+            await releaseInjectedState();
             return;
         }
 
@@ -139,19 +140,19 @@ async function verifyAuthAndWipeIfInvalid() {
             if (!contentType || contentType.indexOf("application/json") === -1) {
                 // Laravel may redirect an unauthenticated API request to the
                 // panel login page. Treat that final HTML response as logout,
-                // but do not wipe on an actual network failure (handled by
+                // but do not release on an actual network failure (handled by
                 // the catch block above).
                 if (res.redirected || /\/login(?:[/?#]|$)/i.test(res.url || '')) {
-                    await wipeAllInjectedCookies();
+                    await releaseInjectedState();
                 }
                 return;
             }
 
             const data = await res.json();
-            // Only wipe if the user was successfully retrieved and their plan is explicitly expired
+            // Only release if the user was successfully retrieved and their plan is explicitly expired
             if (data.success && data.user && data.user.is_expired === true) {
-                console.log('[ToolsByDcx] User subscription is explicitly expired. Wiping session.');
-                await wipeAllInjectedCookies();
+                console.log('[ToolsByDcx] User subscription is explicitly expired. Releasing extension state.');
+                await releaseInjectedState();
             }
         }
     } catch (err) {
@@ -159,43 +160,16 @@ async function verifyAuthAndWipeIfInvalid() {
     }
 }
 
-async function wipeAllInjectedCookies() {
-    const result = await chrome.storage.local.get(['injectedDomains']);
-    const domains = result.injectedDomains || [];
-    if (domains.length === 0) {
-        setUninstallCleanupUrl();
-        return;
-    }
-
-    for (const item of domains) {
-        const domainStr = typeof item === 'string' ? item : item.domain;
-        if (!domainStr) continue;
-        await clearCookiesForDomain("https://" + domainStr, domainStr);
-        await clearCookiesForDomain("http://" + domainStr, domainStr);
-    }
+// A panel logout must not touch the browser's shared third-party cookie jar.
+// The browser has no per-ToolsByDcx-user namespace for ChatGPT cookies, so
+// deleting them would log out the account used by every user of that profile.
+// Releasing the extension state stops reinjection and leaves the host session
+// exactly as the browser owner left it.
+async function releaseInjectedState() {
     await chrome.storage.local.set({ injectedDomains: [] });
+    try { autoInjectedTabs.clear(); } catch (_) {}
     setUninstallCleanupUrl();
-    console.log("ToolsByDcx: Wiped injected platform cookies.");
-}
-
-function clearCookiesForDomain(url, domainStr) {
-    return new Promise((resolve) => {
-        chrome.cookies.getAll({ domain: domainStr }, (cookies) => {
-            if (!cookies || cookies.length === 0) {
-                resolve();
-                return;
-            }
-            let pending = cookies.length;
-            cookies.forEach(cookie => {
-                const cleanDomain = cookie.domain.replace(/^\.+/, '');
-                const cookieUrl = "http" + (cookie.secure ? "s" : "") + "://" + cleanDomain + cookie.path;
-                chrome.cookies.remove({ url: cookieUrl, name: cookie.name }, () => {
-                    pending--;
-                    if (pending === 0) resolve();
-                });
-            });
-        });
-    });
+    console.log('[ToolsByDcx] Released extension injection state without touching platform cookies.');
 }
 
 // ─── SAQIB-GRADE COOKIE NORMALIZATION & 4-TIER RETRY ENGINE ──────────────────
@@ -512,13 +486,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
     autoInjectedTabs.delete(tabId);
-});
-
-// This is best-effort only: Chromium may terminate a service worker without
-// waiting for asynchronous work during uninstall. The uninstall URL above is
-// the durable fallback; this hook still clears cookies when onSuspend runs.
-chrome.runtime.onSuspend.addListener(() => {
-    wipeAllInjectedCookies().catch(() => {});
 });
 
 setUninstallCleanupUrl();
