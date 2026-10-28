@@ -25,6 +25,10 @@
             <i class="las la-magic fs-5"></i>
             <span>@lang('Voice Cloning')</span>
         </a>
+        <a href="{{ route('user.music.index') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.music*') }}">
+            <i class="las la-music fs-5"></i>
+            <span>@lang('AI Music')</span>
+        </a>
     @endif
 
     {{-- Subscription Plans --}}

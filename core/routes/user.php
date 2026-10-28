@@ -115,6 +115,18 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('/task/{task}', 'task')->middleware('throttle:60,1')->name('task');
             });
 
+            // Server-side AI Music generation proxy (shares the encrypted
+            // OpenRadio configuration and assigned TTS access permission).
+            Route::controller('MusicController')->prefix('music')->name('music.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/studio-data', 'studioData')->middleware('throttle:30,1')->name('studio.data');
+                Route::get('/history', 'history')->name('history');
+                Route::post('/generate', 'generate')->middleware('throttle:5,1')->name('generate');
+                Route::get('/task/{generation}', 'task')->middleware('throttle:60,1')->name('task');
+                Route::get('/audio/{generation}', 'audio')->name('audio');
+                Route::delete('/history/{generation}', 'delete')->middleware('throttle:20,1')->name('delete');
+            });
+
             //Profile setting
             Route::controller('ProfileController')->group(function(){
                 Route::get('general-profile', 'generalProfile')->name('general.profile');
