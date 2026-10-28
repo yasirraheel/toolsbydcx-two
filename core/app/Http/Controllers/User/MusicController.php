@@ -37,26 +37,8 @@ class MusicController extends Controller
     {
         $this->ensureAccess($request);
 
-        $account = ['available' => false, 'credits' => null];
-        if ($this->music->configured()) {
-            try {
-                $upstream = $this->music->account();
-                if ($upstream->successful() && is_array($upstream->json())) {
-                    $source = is_array($upstream->json('data')) ? $upstream->json('data') : $upstream->json();
-                    $credits = $source['credits'] ?? $source['balance'] ?? null;
-                    $account = [
-                        'available' => is_numeric($credits),
-                        'credits' => is_numeric($credits) ? (float) $credits : null,
-                    ];
-                }
-            } catch (\Throwable) {
-                // Keep the composer usable while the account endpoint is unavailable.
-            }
-        }
-
         return response()->json([
             'success' => true,
-            'account' => $account,
             'user_credits' => [
                 'limit' => $request->user()->tts_credit_limit,
                 'used' => (int) ($request->user()->tts_credits_used ?? 0),

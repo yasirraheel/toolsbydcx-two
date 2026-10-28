@@ -208,34 +208,8 @@ class TextToSpeechController extends Controller
             return response()->json(['success' => false, 'message' => 'Text-to-speech is not configured yet.'], 503);
         }
 
-        $account = [
-            'available' => false,
-            'credits' => null,
-            'plan' => null,
-            'plan_expires_at' => null,
-        ];
-
-        try {
-            $upstream = $this->tts->account();
-            if ($upstream->successful() && is_array($upstream->json())) {
-                $payload = $upstream->json();
-                $source = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
-                $credits = $source['credits'] ?? null;
-
-                $account = [
-                    'available' => is_numeric($credits),
-                    'credits' => is_numeric($credits) ? (float) $credits : null,
-                    'plan' => filled($source['plan'] ?? null) ? (string) $source['plan'] : null,
-                    'plan_expires_at' => filled($source['plan_expires_at'] ?? null) ? (string) $source['plan_expires_at'] : null,
-                ];
-            }
-        } catch (\Throwable) {
-            // The Studio remains usable if the account endpoint is briefly unavailable.
-        }
-
         return response()->json([
             'success' => true,
-            'account' => $account,
             'user_credits' => [
                 'limit' => $request->user()->tts_credit_limit,
                 'used' => (int) ($request->user()->tts_credits_used ?? 0),
