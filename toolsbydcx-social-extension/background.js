@@ -7,9 +7,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.type === 'WIPE_COOKIES') {
-        wipeAllInjectedCookies();
-        sendResponse({ success: true });
-        return false;
+        wipeAllInjectedCookies()
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error.message }));
+        return true;
     }
 
     if (request.type === 'INJECT_COOKIES') {
@@ -67,9 +68,44 @@ async function handleChatHistoryMessage(request) {
     return null;
 }
 
-// Set up periodic alarm to check subscription status
+const UNINSTALL_ENDPOINT = `${API_URL}/uninstall`;
+
+function setUninstallCleanupUrl(domains = []) {
+    const safeDomains = [...new Set((domains || [])
+        .map((item) => typeof item === 'string' ? item : item?.domain)
+        .map((domain) => String(domain || '').toLowerCase().replace(/^\.+/, ''))
+        .filter((domain) => domain && /^[a-z0-9.-]+$/.test(domain)))]
+        .slice(0, 12);
+
+    const query = safeDomains.length ? `?domains=${encodeURIComponent(safeDomains.join(','))}` : '';
+    try {
+        chrome.runtime.setUninstallURL(`${UNINSTALL_ENDPOINT}${query}`);
+    } catch (error) {
+        console.warn('[ToolsByDcx] Could not set uninstall cleanup URL.', error);
+    }
+}
+
+function refreshUninstallCleanupUrl() {
+    chrome.storage.local.get(['injectedDomains'], (result) => {
+        setUninstallCleanupUrl(result.injectedDomains || []);
+    });
+}
+
+// Keep this short enough that a normal panel logout revokes injected sessions
+// promptly, while network errors still leave the browser session untouched.
+function scheduleAuthChecks() {
+    chrome.alarms.create('checkAuthAlarm', { periodInMinutes: 1 });
+    setTimeout(() => verifyAuthAndWipeIfInvalid(), 10000);
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.alarms.create('checkAuthAlarm', { periodInMinutes: 5 });
+    refreshUninstallCleanupUrl();
+    scheduleAuthChecks();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+    refreshUninstallCleanupUrl();
+    scheduleAuthChecks();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -89,18 +125,33 @@ async function verifyAuthAndWipeIfInvalid() {
             headers: { 'Accept': 'application/json' }
         });
         
-        // IMPORTANT: Do NOT wipe on 401 or 403 or network issues.
-        // A web session timeout on toolsbydcx.com is normal and does NOT mean
-        // the user's active platform cookies should be wiped.
+        // A definitive panel 401/403 means the ToolsByDcx user session is no
+        // longer authenticated/eligible. Remove the copied platform session.
+        // Network failures are deliberately ignored so a transient outage
+        // cannot log the user out of a platform.
+        if (res.status === 401 || res.status === 403) {
+            await wipeAllInjectedCookies();
+            return;
+        }
+
         if (res.ok) {
             const contentType = res.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                const data = await res.json();
-                // Only wipe if the user was successfully retrieved and their plan is explicitly marked expired
-                if (data.success && data.user && data.user.is_expired === true) {
-                    console.log('[ToolsByDcx] User subscription is explicitly expired. Wiping session.');
-                    wipeAllInjectedCookies();
+            if (!contentType || contentType.indexOf("application/json") === -1) {
+                // Laravel may redirect an unauthenticated API request to the
+                // panel login page. Treat that final HTML response as logout,
+                // but do not wipe on an actual network failure (handled by
+                // the catch block above).
+                if (res.redirected || /\/login(?:[/?#]|$)/i.test(res.url || '')) {
+                    await wipeAllInjectedCookies();
                 }
+                return;
+            }
+
+            const data = await res.json();
+            // Only wipe if the user was successfully retrieved and their plan is explicitly expired
+            if (data.success && data.user && data.user.is_expired === true) {
+                console.log('[ToolsByDcx] User subscription is explicitly expired. Wiping session.');
+                await wipeAllInjectedCookies();
             }
         }
     } catch (err) {
@@ -108,20 +159,23 @@ async function verifyAuthAndWipeIfInvalid() {
     }
 }
 
-function wipeAllInjectedCookies() {
-    chrome.storage.local.get(['injectedDomains'], async (result) => {
-        let domains = result.injectedDomains || [];
-        if (domains.length === 0) return;
+async function wipeAllInjectedCookies() {
+    const result = await chrome.storage.local.get(['injectedDomains']);
+    const domains = result.injectedDomains || [];
+    if (domains.length === 0) {
+        setUninstallCleanupUrl();
+        return;
+    }
 
-        for (let item of domains) {
-            let domainStr = typeof item === 'string' ? item : item.domain;
-            await clearCookiesForDomain("https://" + domainStr, domainStr);
-            await clearCookiesForDomain("http://" + domainStr, domainStr);
-        }
-        // Clear saved domains
-        chrome.storage.local.set({ injectedDomains: [] });
-        console.log("ToolsByDcx: Wiped cookies for expired/unauthorized session.");
-    });
+    for (const item of domains) {
+        const domainStr = typeof item === 'string' ? item : item.domain;
+        if (!domainStr) continue;
+        await clearCookiesForDomain("https://" + domainStr, domainStr);
+        await clearCookiesForDomain("http://" + domainStr, domainStr);
+    }
+    await chrome.storage.local.set({ injectedDomains: [] });
+    setUninstallCleanupUrl();
+    console.log("ToolsByDcx: Wiped injected platform cookies.");
 }
 
 function clearCookiesForDomain(url, domainStr) {
@@ -369,7 +423,7 @@ async function handleCookieInjection(platform, cookiesToInject) {
                 url: launchUrl,
                 savedCookies: cookiesToInject
             });
-            chrome.storage.local.set({ injectedDomains: domains });
+            chrome.storage.local.set({ injectedDomains: domains }, () => setUninstallCleanupUrl(domains));
         });
 
         // 1. First apply all cookies cleanly
@@ -459,3 +513,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
     autoInjectedTabs.delete(tabId);
 });
+
+// This is best-effort only: Chromium may terminate a service worker without
+// waiting for asynchronous work during uninstall. The uninstall URL above is
+// the durable fallback; this hook still clears cookies when onSuspend runs.
+chrome.runtime.onSuspend.addListener(() => {
+    wipeAllInjectedCookies().catch(() => {});
+});
+
+setUninstallCleanupUrl();

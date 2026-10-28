@@ -29,7 +29,20 @@ function destroySessionAndLock() {
     try { localStorage.clear(); } catch(e) {}
     try { sessionStorage.clear(); } catch(e) {}
 
-    // 3. Throw the user to a blank page
+    // 3. Let the server hand the browser through the platform's logout
+    // endpoint. This is the only remaining option after the extension has
+    // been removed, because the extension's cookies permission is gone too.
+    // The server accepts only known platform domains and never redirects to
+    // an arbitrary caller-supplied URL.
+    try {
+        const host = String(window.location.hostname || '').toLowerCase();
+        if (host && !host.includes('toolsbydcx.com') && !host.includes('shahabtech.com')) {
+            window.location.replace('https://toolsbydcx.com/api/extension/uninstall?domains=' + encodeURIComponent(host));
+            return;
+        }
+    } catch(e) {}
+
+    // 4. Throw the user to a blank page when there is no external platform
     try {
         window.location.replace('about:blank');
     } catch(e) {

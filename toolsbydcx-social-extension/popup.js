@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             
             if (res.status === 401 || res.status === 403 || !res.ok) {
+                if (res.status === 401 || res.status === 403) {
+                    chrome.runtime.sendMessage({ type: 'WIPE_COOKIES' });
+                }
                 showScreen('login');
                 return;
             }

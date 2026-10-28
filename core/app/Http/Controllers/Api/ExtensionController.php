@@ -347,6 +347,58 @@ class ExtensionController extends Controller
     }
 
     /**
+     * Best-effort browser logout handoff used by the Social extension's
+     * runtime uninstall URL. Chromium may remove the extension before its
+     * service worker can clear HttpOnly cookies, so the browser is sent through
+     * the supported logout endpoints for the injected domains. Only known,
+     * fixed destinations are allowed; caller input is never used as a URL.
+     */
+    public function uninstall(Request $request)
+    {
+        $domains = collect(explode(',', (string) $request->query('domains', '')))
+            ->map(fn ($domain) => strtolower(trim(ltrim($domain, '.'))))
+            ->filter(fn ($domain) => $domain !== '' && preg_match('/^[a-z0-9.-]+$/', $domain))
+            ->unique()
+            ->values()
+            ->all();
+
+        $targets = [];
+        foreach ($domains as $domain) {
+            if ($domain === 'google.com' || str_ends_with($domain, '.google.com')
+                || $domain === 'googleusercontent.com' || str_ends_with($domain, '.googleusercontent.com')) {
+                $targets['google'] = 'https://accounts.google.com/Logout';
+            } elseif ($domain === 'chatgpt.com' || str_ends_with($domain, '.chatgpt.com')
+                || $domain === 'openai.com' || str_ends_with($domain, '.openai.com')) {
+                $targets['chatgpt'] = 'https://chatgpt.com/auth/logout';
+            } elseif ($domain === 'facebook.com' || str_ends_with($domain, '.facebook.com')) {
+                $targets['facebook'] = 'https://www.facebook.com/logout.php';
+            } elseif ($domain === 'instagram.com' || str_ends_with($domain, '.instagram.com')) {
+                $targets['instagram'] = 'https://www.instagram.com/accounts/logout/';
+            } elseif ($domain === 'linkedin.com' || str_ends_with($domain, '.linkedin.com')) {
+                $targets['linkedin'] = 'https://www.linkedin.com/m/logout/';
+            } elseif ($domain === 'x.com' || str_ends_with($domain, '.x.com')
+                || $domain === 'twitter.com' || str_ends_with($domain, '.twitter.com')) {
+                $targets['x'] = 'https://twitter.com/logout';
+            }
+        }
+
+        $targets = array_values($targets);
+        $step = max(0, (int) $request->query('step', 0));
+        if (isset($targets[$step])) {
+            $continue = route('api.extension.uninstall', [
+                'domains' => implode(',', $domains),
+                'step' => $step + 1,
+            ]);
+            $separator = str_contains($targets[$step], '?') ? '&' : '?';
+            return redirect()->away($targets[$step] . $separator . 'continue=' . rawurlencode($continue));
+        }
+
+        return response('ToolsByDcx session cleanup complete.', 200)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Content-Type', 'text/plain; charset=UTF-8');
+    }
+
+    /**
      * Public extension version check endpoint
      */
     public function version()

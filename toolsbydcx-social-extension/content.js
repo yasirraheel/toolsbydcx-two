@@ -50,7 +50,7 @@ window.addEventListener('ToolsByDcxInject', (e) => handleInjectEvent(e, 'ToolsBy
 window.addEventListener('WeMateInject', (e) => handleInjectEvent(e, 'WeMate'));
 
 // Also let the web page know the extension is installed and its exact version
-const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.4';
+const extVersion = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '2.3.5';
 
 function injectExtensionMetaTags() {
     const target = document.head || document.documentElement;
@@ -93,4 +93,52 @@ window.addEventListener('message', (event) => {
         window.postMessage({ type: '__dcx_social_pong__', version: extVersion }, location.origin);
     }
 });
+
+// The panel session is the authority for injected accounts. If the user logs
+// out of the panel (including a SPA logout that redirects without a reload),
+// ask the service worker to remove the copied platform cookies immediately.
+// This does not interfere with logout links on the injected third-party site.
+(() => {
+    const host = window.location.hostname.toLowerCase();
+    const isPanel = host === 'toolsbydcx.com'
+        || host.endsWith('.toolsbydcx.com')
+        || host === 'shahabtech.com'
+        || host.endsWith('.shahabtech.com');
+    if (!isPanel) return;
+
+    let wipeRequested = false;
+    const requestWipe = () => {
+        if (wipeRequested) return;
+        wipeRequested = true;
+        try { chrome.runtime.sendMessage({ type: 'WIPE_COOKIES' }); } catch (_) {}
+    };
+
+    const looksLikeLogout = (value) => /(?:^|\/)(?:user\/)?(?:login|logout|signout|sign-out)(?:[/?#]|$)/i.test(String(value || ''))
+        || /\b(?:log\s*out|sign\s*out)\b/i.test(String(value || ''));
+
+    const inspectLocation = () => {
+        if (looksLikeLogout(window.location.pathname) || looksLikeLogout(window.location.href)) {
+            requestWipe();
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        const target = event.target?.closest?.('a,button,form,[role="button"],[role="menuitem"]');
+        if (!target) return;
+        const value = [target.getAttribute('href'), target.getAttribute('action'), target.textContent].join(' ');
+        if (looksLikeLogout(value)) requestWipe();
+    }, true);
+
+    for (const method of ['pushState', 'replaceState']) {
+        const original = history[method];
+        history[method] = function (...args) {
+            const result = original.apply(this, args);
+            inspectLocation();
+            return result;
+        };
+    }
+    window.addEventListener('popstate', inspectLocation);
+    window.setInterval(inspectLocation, 1500);
+    inspectLocation();
+})();
 

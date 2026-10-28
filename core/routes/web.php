@@ -36,6 +36,10 @@ Route::options('api/extension/{any?}', function() {
 
 Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(function () {
     Route::get('version', 'ExtensionController@version')->name('version');
+    // Chrome opens this URL after the Social extension is removed. It is
+    // intentionally public because the extension no longer exists to send an
+    // authenticated request at uninstall time.
+    Route::get('uninstall', 'ExtensionController@uninstall')->name('uninstall');
     Route::post('login', 'ExtensionController@mobileLogin')->name('mobile.login');
 
     Route::middleware('auth')->group(function () {

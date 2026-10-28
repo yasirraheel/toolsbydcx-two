@@ -28,7 +28,7 @@ class ExtensionUploadController extends Controller
             }
         }
         $socialDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-ext.zip']);
-        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.4';
+        $socialVersion = $socialHistory ? $socialHistory->version : '2.3.5';
 
         // Flow Extension status
         $flowHistory = ExtensionHistory::where('type', 'flow')->where('is_current', true)->first()
@@ -147,7 +147,7 @@ class ExtensionUploadController extends Controller
             $zip->close();
         }
 
-        $defaultVer = $extType === 'social' ? '2.3.4' : ($extType === 'flow' ? '1.0.3' : '1.0.0');
+        $defaultVer = $extType === 'social' ? '2.3.5' : ($extType === 'flow' ? '1.0.3' : '1.0.0');
         $version = $detectedVersion ?: ($request->min_extension_version ?: $defaultVer);
         $cleanVersion = preg_replace('/[^0-9.]/', '', $version) ?: $defaultVer;
 

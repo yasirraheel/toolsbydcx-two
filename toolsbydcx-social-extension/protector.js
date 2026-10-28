@@ -117,6 +117,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         let chatIsolationInitialized = false;
         let chatRefreshTimer = null;
         let lastRegisteredChatId = null;
+        const chatRegistrationsInFlight = new Set();
 
         // --- 3. Hide logout elements via JS based on text content ---
         const hideLogoutByText = () => {
@@ -188,21 +189,44 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                     return (item?.innerText || item?.textContent || document.title || '').trim().slice(0, 300);
                 };
 
-                const registerCurrentChat = () => {
-                    if (!chatServerReady) return;
-                    const chatId = currentChatId();
-                    if (!chatId || lastRegisteredChatId === chatId) return;
-
-                    lastRegisteredChatId = chatId;
+                const registerChat = (chatId, title = '') => {
+                    if (!chatServerReady || !chatId || serverChatIds.has(chatId) || chatRegistrationsInFlight.has(chatId)) return;
+                    chatRegistrationsInFlight.add(chatId);
                     sendChatHistoryMessage({
                         type: 'CHAT_HISTORY_REGISTER',
                         chatId,
-                        title: currentChatTitle(chatId)
+                        title: title || currentChatTitle(chatId)
                     }, (response) => {
+                        chatRegistrationsInFlight.delete(chatId);
                         if (response?.success && response.data?.chat?.id) {
                             serverChatIds.add(response.data.chat.id);
+                            const stored = response.data.chat;
+                            const existing = serverChats.find((chat) => chat.id === response.data.chat.id);
+                            if (existing) {
+                                existing.title = String(stored.title || existing.title || '').trim().slice(0, 300);
+                            } else {
+                                serverChats.push({
+                                    id: String(stored.id),
+                                    title: String(stored.title || title || 'Untitled chat').trim().slice(0, 300)
+                                });
+                            }
                             chatFilter();
                         }
+                    });
+                };
+
+                const registerCurrentChat = () => {
+                    const chatId = currentChatId();
+                    if (chatId) registerChat(chatId, currentChatTitle(chatId));
+                };
+
+                const registerVisibleChats = () => {
+                    if (!chatServerReady) return;
+                    document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
+                        const chatId = chatIdFromLink(link);
+                        if (!chatId) return;
+                        const title = (link.innerText || link.textContent || '').trim().slice(0, 300);
+                        registerChat(chatId, title);
                     });
                 };
 
@@ -329,6 +353,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 chatFilter = () => {
                     if (!chatServerReady) return;
                     registerCurrentChat();
+                    registerVisibleChats();
                     renderServerChatsInSidebar();
 
                     document.querySelectorAll('a[href*="/c/"], [data-testid="history-item"]').forEach(el => {
