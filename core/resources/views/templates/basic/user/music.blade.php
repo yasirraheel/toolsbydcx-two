@@ -52,9 +52,9 @@
     .dcx-music__history-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.85rem; }
     .dcx-music__history-head h2 { margin:0; color:var(--music-text); font-size:1rem; }
     .dcx-music__history-count { padding:.25rem .55rem; border:1px solid rgba(255,121,0,.4); border-radius:999px; color:#fdba74; background:rgba(255,121,0,.08); font-size:.68rem; font-weight:700; }
-    .dcx-music__history { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+    .dcx-music__history { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem; }
     .dcx-music__history-item { min-width:0; padding:.95rem; border:1px solid var(--music-line); border-radius:11px; background:var(--music-raised); }
-    .dcx-music__history-item header { display:flex; align-items:flex-start; justify-content:space-between; gap:.7rem; }
+    .dcx-music__history-item header { display:flex; align-items:center; justify-content:space-between; gap:.7rem; }
     .dcx-music__history-item strong { display:block; overflow:hidden; color:#f8fafc; font-size:.8rem; line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
     .dcx-music__history-item small { display:block; margin-top:.2rem; color:var(--music-muted); font-size:.66rem; }
     .dcx-music__history-item .status { color:#fdba74; font-size:.66rem; white-space:nowrap; }
