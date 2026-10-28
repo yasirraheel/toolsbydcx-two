@@ -36,7 +36,7 @@
 
                         <div class="form-group">
                             <label>@lang('Extension Version')</label>
-                            <input type="text" class="form-control" name="min_extension_version" value="{{ $socialVersion }}" placeholder="e.g. 2.3.5" required>
+                            <input type="text" class="form-control" name="min_extension_version" value="{{ $socialVersion }}" placeholder="e.g. 2.3.6" required>
                             <small class="text-muted">@lang('Auto-updated from manifest.json inside zip if left unchanged')</small>
                         </div>
 
