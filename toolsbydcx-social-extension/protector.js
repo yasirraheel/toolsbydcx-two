@@ -258,12 +258,22 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 };
 
                 const chatSidebarTarget = () => {
-                    const nativeChat = Array.from(
+                    const nativeChats = Array.from(
                         document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])')
-                    )[0];
+                    );
+                    // ChatGPT keeps pinned and recent conversations in
+                    // separate list containers. Use the last native row as a
+                    // recent-list template so server chats do not get
+                    // appended into the horizontal pinned strip.
+                    const nativeChat = nativeChats[nativeChats.length - 1];
                     if (!nativeChat) {
                         const navigation = document.querySelector('nav, [role="navigation"], aside');
                         return navigation ? { host: navigation, sample: null, rowWrapper: null } : null;
+                    }
+
+                    const rowWrapper = nativeChat.closest('li, [role="listitem"], [data-testid="history-item"]');
+                    if (rowWrapper && rowWrapper.parentElement) {
+                        return { host: rowWrapper.parentElement, sample: nativeChat, rowWrapper };
                     }
 
                     const parent = nativeChat.parentElement;
@@ -272,10 +282,6 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                     // ChatGPT commonly wraps each history link in an li/listitem.
                     // Insert synthetic links beside those rows so they use the
                     // host sidebar's existing spacing, hover, and typography.
-                    if (parent.matches('li, [role="listitem"]') && parent.parentElement) {
-                        return { host: parent.parentElement, sample: nativeChat, rowWrapper: parent };
-                    }
-
                     return { host: parent, sample: nativeChat, rowWrapper: null };
                 };
 
