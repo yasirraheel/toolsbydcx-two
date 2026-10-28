@@ -240,7 +240,8 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                                 id: String(chat?.id || ''),
                                 title: String(chat?.title || '').trim().slice(0, 300)
                             }))
-                            .filter((chat) => /^[A-Za-z0-9_-]{4,128}$/.test(chat.id));
+                            .filter((chat) => /^[A-Za-z0-9_-]{4,128}$/.test(chat.id))
+                            .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
                         serverChatIds = new Set(serverChats.map((chat) => chat.id));
                         lastRegisteredChatId = null;
                     } else {

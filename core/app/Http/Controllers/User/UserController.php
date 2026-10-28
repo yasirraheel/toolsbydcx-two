@@ -99,7 +99,9 @@ class UserController extends Controller
             ->orderByDesc('last_seen_at')
             ->orderByDesc('id')
             ->limit(500)
-            ->get();
+            ->get()
+            ->unique('chat_id')
+            ->values();
 
         return view('Template::user.chat_history', compact('pageTitle', 'chatHistory'));
     }

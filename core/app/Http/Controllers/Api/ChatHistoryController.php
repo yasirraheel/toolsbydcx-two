@@ -44,6 +44,7 @@ class ChatHistoryController extends Controller
             ->orderByDesc('id')
             ->limit(500)
             ->get(['chat_id', 'title', 'last_seen_at'])
+            ->unique('chat_id')
             ->map(fn (UserChatThread $chat) => [
                 'id' => $chat->chat_id,
                 'title' => $chat->title,
