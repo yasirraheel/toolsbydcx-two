@@ -2,10 +2,10 @@
 
 @push('style')
 <style>
-    .dcx-music { --music-orange:#ff7900; --music-surface:#111827; --music-raised:#172033; --music-field:#1e293b; --music-line:rgba(148,163,184,.17); --music-text:#f8fafc; --music-muted:#94a3b8; color:var(--music-text); font-family:'Poppins',sans-serif; }
+    .dcx-music { --music-orange:#ff7900; --music-surface:#111827; --music-raised:#172033; --music-field:#1e293b; --music-line:rgba(148,163,184,.17); --music-text:#f8fafc; --music-muted:#94a3b8; width:min(760px,100%); margin:0 auto; color:var(--music-text); font-family:'Poppins',sans-serif; }
     .dcx-music * { box-sizing:border-box; }
-    .dcx-music__hero { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
-    .dcx-music__heading { display:flex; align-items:center; gap:.85rem; }
+    .dcx-music__hero { display:flex; align-items:center; justify-content:center; gap:.7rem; margin-bottom:1.25rem; text-align:center; }
+    .dcx-music__heading { display:flex; align-items:center; justify-content:center; gap:.85rem; }
     .dcx-music__icon { display:inline-flex; width:3rem; height:3rem; align-items:center; justify-content:center; border-radius:12px; color:#fff; background:var(--music-orange); font-size:1.45rem; box-shadow:0 8px 18px rgba(255,121,0,.18); }
     .dcx-music h1 { margin:0; color:var(--music-text); font-size:1.35rem; font-weight:700; line-height:1.2; }
     .dcx-music__heading p { margin:.25rem 0 0; color:var(--music-muted); font-size:.82rem; }
@@ -18,7 +18,7 @@
     .dcx-music__field { margin-top:1.1rem; }
     .dcx-music__field label { display:block; margin-bottom:.45rem; color:#e2e8f0; font-size:.78rem; font-weight:600; }
     .dcx-music__field textarea,.dcx-music__field input,.dcx-music__field select { width:100%; min-height:45px; padding:.65rem .8rem; border:1px solid var(--music-line); border-radius:9px; outline:0; color:var(--music-text); background:var(--music-field); font:inherit; font-size:.8rem; }
-    .dcx-music__field textarea { min-height:145px; resize:vertical; line-height:1.55; }
+    .dcx-music__field textarea { min-height:118px; resize:vertical; line-height:1.55; }
     .dcx-music__field textarea:focus,.dcx-music__field input:focus,.dcx-music__field select:focus { border-color:var(--music-orange); box-shadow:0 0 0 .18rem rgba(255,121,0,.14); }
     .dcx-music__field small { display:block; margin-top:.35rem; color:var(--music-muted); font-size:.68rem; }
     .dcx-music__custom { display:none; }
