@@ -173,6 +173,7 @@
                             {{-- Assign Text-to-Speech access --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
+                                <input type="hidden" name="tts_credit_limit_submitted" value="1">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
@@ -184,6 +185,48 @@
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         <i class="las la-info-circle"></i> @lang('Allow this user to use the server-side OpenRadio voice tool.')
                                     </small>
+                                </div>
+                            </div>
+
+                            {{-- Per-user TTS credit quota --}}
+                            <div class="col-lg-4 col-md-6 col-12">
+                                @php
+                                    $assignedTtsCredits = $user->tts_credit_limit;
+                                    $usedTtsCredits = (int) ($user->tts_credits_used ?? 0);
+                                @endphp
+                                <div class="dcx-tts-credit-card p-3 rounded h-100">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <label class="fw-bold mb-0">
+                                            <i class="las la-coins text--warning"></i> @lang('TTS Credit Limit')
+                                        </label>
+                                        <span class="badge badge--info">@lang('Per user')</span>
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="tts_credit_limit" id="ttsCreditLimitInput"
+                                               min="0" max="1000000000" step="1"
+                                               value="{{ old('tts_credit_limit', $assignedTtsCredits) }}"
+                                               placeholder="@lang('Unlimited')">
+                                        <span class="input-group-text bg--dark text-white border-secondary">@lang('credits')</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1 mt-2" aria-label="@lang('Quick credit presets')">
+                                        @foreach([1000, 5000, 10000, 25000, 50000] as $preset)
+                                            <button type="button" class="btn btn-xs btn-outline--warning tts-credit-preset" data-credits="{{ $preset }}">{{ number_format($preset) }}</button>
+                                        @endforeach
+                                        <button type="button" class="btn btn-xs btn-outline--secondary tts-credit-preset" data-credits="">@lang('Unlimited')</button>
+                                    </div>
+                                    <div class="small text-muted mt-2">
+                                        <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($usedTtsCredits) }}</strong></span>
+                                        <span class="ms-2"><i class="las la-hourglass-half"></i> @lang('Remaining'):
+                                            <strong class="{{ $ttsCreditRemaining === null ? 'text--success' : ($ttsCreditRemaining > 0 ? 'text--success' : 'text--danger') }}">
+                                                {{ $ttsCreditRemaining === null ? __('Unlimited') : number_format($ttsCreditRemaining) }}
+                                            </strong>
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="las la-server"></i> @lang('Live provider balance'):
+                                        <strong class="text--warning">{{ $ttsProviderCredits === null ? __('Unavailable') : number_format($ttsProviderCredits, 0) }}</strong>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">@lang('Leave blank for unlimited access. Credits are enforced server-side for TTS and AI Music.') </small>
                                 </div>
                             </div>
 
@@ -494,6 +537,10 @@
     .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
     .dcx-expiry-panel { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
     .dcx-expiry-panel #detailExpiresAtInput { min-height: 54px; }
+    .dcx-tts-credit-card { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
+    .dcx-tts-credit-card .form-control { min-height: 42px; }
+    .dcx-tts-credit-card .input-group-text { font-size: .78rem; }
+    .dcx-tts-credit-card small { line-height: 1.45; }
     @media (max-width: 767px) {
         .dcx-tts-assignment { height: auto; }
         .dcx-tts-assignment > span { align-items: flex-start; flex-direction: column !important; gap: 2px !important; }
@@ -745,6 +792,10 @@
             $('.modal-day-chip').removeClass('btn--primary text-white active').addClass('btn-outline--primary');
             $(this).removeClass('btn-outline--primary').addClass('btn--primary text-white active');
             updateModalPreview();
+        });
+
+        $(document).on('click', '.tts-credit-preset', function () {
+            $('#ttsCreditLimitInput').val($(this).data('credits'));
         });
 
         // Initialize preview on modal open

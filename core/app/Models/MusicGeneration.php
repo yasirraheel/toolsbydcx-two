@@ -19,6 +19,8 @@ class MusicGeneration extends Model
         'async',
         'task_id',
         'status',
+        'credit_cost',
+        'credits_refunded',
         'audio_path',
         'mime_type',
         'provider_data',
@@ -29,6 +31,8 @@ class MusicGeneration extends Model
         'make_instrumental' => 'boolean',
         'async' => 'boolean',
         'provider_data' => 'array',
+        'credit_cost' => 'integer',
+        'credits_refunded' => 'boolean',
     ];
 
     public function user(): BelongsTo

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TtsAudio;
 use App\Models\TtsVoiceClone;
 use App\Services\OpenRadioTtsService;
+use App\Services\UserAudioCreditService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -14,7 +15,10 @@ use Illuminate\Support\Str;
 
 class TextToSpeechController extends Controller
 {
-    public function __construct(private readonly OpenRadioTtsService $tts)
+    public function __construct(
+        private readonly OpenRadioTtsService $tts,
+        private readonly UserAudioCreditService $credits
+    )
     {
     }
 
@@ -232,6 +236,11 @@ class TextToSpeechController extends Controller
         return response()->json([
             'success' => true,
             'account' => $account,
+            'user_credits' => [
+                'limit' => $request->user()->tts_credit_limit,
+                'used' => (int) ($request->user()->tts_credits_used ?? 0),
+                'remaining' => $this->credits->remaining($request->user()),
+            ],
             // OpenRadio's official Studio publishes these as editor helper
             // menus. They are served from our Studio endpoint so the page has
             // one live source of truth and no duplicated browser constants.
@@ -346,9 +355,25 @@ class TextToSpeechController extends Controller
             return response()->json(['success' => false, 'message' => 'Choose a voice before generating audio.'], 422);
         }
 
-        $upstream = $this->tts->synthesize(trim($validated['text']), $voiceId, $validated['model'] ?? null);
-        if ($upstream->successful() && str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
-            return $this->saveAudio($request->user(), trim($validated['text']), $voiceId, $upstream->body(), (string) $upstream->header('Content-Type'));
+        $text = trim($validated['text']);
+        $creditCost = $this->ttsCreditCost($text);
+        if (!$this->credits->reserve($request->user(), $creditCost)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account does not have enough assigned TTS credits for that request.',
+                'remaining' => $this->credits->remaining($request->user()),
+            ], 402);
+        }
+
+        try {
+            $upstream = $this->tts->synthesize($text, $voiceId, $validated['model'] ?? null);
+            if ($upstream->successful() && str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
+                return $this->saveAudio($request->user(), $text, $voiceId, $upstream->body(), (string) $upstream->header('Content-Type'));
+            }
+            $this->credits->refund($request->user(), $creditCost);
+        } catch (\Throwable $e) {
+            $this->credits->refund($request->user(), $creditCost);
+            throw $e;
         }
 
         return $this->forward($upstream);
@@ -547,6 +572,14 @@ class TextToSpeechController extends Controller
     private function ensureAccess(Request $request): void
     {
         abort_unless($request->user()?->tts_access === true, 403, 'Text-to-Speech access has not been assigned to this account.');
+    }
+
+    private function ttsCreditCost(string $text): int
+    {
+        // OpenRadio bills ElevenLabs-style TTS by characters; reserve a small
+        // integer amount before the request so concurrent generations cannot
+        // overspend a user's assigned quota.
+        return max(1, (int) ceil(mb_strlen($text) * 1.2));
     }
 
     private function saveAudio($user, string $text, string $voiceId, string $contents, string $mimeType)

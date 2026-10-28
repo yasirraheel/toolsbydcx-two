@@ -174,6 +174,7 @@ class ManageUsersController extends Controller
             'validity_days' => 'nullable|integer|min:1|max:3650',
             'expires_at' => 'nullable|date',
             'tts_access' => 'nullable|boolean',
+            'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -232,6 +233,8 @@ class ManageUsersController extends Controller
             $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
             $user->tts_access = $request->boolean('tts_access');
+            $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
+            $user->tts_credits_used = 0;
 
             // Force all verifications and active profile so user can log in immediately
             $user->ev = Status::VERIFIED;
@@ -283,6 +286,24 @@ class ManageUsersController extends Controller
             ->with('googleFlowAccount')
             ->get();
 
+        $ttsProviderCredits = null;
+        try {
+            $tts = app(\App\Services\OpenRadioTtsService::class);
+            if ($tts->configured()) {
+                $account = $tts->account();
+                if ($account->successful() && is_array($account->json())) {
+                    $source = is_array($account->json('data')) ? $account->json('data') : $account->json();
+                    $creditValue = $source['credits'] ?? $source['balance'] ?? null;
+                    $ttsProviderCredits = is_numeric($creditValue) ? (float) $creditValue : null;
+                }
+            }
+        } catch (\Throwable) {
+            // Provider availability must not prevent the admin from editing a user.
+        }
+        $ttsCreditRemaining = $user->tts_credit_limit === null
+            ? null
+            : max(0, (int) $user->tts_credit_limit - (int) $user->tts_credits_used);
+
         return view('admin.users.detail', compact(
             'pageTitle',
             'user',
@@ -290,7 +311,9 @@ class ManageUsersController extends Controller
             'domain',
             'googleFlowAccounts',
             'currentFlowAccount',
-            'userPairings'
+            'userPairings',
+            'ttsProviderCredits',
+            'ttsCreditRemaining'
         ));
     }
 
@@ -356,6 +379,8 @@ class ManageUsersController extends Controller
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'tts_access' => 'nullable|boolean',
+            'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -407,6 +432,9 @@ class ManageUsersController extends Controller
 
         if ($request->has('tts_access_submitted')) {
             $user->tts_access = $request->boolean('tts_access');
+            if ($request->has('tts_credit_limit_submitted')) {
+                $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
+            }
         }
 
         if ($request->has('expires_at_submitted') || $request->filled('expires_at') || $request->filled('validity_days')) {

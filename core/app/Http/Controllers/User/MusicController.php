@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\MusicGeneration;
 use App\Services\OpenRadioMusicService;
+use App\Services\UserAudioCreditService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -13,7 +14,12 @@ use Illuminate\Support\Str;
 
 class MusicController extends Controller
 {
-    public function __construct(private readonly OpenRadioMusicService $music)
+    private const GENERATION_COST = 4000;
+
+    public function __construct(
+        private readonly OpenRadioMusicService $music,
+        private readonly UserAudioCreditService $credits
+    )
     {
     }
 
@@ -51,6 +57,11 @@ class MusicController extends Controller
         return response()->json([
             'success' => true,
             'account' => $account,
+            'user_credits' => [
+                'limit' => $request->user()->tts_credit_limit,
+                'used' => (int) ($request->user()->tts_credits_used ?? 0),
+                'remaining' => $this->credits->remaining($request->user()),
+            ],
             'pricing' => ['simple' => 4000, 'custom' => 4000],
             'max' => ['description' => 500, 'title' => 80, 'lyrics' => 5000, 'tags' => 500],
         ])->header('Cache-Control', 'no-store');
@@ -109,38 +120,55 @@ class MusicController extends Controller
             }
         }
 
-        $upstream = $this->music->generate($payload);
-        if (!$upstream->successful()) {
-            return $this->forwardError($upstream);
+        if (!$this->credits->reserve($request->user(), self::GENERATION_COST)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account does not have enough assigned credits for music generation.',
+                'remaining' => $this->credits->remaining($request->user()),
+            ], 402);
         }
 
-        if ($this->isAudioResponse($upstream)) {
-            $generation = MusicGeneration::create($this->generationAttributes($request, $payload));
-            $this->saveAudio($generation, $upstream->body(), (string) $upstream->header('Content-Type'));
+        try {
+            $upstream = $this->music->generate($payload);
+            if (!$upstream->successful()) {
+                $this->credits->refund($request->user(), self::GENERATION_COST);
+                return $this->forwardError($upstream);
+            }
 
-            return response()->json(['success' => true, 'generation' => $this->publicGeneration($generation)]);
+            if ($this->isAudioResponse($upstream)) {
+                $generation = MusicGeneration::create($this->generationAttributes($request, $payload));
+                $generation->update(['credit_cost' => self::GENERATION_COST]);
+                $this->saveAudio($generation, $upstream->body(), (string) $upstream->header('Content-Type'));
+
+                return response()->json(['success' => true, 'generation' => $this->publicGeneration($generation)]);
+            }
+
+            $responsePayload = $upstream->json();
+            $responsePayload = is_array($responsePayload) ? $responsePayload : [];
+            $generation = MusicGeneration::create(array_merge(
+                $this->generationAttributes($request, $payload),
+                [
+                    'task_id' => $this->findTaskId($responsePayload),
+                    'status' => $this->normalizeStatus($this->findStatus($responsePayload) ?: 'queued'),
+                    'provider_data' => $responsePayload,
+                    'credit_cost' => self::GENERATION_COST,
+                ]
+            ));
+
+            $audioUrl = $this->findAudioUrl($responsePayload);
+            if ($audioUrl && !$this->saveRemoteAudio($generation, $audioUrl)) {
+                $generation->update(['status' => 'failed', 'error_message' => 'The generated music could not be saved.']);
+                $this->refundGenerationCredits($generation);
+            }
+
+            return response()->json([
+                'success' => true,
+                'generation' => $this->publicGeneration($generation->fresh()),
+            ])->header('Cache-Control', 'no-store');
+        } catch (\Throwable $e) {
+            $this->credits->refund($request->user(), self::GENERATION_COST);
+            throw $e;
         }
-
-        $responsePayload = $upstream->json();
-        $responsePayload = is_array($responsePayload) ? $responsePayload : [];
-        $generation = MusicGeneration::create(array_merge(
-            $this->generationAttributes($request, $payload),
-            [
-                'task_id' => $this->findTaskId($responsePayload),
-                'status' => $this->normalizeStatus($this->findStatus($responsePayload) ?: 'queued'),
-                'provider_data' => $responsePayload,
-            ]
-        ));
-
-        $audioUrl = $this->findAudioUrl($responsePayload);
-        if ($audioUrl) {
-            $this->saveRemoteAudio($generation, $audioUrl);
-        }
-
-        return response()->json([
-            'success' => true,
-            'generation' => $this->publicGeneration($generation->fresh()),
-        ])->header('Cache-Control', 'no-store');
     }
 
     public function task(Request $request, MusicGeneration $generation)
@@ -168,10 +196,12 @@ class MusicController extends Controller
         if (in_array($status, ['failed', 'error', 'cancelled', 'canceled'], true)) {
             $generation->status = 'failed';
             $generation->error_message = 'The music generation could not be completed.';
+            $this->refundGenerationCredits($generation);
         } elseif ($audioUrl = $this->findAudioUrl($payload)) {
             if (!$this->saveRemoteAudio($generation, $audioUrl)) {
                 $generation->status = 'failed';
                 $generation->error_message = 'The generated music could not be saved.';
+                $this->refundGenerationCredits($generation);
             }
         } elseif (filled($status)) {
             $generation->status = $status;
@@ -226,6 +256,8 @@ class MusicController extends Controller
             'make_instrumental' => (bool) ($payload['make_instrumental'] ?? false),
             'async' => true,
             'status' => 'queued',
+            'credit_cost' => self::GENERATION_COST,
+            'credits_refunded' => false,
         ];
     }
 
@@ -344,6 +376,17 @@ class MusicController extends Controller
         $path = 'music/' . $generation->user_id . '/' . Str::uuid() . '.' . $extension;
         Storage::disk('local')->put($path, $contents);
         $generation->update(['audio_path' => $path, 'mime_type' => $mime, 'status' => 'completed', 'error_message' => null]);
+    }
+
+    private function refundGenerationCredits(MusicGeneration $generation): void
+    {
+        if ($generation->credits_refunded || (int) $generation->credit_cost <= 0) {
+            return;
+        }
+
+        $this->credits->refund($generation->user, (int) $generation->credit_cost);
+        $generation->credits_refunded = true;
+        $generation->saveQuietly();
     }
 
     private function forwardError(Response $upstream)
