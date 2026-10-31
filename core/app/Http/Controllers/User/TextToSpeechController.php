@@ -27,11 +27,21 @@ class TextToSpeechController extends Controller
         $this->ensureAccess($request);
         $pageTitle = 'Text to Speech';
         $setting = $this->tts->setting();
+        $initialVoiceId = trim((string) $request->query('voice_id', ''));
+        $initialVoice = preg_match('/^[A-Za-z0-9_-]{1,180}$/', $initialVoiceId)
+            ? [
+                'voice_id' => $initialVoiceId,
+                'name' => mb_substr(trim((string) $request->query('voice_name', 'Cloned voice')), 0, 120),
+                'provider' => 'clone',
+                'description' => 'Your cloned voice',
+            ]
+            : null;
 
         return view('templates.basic.user.tts-studio', [
             'pageTitle' => $pageTitle,
             'configured' => $this->tts->configured(),
             'defaultVoiceId' => $setting?->default_voice_id,
+            'initialVoice' => $initialVoice,
         ]);
     }
 
@@ -86,6 +96,9 @@ class TextToSpeechController extends Controller
                 'voice_id' => $clone->clone_id,
                 'name' => $clone->name,
                 'description' => $clone->description,
+                'preview_url' => ($clone->metadata ?? [])['preview_url'] ?? ($clone->metadata ?? [])['previewUrl'] ?? null,
+                'language' => ($clone->metadata ?? [])['language'] ?? null,
+                'gender' => ($clone->metadata ?? [])['gender'] ?? null,
                 'provider' => 'clone',
             ])
             ->all();
@@ -451,6 +464,9 @@ class TextToSpeechController extends Controller
                     'voice_id' => $id,
                     'name' => (string) ($clone['name'] ?? $clone['display_name'] ?? $clone['label'] ?? 'Voice clone'),
                     'description' => $clone['description'] ?? null,
+                    'preview_url' => $clone['preview_url'] ?? $clone['previewUrl'] ?? null,
+                    'language' => $clone['language'] ?? null,
+                    'gender' => $clone['gender'] ?? null,
                     'provider' => 'clone',
                 ];
             })

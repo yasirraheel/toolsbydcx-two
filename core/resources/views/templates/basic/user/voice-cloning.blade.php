@@ -48,17 +48,23 @@
     .dcx-clone-list-head h2 { margin:0; }
     .dcx-clone-count { padding:.25rem .55rem; border:1px solid rgba(255,121,0,.4); border-radius:999px; color:#fdba74; background:rgba(255,121,0,.08); font-size:.68rem; font-weight:700; }
     .dcx-clone-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
-    .dcx-clone-item { display:flex; min-width:0; align-items:center; gap:.7rem; padding:.85rem; border:1px solid var(--clone-line); border-radius:11px; background:var(--clone-raised); }
+    .dcx-clone-item { display:grid; min-width:0; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:.7rem; padding:.85rem; border:1px solid var(--clone-line); border-radius:11px; background:var(--clone-raised); }
     .dcx-clone-avatar { display:inline-flex; width:2.45rem; height:2.45rem; flex:0 0 auto; align-items:center; justify-content:center; border-radius:10px; color:#fff; background:var(--clone-orange); font-size:1rem; font-weight:700; }
     .dcx-clone-item__body { min-width:0; flex:1; }
     .dcx-clone-item__body strong { display:block; overflow:hidden; color:#f8fafc; font-size:.8rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
     .dcx-clone-item__body code { display:block; overflow:hidden; margin-top:.22rem; color:#94a3b8; font-size:.65rem; text-overflow:ellipsis; white-space:nowrap; }
+    .dcx-clone-item__actions { display:flex; align-items:center; justify-content:flex-end; gap:.35rem; flex-wrap:wrap; }
+    .dcx-clone-action { display:inline-flex; min-height:31px; align-items:center; justify-content:center; gap:.3rem; padding:.35rem .55rem; border:1px solid rgba(148,163,184,.28); border-radius:8px; color:#cbd5e1; background:transparent; font-size:.67rem; font-weight:700; text-decoration:none; cursor:pointer; transition:.18s ease; }
+    .dcx-clone-action:hover { color:#fff; border-color:rgba(255,121,0,.65); background:rgba(255,121,0,.1); }
+    .dcx-clone-action--use { color:#0b1220; border-color:var(--clone-orange); background:var(--clone-orange); }
+    .dcx-clone-action--use:hover { color:#0b1220; border-color:#ff9a3c; background:#ff9a3c; }
+    .dcx-clone-action:disabled { opacity:.45; cursor:not-allowed; }
     .dcx-clone-delete { display:inline-flex; width:31px; height:31px; flex:0 0 auto; align-items:center; justify-content:center; border:1px solid rgba(248,113,113,.35); border-radius:8px; color:#fca5a5; background:transparent; cursor:pointer; }
     .dcx-clone-delete:hover { color:#fff; background:rgba(239,68,68,.2); }
     .dcx-clone-empty { grid-column:1/-1; padding:3rem 1rem; border:1px dashed var(--clone-line); border-radius:11px; color:var(--clone-muted); text-align:center; }
     .dcx-clone-empty i { display:block; margin-bottom:.5rem; color:#64748b; font-size:1.7rem; }
     @media (max-width: 991px) { .dcx-clone-layout { grid-template-columns:1fr; } }
-    @media (max-width: 767px) { .dcx-clone-highlights { grid-template-columns:1fr; } .dcx-clone-hero { flex-direction:column; } .dcx-clone-card { padding:1rem; } .dcx-clone-list { grid-template-columns:1fr; } }
+    @media (max-width: 767px) { .dcx-clone-highlights { grid-template-columns:1fr; } .dcx-clone-hero { flex-direction:column; } .dcx-clone-card { padding:1rem; } .dcx-clone-list { grid-template-columns:1fr; } .dcx-clone-item { grid-template-columns:auto minmax(0,1fr); } .dcx-clone-item__actions { grid-column:1/-1; justify-content:flex-start; } }
 </style>
 @endpush
 
@@ -133,8 +139,9 @@
     const clonesUrl = @json(route('user.tts.clones'));
     const createUrl = @json(route('user.tts.clone.create'));
     const deleteUrl = @json(route('user.tts.clone.delete', ['clone' => '__CLONE__']));
+    const ttsUrl = @json(route('user.tts.index'));
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value || '';
-    let clones = [];
+    let clones = [], previewAudio = null, previewButton = null;
 
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
     const setMessage = (text, error = false) => { message.textContent = text || ''; message.classList.toggle('is-error', error); };
@@ -142,19 +149,22 @@
     const setSubmitting = (loading) => { submit.classList.toggle('is-loading', loading); submit.setAttribute('aria-busy', loading ? 'true' : 'false'); submitLabel.textContent = loading ? '@lang('Creating…')' : '@lang('Create Voice Clone')'; };
     const normalize = (payload) => {
         const rows = Array.isArray(payload?.clones) ? payload.clones : (Array.isArray(payload?.data) ? payload.data : []);
-        return rows.map((clone) => ({ id: clone.id ?? clone.voice_id ?? clone.voiceId, name: clone.name ?? clone.display_name ?? 'Voice clone', voiceId: clone.voice_id ?? clone.voiceId ?? clone.id, description: clone.description ?? '' })).filter((clone) => clone.id);
+        return rows.map((clone) => ({ id: clone.id ?? clone.voice_id ?? clone.voiceId, name: clone.name ?? clone.display_name ?? 'Voice clone', voiceId: clone.voice_id ?? clone.voiceId ?? clone.id, description: clone.description ?? '', previewUrl: clone.preview_url ?? clone.previewUrl ?? clone.preview ?? '', language: clone.language ?? '', gender: clone.gender ?? '' })).filter((clone) => clone.id);
     };
+    const stopPreview = () => { if (previewAudio) { previewAudio.pause(); previewAudio.currentTime = 0; } if (previewButton) previewButton.innerHTML = '<i class="las la-play"></i><span>@lang('Preview')</span>'; previewAudio = null; previewButton = null; };
+    const togglePreview = (button, url) => { if (!url) return; if (previewButton === button) { stopPreview(); return; } stopPreview(); previewAudio = new Audio(url); previewButton = button; button.innerHTML = '<i class="las la-pause"></i><span>@lang('Playing')</span>'; previewAudio.addEventListener('ended', stopPreview, {once:true}); previewAudio.addEventListener('error', () => { stopPreview(); setMessage('@lang('Preview audio could not be played.')', true); }, {once:true}); previewAudio.play().catch(() => { stopPreview(); setMessage('@lang('Preview audio could not be played.')', true); }); };
     const render = () => {
+        stopPreview();
         count.textContent = String(clones.length);
         if (!clones.length) { list.innerHTML = '<div class="dcx-clone-empty"><i class="las la-wave-square"></i><strong>@lang('No clones yet')</strong><div class="mt-1">@lang('Create your first voice clone from a clear sample.')</div></div>'; return; }
-        list.innerHTML = clones.map((clone) => '<article class="dcx-clone-item"><span class="dcx-clone-avatar">' + escapeHtml(clone.name.charAt(0).toUpperCase()) + '</span><div class="dcx-clone-item__body"><strong>' + escapeHtml(clone.name) + '</strong><code>' + escapeHtml(clone.voiceId) + '</code></div><button type="button" class="dcx-clone-delete" data-delete-clone="' + escapeHtml(clone.id) + '" aria-label="@lang('Delete clone')"><i class="las la-trash"></i></button></article>').join('');
+        list.innerHTML = clones.map((clone) => { const useUrl = ttsUrl + '?voice_id=' + encodeURIComponent(clone.voiceId) + '&voice_name=' + encodeURIComponent(clone.name); return '<article class="dcx-clone-item"><span class="dcx-clone-avatar">' + escapeHtml(clone.name.charAt(0).toUpperCase()) + '</span><div class="dcx-clone-item__body"><strong>' + escapeHtml(clone.name) + '</strong><code>' + escapeHtml(clone.voiceId) + '</code></div><div class="dcx-clone-item__actions"><button type="button" class="dcx-clone-action" data-preview-clone="' + escapeHtml(clone.id) + '" data-preview-url="' + escapeHtml(clone.previewUrl) + '" ' + (clone.previewUrl ? '' : 'disabled') + '><i class="las la-play"></i><span>@lang('Preview')</span></button><a class="dcx-clone-action dcx-clone-action--use" data-use-clone href="' + escapeHtml(useUrl) + '"><i class="las la-microphone"></i><span>@lang('Use this voice')</span></a><button type="button" class="dcx-clone-delete" data-delete-clone="' + escapeHtml(clone.id) + '" aria-label="@lang('Delete clone')"><i class="las la-trash"></i></button></div></article>'; }).join('');
     };
     const apiJson = async (url, options = {}) => { const response = await fetch(url, { credentials: 'same-origin', ...options }); const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(payload.message || payload.error || '@lang('The request could not be completed.')'); return payload; };
     const load = async () => { try { clones = normalize(await apiJson(clonesUrl)); render(); } catch (error) { list.innerHTML = '<div class="dcx-clone-empty">' + escapeHtml(error.message) + '</div>'; } };
     audio.addEventListener('change', () => { const selected = audio.files?.[0]; fileLabel.textContent = selected ? selected.name : '@lang('Click to upload audio')'; upload.classList.toggle('is-selected', !!selected); updateSubmit(); });
     name.addEventListener('input', updateSubmit); consent.addEventListener('change', updateSubmit);
     form.addEventListener('submit', async (event) => { event.preventDefault(); if (submit.disabled) return; submit.disabled = true; setSubmitting(true); setMessage('@lang('Creating your voice clone…')'); const data = new FormData(form); try { await apiJson(createUrl, { method: 'POST', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}, body: data }); form.reset(); fileLabel.textContent = '@lang('Click to upload audio')'; upload.classList.remove('is-selected'); setMessage('@lang('Voice clone created successfully.')'); await load(); } catch (error) { setMessage(error.message, true); } finally { setSubmitting(false); updateSubmit(); } });
-    list.addEventListener('click', async (event) => { const button = event.target.closest('[data-delete-clone]'); if (!button) return; const id = button.dataset.deleteClone; if (!id || !window.confirm('@lang('Delete this voice clone permanently?')')) return; button.disabled = true; try { await apiJson(deleteUrl.replace('__CLONE__', encodeURIComponent(id)), { method: 'DELETE', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'} }); clones = clones.filter((clone) => String(clone.id) !== String(id)); render(); setMessage('@lang('Voice clone deleted.')'); } catch (error) { button.disabled = false; setMessage(error.message, true); } });
+    list.addEventListener('click', async (event) => { const preview = event.target.closest('[data-preview-clone]'); if (preview) { togglePreview(preview, preview.dataset.previewUrl); return; } const use = event.target.closest('[data-use-clone]'); if (use) { stopPreview(); return; } const button = event.target.closest('[data-delete-clone]'); if (!button) return; const id = button.dataset.deleteClone; if (!id || !window.confirm('@lang('Delete this voice clone permanently?')')) return; stopPreview(); button.disabled = true; try { await apiJson(deleteUrl.replace('__CLONE__', encodeURIComponent(id)), { method: 'DELETE', headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'} }); clones = clones.filter((clone) => String(clone.id) !== String(id)); render(); setMessage('@lang('Voice clone deleted.')'); } catch (error) { button.disabled = false; setMessage(error.message, true); } });
     load();
 }());
 </script>
