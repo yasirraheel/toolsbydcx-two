@@ -440,7 +440,10 @@ class TextToSpeechController extends Controller
         }
 
         return collect($rows)
-            ->filter('is_array')
+            // Collection::filter passes both value and key to callbacks;
+            // PHP's is_array() accepts only one argument, so use an explicit
+            // closure to avoid a production ArgumentCountError here.
+            ->filter(fn ($clone) => is_array($clone))
             ->map(function (array $clone) {
                 $id = $this->cloneId($clone);
                 return [
