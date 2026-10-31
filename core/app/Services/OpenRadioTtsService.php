@@ -136,11 +136,11 @@ class OpenRadioTtsService
      */
     public function voiceClones(): Response
     {
-        // OpenRadio exposes user-owned clones through the regular voice
-        // catalog. There is no public `/voice-clones` resource in the v1
-        // developer API; requesting it returns 404, which made the cloned
-        // tab appear empty even when a clone existed in OpenRadio.
-        return $this->voices(null, 1, 100, [], 'clone');
+        // Voice clones are a first-class resource in the developer API. Keep
+        // this request separate from the voice-library endpoint because the
+        // clone catalog is scoped to the API account and is not returned by
+        // `/voices?provider=clone`.
+        return $this->client()->get($this->url('voice-clones'));
     }
 
     /**
@@ -152,11 +152,13 @@ class OpenRadioTtsService
         $stream = fopen($audio->getRealPath(), 'rb');
 
         try {
-            return $this->client()
+            // `attach()` switches the request to multipart/form-data. Do not
+            // use the JSON-only client here: the documented endpoint expects
+            // the sample in the `audio` multipart field.
+            return $this->multipartClient()
                 ->attach('audio', $stream, $audio->getClientOriginalName())
-                ->post($this->url('voice-clone'), [
+                ->post($this->url('voice-clones'), [
                     'name' => $name,
-                    'consent' => 'true',
                 ]);
         } finally {
             if (is_resource($stream)) {
@@ -178,6 +180,19 @@ class OpenRadioTtsService
         return Http::withToken((string) $apiKey)
             ->acceptJson()
             ->asJson()
+            // Do not follow redirects with an Authorization header.
+            ->withOptions(['allow_redirects' => false])
+            ->timeout(45)
+            ->connectTimeout(10);
+    }
+
+    private function multipartClient()
+    {
+        $setting = $this->setting();
+        $apiKey = $setting?->decryptedApiKey();
+
+        return Http::withToken((string) $apiKey)
+            ->acceptJson()
             // Do not follow redirects with an Authorization header.
             ->withOptions(['allow_redirects' => false])
             ->timeout(45)

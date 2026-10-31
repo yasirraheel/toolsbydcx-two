@@ -116,7 +116,9 @@ class TextToSpeechController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'audio' => ['required', 'file', 'mimes:mp3,wav,m4a,aac', 'max:10240'],
+            // OpenRadio's voice-clones endpoint accepts MP3, WAV, M4A and
+            // FLAC reference samples up to 20 MB.
+            'audio' => ['required', 'file', 'mimes:mp3,wav,m4a,aac,flac', 'max:20480'],
             'consent' => ['accepted'],
         ]);
 

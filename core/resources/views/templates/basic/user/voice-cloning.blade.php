@@ -96,9 +96,9 @@
                 <div class="dcx-clone-field">
                     <label>@lang('Voice Sample')</label>
                     <label id="dcx-clone-upload" class="dcx-clone-upload" for="dcx-clone-audio">
-                        <span><i class="las la-cloud-upload-alt"></i><strong id="dcx-clone-file-label">@lang('Click to upload audio')</strong><small>@lang('MP3, WAV, M4A or AAC · 1–30 seconds · max 10 MB')</small></span>
+                        <span><i class="las la-cloud-upload-alt"></i><strong id="dcx-clone-file-label">@lang('Click to upload audio')</strong><small>@lang('MP3, WAV, M4A or FLAC · 10 seconds–5 minutes · max 20 MB')</small></span>
                     </label>
-                    <input id="dcx-clone-audio" type="file" name="audio" accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/aac,.mp3,.wav,.m4a,.aac" hidden required>
+                    <input id="dcx-clone-audio" type="file" name="audio" accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/flac,.mp3,.wav,.m4a,.aac,.flac" hidden required>
                 </div>
                 <label class="dcx-clone-consent"><input id="dcx-clone-consent" type="checkbox" name="consent" value="1" required><span>@lang('I confirm this is my own voice, or I have explicit permission from the voice owner to clone it. I will not use it to impersonate, deceive or harm anyone.')</span></label>
                 <div class="dcx-clone-cost"><strong><i class="las la-coins me-1"></i>@lang('Estimated cost: Free')</strong><span>@lang('Creating a clone is free. Credits are only charged when you generate audio with it in Text to Speech.')</span></div>
