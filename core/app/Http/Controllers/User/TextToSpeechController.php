@@ -10,6 +10,7 @@ use App\Services\UserAudioCreditService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -359,7 +360,31 @@ class TextToSpeechController extends Controller
             if ($upstream->successful() && str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
                 return $this->saveAudio($request->user(), $text, $voiceId, $upstream->body(), (string) $upstream->header('Content-Type'));
             }
+
+            if (!$upstream->successful()) {
+                $this->credits->refund($request->user(), $creditCost);
+                return $this->forward($upstream);
+            }
+
+            $payload = $upstream->json();
+            $payload = is_array($payload) ? $payload : [];
+            $taskId = $this->findTaskId($payload);
+            $audioUrl = $this->findAudioUrl($payload);
+
+            if ($taskId) {
+                // Keep the reservation while the provider task is processing.
+                // The task endpoint settles it when the task completes or fails.
+                $this->rememberTaskCredit($request->user()->id, $taskId, $creditCost);
+                return $this->jsonWithRemaining($payload, $request->user());
+            }
+
+            if ($audioUrl) {
+                return $this->jsonWithRemaining($payload, $request->user());
+            }
+
+            // A successful response without audio or a task is not billable.
             $this->credits->refund($request->user(), $creditCost);
+            return $this->jsonWithRemaining($payload ?: ['success' => false, 'message' => 'The speech service returned an invalid response.'], $request->user());
         } catch (\Throwable $e) {
             $this->credits->refund($request->user(), $creditCost);
             report($e);
@@ -368,8 +393,6 @@ class TextToSpeechController extends Controller
                 'message' => 'The speech service is temporarily unavailable. Your credits were restored; please try again.',
             ], 502)->header('Cache-Control', 'no-store');
         }
-
-        return $this->forward($upstream);
     }
 
     public function task(Request $request, string $task)
@@ -381,7 +404,117 @@ class TextToSpeechController extends Controller
 
         abort_unless(preg_match('/^[A-Za-z0-9_-]{1,160}$/', $task), 404);
 
-        return $this->forward($this->tts->task($task));
+        $upstream = $this->tts->task($task);
+        if (!$upstream->successful()) {
+            return $this->forward($upstream);
+        }
+
+        if (str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
+            $this->settleTaskCredit($request->user(), $task, false);
+            return $this->forward($upstream);
+        }
+
+        $payload = $upstream->json();
+        $payload = is_array($payload) ? $payload : [];
+        $status = $this->findTaskStatus($payload);
+        $audioUrl = $this->findAudioUrl($payload);
+        if ($audioUrl || in_array($status, ['completed', 'succeeded', 'success', 'done', 'ready'], true)) {
+            $this->settleTaskCredit($request->user(), $task, false);
+        } elseif (in_array($status, ['failed', 'error', 'cancelled', 'canceled', 'expired'], true)) {
+            $this->settleTaskCredit($request->user(), $task, true);
+        }
+
+        return $this->jsonWithRemaining($payload, $request->user());
+    }
+
+    private function rememberTaskCredit(int $userId, string $task, int $amount): void
+    {
+        Cache::put($this->taskCreditKey($userId, $task), $amount, now()->addHours(2));
+    }
+
+    private function settleTaskCredit($user, string $task, bool $refund): void
+    {
+        $amount = Cache::pull($this->taskCreditKey($user->id, $task));
+        if ($refund && is_numeric($amount)) {
+            $this->credits->refund($user, (int) $amount);
+        }
+    }
+
+    private function taskCreditKey(int $userId, string $task): string
+    {
+        return 'tts-credit-reservation:' . $userId . ':' . $task;
+    }
+
+    private function jsonWithRemaining(array $payload, $user)
+    {
+        $payload['remaining_credits'] = $this->credits->remaining($user);
+
+        return response()->json($payload)->header('Cache-Control', 'no-store');
+    }
+
+    private function findTaskId(array $payload): ?string
+    {
+        foreach (['task_id', 'taskId', 'id'] as $key) {
+            if (filled($payload[$key] ?? null)) {
+                return (string) $payload[$key];
+            }
+        }
+        foreach (['task', 'data', 'result'] as $key) {
+            if (is_array($payload[$key] ?? null)) {
+                $task = $this->findTaskId($payload[$key]);
+                if ($task) {
+                    return $task;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function findTaskStatus(array $payload): ?string
+    {
+        foreach (['status', 'state'] as $key) {
+            if (filled($payload[$key] ?? null)) {
+                return strtolower((string) $payload[$key]);
+            }
+        }
+        foreach (['task', 'data', 'result'] as $key) {
+            if (is_array($payload[$key] ?? null)) {
+                $status = $this->findTaskStatus($payload[$key]);
+                if ($status) {
+                    return $status;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function findAudioUrl(array $payload): ?string
+    {
+        foreach (['audio_url', 'audioUrl', 'download_url', 'downloadUrl', 'url'] as $key) {
+            if (filter_var($payload[$key] ?? null, FILTER_VALIDATE_URL)) {
+                return (string) $payload[$key];
+            }
+        }
+        foreach (['audio', 'data', 'result', 'output'] as $key) {
+            if (is_array($payload[$key] ?? null)) {
+                $url = $this->findAudioUrl($payload[$key]);
+                if ($url) {
+                    return $url;
+                }
+            }
+        }
+        foreach ($payload as $value) {
+            if (is_array($value)) {
+                $url = $this->findAudioUrl($value);
+                if ($url) {
+                    return $url;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function forward(Response $upstream)
