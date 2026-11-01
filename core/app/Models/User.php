@@ -155,9 +155,18 @@ class User extends Authenticatable
 
     public function fullname(): Attribute
     {
-        return new Attribute(
-            get: fn () => trim($this->firstname . ' ' . $this->lastname),
-        );
+        return new Attribute(get: function () {
+            $firstname = trim((string) $this->firstname);
+            $lastname = trim((string) $this->lastname);
+
+            // Older records created from a one-word name may contain the
+            // same value in both columns. Keep their display consistent too.
+            if ($firstname !== '' && $lastname !== '' && mb_strtolower($firstname) === mb_strtolower($lastname)) {
+                return $firstname;
+            }
+
+            return trim($firstname . ' ' . $lastname);
+        });
     }
 
     public function mobileNumber(): Attribute
