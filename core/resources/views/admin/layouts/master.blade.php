@@ -203,17 +203,23 @@
             color: #ffffff !important;
         }
         .nav-pills .nav-link.active,
-        .nav-pills .nav-link.active i,
-        .nav-pills .nav-link.active span,
         .nav-pills .nav-link.active.text-success,
-        .nav-pills .nav-link.active.text-success i,
-        .nav-pills .nav-link.active.text-success span,
-        .nav-pills .nav-link.active.text-danger,
-        .nav-pills .nav-link.active.text-danger i,
-        .nav-pills .nav-link.active.text-danger span {
+        .nav-pills .nav-link.active.text-danger {
             background: #4634ff !important;
             color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(70, 52, 255, 0.35) !important;
+            font-weight: 600 !important;
+        }
+        /* Keep the active pill as one clean control instead of painting
+           a separate selection-like rectangle behind its text/icon. */
+        .nav-pills .nav-link.active i,
+        .nav-pills .nav-link.active span,
+        .nav-pills .nav-link.active.text-success i,
+        .nav-pills .nav-link.active.text-success span,
+        .nav-pills .nav-link.active.text-danger i,
+        .nav-pills .nav-link.active.text-danger span {
+            background: transparent !important;
+            color: #ffffff !important;
             font-weight: 600 !important;
         }
         .sidebar-submenu-box .nav-link {
