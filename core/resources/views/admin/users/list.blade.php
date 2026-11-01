@@ -1,11 +1,51 @@
 @extends('admin.layouts.app')
+@push('style')
+<style>
+    .admin-users-table-wrap { overflow-x:hidden; }
+    .admin-users-table { width:100%; table-layout:fixed; }
+    .admin-users-table th,
+    .admin-users-table td { min-width:0; overflow:hidden; }
+    .admin-users-table th:nth-child(1),
+    .admin-users-table td:nth-child(1) { width:3%; }
+    .admin-users-table th:nth-child(2),
+    .admin-users-table td:nth-child(2) { width:31%; }
+    .admin-users-table th:nth-child(3),
+    .admin-users-table td:nth-child(3) { width:20%; }
+    .admin-users-table th:nth-child(4),
+    .admin-users-table td:nth-child(4) { width:8%; }
+    .admin-users-table th:nth-child(5),
+    .admin-users-table td:nth-child(5) { width:19%; }
+    .admin-users-table th:nth-child(6),
+    .admin-users-table td:nth-child(6) { width:19%; }
+    .admin-users-table .admin-user-name,
+    .admin-users-table .admin-user-active-ip {
+        display:block;
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+    .admin-users-table .admin-actions { min-width:0 !important; width:100%; }
+    .admin-users-table .admin-actions .btn {
+        min-width:0;
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+    @media (max-width: 1200px) {
+        .admin-users-table { font-size:.86rem; }
+        .admin-users-table .admin-actions .btn { padding-left:.45rem; padding-right:.45rem; }
+    }
+</style>
+@endpush
 @section('panel')
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table--light style--two mb-0">
+                    <div class="table-responsive admin-users-table-wrap">
+                        <table class="table table--light style--two mb-0 admin-users-table">
                             <thead>
                             <tr>
                                 <th style="width: 45px;" class="text-center">
@@ -26,7 +66,7 @@
                                 </td>
                                 <td class="text-start" style="text-align: left !important; word-break: break-word;">
                                     <div class="text-start">
-                                        <span class="fw-bold text--dark d-block">{{$user->fullname}}</span>
+                                        <span class="fw-bold text--dark d-block admin-user-name" title="{{ $user->fullname }}">{{$user->fullname}}</span>
                                         <span class="small d-block">
                                             <a href="{{ route('admin.users.detail', $user->id) }}"><span>@</span>{{ $user->username }}</a>
                                         </span>
@@ -61,7 +101,7 @@
                                         </div>
                                     @endif
                                     @if($user->last_seen_ip)
-                                        <div class="text-muted small mt-1 text-start" style="word-break: break-all; text-align: left !important;">
+                                        <div class="text-muted small mt-1 text-start admin-user-active-ip" title="{{ $user->last_seen_ip }}" style="text-align: left !important;">
                                             Active IP: <a href="{{route('admin.report.login.ipHistory',[$user->last_seen_ip])}}">{{ $user->last_seen_ip }}</a>
                                         </div>
                                     @endif
@@ -120,7 +160,7 @@
                                 </td>
 
                                 <td class="text-end">
-                                    <div class="d-flex flex-column gap-1 align-items-end" style="min-width: 90px;">
+                                    <div class="d-flex flex-column gap-1 align-items-end admin-actions" style="min-width: 0;">
                                         <a href="{{ route('admin.users.detail', $user->id) }}" class="btn btn-sm btn-outline--primary w-100 text-center">
                                             <i class="las la-desktop"></i> @lang('Details')
                                         </a>
