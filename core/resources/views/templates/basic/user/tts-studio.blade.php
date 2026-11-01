@@ -83,19 +83,19 @@
         flex:0 0 24px;
         align-items:center;
         justify-content:center;
-        border:1px solid rgba(226,232,240,.28);
+        border:1px solid rgba(255,255,255,.9);
         border-radius:7px;
-        color:#f8fafc;
-        background:rgba(248,250,252,.1);
+        color:#172033;
+        background:#ffffff;
         font-size:14px;
-        text-shadow:0 0 8px currentColor;
+        text-shadow:none;
     }
-    .studio-provider__icon--elevenlabs { color:#f9a8d4 !important; border-color:rgba(244,114,182,.58); background:rgba(236,72,153,.2); }
-    .studio-provider__icon--minimax { color:#fda4af !important; border-color:rgba(251,113,133,.58); background:rgba(244,63,94,.2); }
-    .studio-provider__icon--edge { color:#fde68a !important; border-color:rgba(250,204,21,.58); background:rgba(234,179,8,.2); }
-    .studio-provider__icon--fishaudio { color:#a5f3fc !important; border-color:rgba(34,211,238,.58); background:rgba(6,182,212,.2); }
-    .studio-provider__icon--cloned { color:#fed7aa !important; border-color:rgba(251,146,60,.58); background:rgba(249,115,22,.2); }
-    .studio-provider__icon--library { color:#bfdbfe !important; border-color:rgba(96,165,250,.58); background:rgba(37,99,235,.2); }
+    .studio-provider__icon--elevenlabs { color:#db2777 !important; }
+    .studio-provider__icon--minimax { color:#e11d48 !important; }
+    .studio-provider__icon--edge { color:#b45309 !important; }
+    .studio-provider__icon--fishaudio { color:#0891b2 !important; }
+    .studio-provider__icon--cloned { color:#ea580c !important; }
+    .studio-provider__icon--library { color:#2563eb !important; }
     .studio-provider:hover i,.studio-provider.is-active i { color:#fdba74; }
     .studio-provider:hover,.studio-provider.is-active { border-color:rgba(255,121,0,.6); color:#fdba74; background:var(--orange-soft); }
     .studio-field { margin-top:19px; }
