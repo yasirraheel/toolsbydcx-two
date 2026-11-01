@@ -74,13 +74,28 @@
     .studio-label { display:block; margin:0 0 10px; color:#e2e8f0; font-size:12px; font-weight:700; }
     .studio-providers { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
     .studio-provider { display:inline-flex; min-height:40px; align-items:center; justify-content:center; gap:6px; border:1px solid rgba(148,163,184,.22); border-radius:8px; padding:7px; color:#cbd5e1; background:var(--field); font-size:11px; font-weight:600; text-align:center; text-decoration:none; cursor:pointer; }
-    .studio-provider i { flex:0 0 auto; color:#60a5fa; font-size:14px; }
-    .studio-provider__icon--elevenlabs { color:#f472b6 !important; }
-    .studio-provider__icon--minimax { color:#fb7185 !important; }
-    .studio-provider__icon--edge { color:#fbbf24 !important; }
-    .studio-provider__icon--fishaudio { color:#67e8f9 !important; }
-    .studio-provider__icon--cloned { color:#fb923c !important; }
-    .studio-provider__icon--library { color:#60a5fa !important; }
+    /* Give each provider icon its own high-contrast badge so it remains
+       readable against the dark field in both idle and selected states. */
+    .studio-provider i {
+        display:inline-flex;
+        width:24px;
+        height:24px;
+        flex:0 0 24px;
+        align-items:center;
+        justify-content:center;
+        border:1px solid rgba(226,232,240,.28);
+        border-radius:7px;
+        color:#f8fafc;
+        background:rgba(248,250,252,.1);
+        font-size:14px;
+        text-shadow:0 0 8px currentColor;
+    }
+    .studio-provider__icon--elevenlabs { color:#f9a8d4 !important; border-color:rgba(244,114,182,.58); background:rgba(236,72,153,.2); }
+    .studio-provider__icon--minimax { color:#fda4af !important; border-color:rgba(251,113,133,.58); background:rgba(244,63,94,.2); }
+    .studio-provider__icon--edge { color:#fde68a !important; border-color:rgba(250,204,21,.58); background:rgba(234,179,8,.2); }
+    .studio-provider__icon--fishaudio { color:#a5f3fc !important; border-color:rgba(34,211,238,.58); background:rgba(6,182,212,.2); }
+    .studio-provider__icon--cloned { color:#fed7aa !important; border-color:rgba(251,146,60,.58); background:rgba(249,115,22,.2); }
+    .studio-provider__icon--library { color:#bfdbfe !important; border-color:rgba(96,165,250,.58); background:rgba(37,99,235,.2); }
     .studio-provider:hover i,.studio-provider.is-active i { color:#fdba74; }
     .studio-provider:hover,.studio-provider.is-active { border-color:rgba(255,121,0,.6); color:#fdba74; background:var(--orange-soft); }
     .studio-field { margin-top:19px; }
