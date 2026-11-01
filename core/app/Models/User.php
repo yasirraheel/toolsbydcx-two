@@ -156,7 +156,7 @@ class User extends Authenticatable
     public function fullname(): Attribute
     {
         return new Attribute(
-            get: fn () => $this->firstname . ' ' . $this->lastname,
+            get: fn () => trim($this->firstname . ' ' . $this->lastname),
         );
     }
 

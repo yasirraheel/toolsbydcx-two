@@ -180,7 +180,9 @@ class ManageUsersController extends Controller
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
         $nameParts = array_values(array_filter(explode(' ', $name)));
         $firstname = $nameParts[0] ?? 'User';
-        $lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : $firstname;
+        // A single full-name value should remain a single name. Repeating it
+        // here makes the model accessor render "Ali Ali" for an input of "Ali".
+        $lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
 
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
         $rawPrefix = trim($request->email_prefix ?: $request->email ?: $request->username ?: strtolower(str_replace(' ', '_', $name)));
@@ -386,7 +388,7 @@ class ManageUsersController extends Controller
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
         $nameParts = array_values(array_filter(explode(' ', $name)));
         $user->firstname = $nameParts[0] ?? $user->firstname;
-        $user->lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : ($nameParts[0] ?? $user->lastname);
+        $user->lastname  = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
 
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
         $rawEmail = trim($request->email);
