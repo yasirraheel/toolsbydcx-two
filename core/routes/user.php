@@ -73,6 +73,8 @@ Route::middleware('auth')->name('user.')->group(function () {
             Route::controller('UserController')->group(function(){
                 Route::get('dashboard', 'home')->name('home');
                 Route::get('chat-history', 'chatHistory')->name('chat.history');
+                Route::get('chat-history/{chat_id}/archive', 'chatArchive')->name('chat.history.archive.view');
+                Route::post('chat-history/share', 'shareChatHistory')->name('chat.history.share');
                 Route::post('chat-history/delete', 'deleteChatHistory')->name('chat.history.delete');
                 Route::post('plan/subscribe/{id}', 'subscribePlan')->name('plan.subscribe');
                 Route::get('download-attachments/{file_hash}', 'downloadAttachment')->name('download.attachment');

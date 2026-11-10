@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER') {
+    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE') {
         handleChatHistoryMessage(request)
             .then((data) => sendResponse({ success: true, data }))
             .catch((error) => sendResponse({ success: false, status: error.status || 0, error: error.message }));
@@ -68,6 +68,26 @@ async function handleChatHistoryMessage(request) {
                 provider: 'chatgpt',
                 chat_id: chatId,
                 title: String(request.title || '').slice(0, 300)
+            })
+        });
+    }
+
+    if (request.type === 'CHAT_HISTORY_ARCHIVE') {
+        const chatId = String(request.chatId || '');
+        if (!/^[A-Za-z0-9_-]{4,128}$/.test(chatId)) {
+            throw new Error('Invalid chat id.');
+        }
+        const messages = Array.isArray(request.messages) ? request.messages.slice(0, 200) : [];
+        if (!messages.length) return null;
+
+        return requestChatHistory('/archive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'chatgpt',
+                chat_id: chatId,
+                title: String(request.title || '').slice(0, 300),
+                messages
             })
         });
     }

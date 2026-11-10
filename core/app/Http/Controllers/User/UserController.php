@@ -106,6 +106,64 @@ class UserController extends Controller
         return view('Template::user.chat_history', compact('pageTitle', 'chatHistory'));
     }
 
+    public function chatArchive(string $chatId)
+    {
+        abort_unless(preg_match('/^[A-Za-z0-9_-]{4,128}$/', $chatId), 404);
+
+        $chat = UserChatThread::query()
+            ->where('user_id', auth()->id())
+            ->where('provider', 'chatgpt')
+            ->where('chat_id', $chatId)
+            ->firstOrFail();
+
+        abort_if(!$chat->messages_encrypted, 404);
+
+        $pageTitle = $chat->title ?: 'Archived Chat';
+        $messages = $chat->decryptedMessages();
+        return view('Template::user.chat_archive', compact('pageTitle', 'chat', 'messages'));
+    }
+
+    public function shareChatHistory(Request $request)
+    {
+        $validated = $request->validate([
+            'chat_id' => ['required', 'string', 'max:128', 'regex:/^[A-Za-z0-9_-]{4,128}$/'],
+            'public' => ['required', 'boolean'],
+        ]);
+
+        $chat = UserChatThread::query()
+            ->where('user_id', auth()->id())
+            ->where('provider', 'chatgpt')
+            ->where('chat_id', $validated['chat_id'])
+            ->firstOrFail();
+
+        if ($validated['public']) {
+            $chat->share_token = $chat->share_token ?: \Illuminate\Support\Str::random(48);
+            $chat->is_public = true;
+        } else {
+            $chat->share_token = null;
+            $chat->is_public = false;
+        }
+        $chat->save();
+
+        return back()->withNotify([['success', $chat->is_public ? 'Public chat link enabled.' : 'Public chat link revoked.']]);
+    }
+
+    public function sharedChat(string $token)
+    {
+        abort_unless(preg_match('/^[A-Za-z0-9]{48}$/', $token), 404);
+
+        $chat = UserChatThread::query()
+            ->where('provider', 'chatgpt')
+            ->where('share_token', $token)
+            ->where('is_public', true)
+            ->whereNotNull('messages_encrypted')
+            ->firstOrFail();
+
+        $pageTitle = $chat->title ?: 'Shared Chat';
+        $messages = $chat->decryptedMessages();
+        return view('Template::user.shared_chat', compact('pageTitle', 'chat', 'messages'));
+    }
+
     /**
      * Delete one saved chat or the authenticated user's complete saved chat
      * history. No other user's rows can be affected by this scoped query.

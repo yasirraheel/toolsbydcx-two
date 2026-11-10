@@ -116,6 +116,9 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         let chatFilter = null;
         let chatIsolationInitialized = false;
         let chatRefreshTimer = null;
+        let chatArchiveTimer = null;
+        let chatArchiveInFlight = false;
+        let lastArchivedSignature = '';
         let lastRegisteredChatId = null;
         const chatRegistrationsInFlight = new Set();
 
@@ -199,6 +202,46 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                         return href.includes(`/c/${chatId}`);
                     });
                     return (item?.innerText || item?.textContent || document.title || '').trim().slice(0, 300);
+                };
+
+                const extractChatMessages = () => {
+                    const messageNodes = Array.from(document.querySelectorAll('[data-message-author-role]'));
+                    const messages = [];
+                    messageNodes.forEach((node) => {
+                        const role = String(node.getAttribute('data-message-author-role') || '').toLowerCase();
+                        if (!['user', 'assistant', 'system', 'tool'].includes(role)) return;
+                        const contentNode = node.querySelector('.markdown, [data-message-content], [class*="markdown"]') || node;
+                        const content = String(contentNode.innerText || contentNode.textContent || '').trim();
+                        if (!content) return;
+                        const last = messages[messages.length - 1];
+                        if (last && last.role === role && last.content === content) return;
+                        messages.push({ role, content: content.slice(0, 100000) });
+                    });
+                    return messages.slice(-200);
+                };
+
+                const archiveCurrentChat = () => {
+                    const chatId = currentChatId();
+                    if (!chatServerReady || !chatId || chatArchiveInFlight) return;
+                    const messages = extractChatMessages();
+                    if (!messages.length) return;
+                    const signature = chatId + ':' + JSON.stringify(messages);
+                    if (signature === lastArchivedSignature) return;
+                    chatArchiveInFlight = true;
+                    sendChatHistoryMessage({
+                        type: 'CHAT_HISTORY_ARCHIVE',
+                        chatId,
+                        title: currentChatTitle(chatId),
+                        messages
+                    }, (response) => {
+                        chatArchiveInFlight = false;
+                        if (response?.success) lastArchivedSignature = signature;
+                    });
+                };
+
+                const scheduleChatArchive = () => {
+                    if (chatArchiveTimer) window.clearTimeout(chatArchiveTimer);
+                    chatArchiveTimer = window.setTimeout(archiveCurrentChat, 1200);
                 };
 
                 const registerChat = (chatId, title = '') => {
@@ -363,6 +406,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
                 chatFilter = () => {
                     if (!chatServerReady) return;
                     registerCurrentChat();
+                    scheduleChatArchive();
                     renderServerChatsInSidebar();
 
                     document.querySelectorAll('a[href*="/c/"], [data-testid*="history-item" i]').forEach(el => {

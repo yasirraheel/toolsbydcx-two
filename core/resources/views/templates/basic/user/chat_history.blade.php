@@ -61,6 +61,25 @@
         transition: background .18s ease, border-color .18s ease;
     }
 
+    .dcx-chat-history .chat-history-share {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(129, 140, 248, .42);
+        border-radius: 8px;
+        color: #c4b5fd;
+        background: rgba(79, 70, 229, .14);
+        font-size: .9rem;
+        cursor: pointer;
+    }
+
+    .dcx-chat-history .chat-history-share:hover {
+        border-color: #a78bfa;
+        background: rgba(79, 70, 229, .3);
+    }
+
     .dcx-chat-history .chat-history-delete-all {
         padding: .45rem .75rem;
     }
@@ -160,6 +179,19 @@
         font-size: 2.5rem;
     }
 
+    .dcx-chat-history .chat-history-share-url {
+        margin: -.5rem 1rem .25rem;
+        padding: .55rem .8rem;
+        overflow: hidden;
+        color: #a5b4fc;
+        background: rgba(30, 41, 59, .42);
+        border: 1px solid rgba(129, 140, 248, .18);
+        border-radius: 8px;
+        font-size: .75rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     @media (max-width: 575.98px) {
         .dcx-chat-history .chat-history-card__header {
             align-items: flex-start;
@@ -179,7 +211,7 @@
         <div class="chat-history-card__header">
             <div>
                 <h4><i class="las la-comments text--primary me-2"></i>@lang('Chat History')</h4>
-                <p>@lang('Open the ChatGPT conversations saved to your ToolsByDcx account.')</p>
+                <p>@lang('View the conversations archived securely in your ToolsByDcx account.')</p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
                 <span class="chat-history-count">
@@ -198,31 +230,53 @@
             <div class="chat-history-list">
                 @foreach($chatHistory as $chat)
                     <div class="chat-history-item">
-                        <a class="chat-history-item__link" href="https://chatgpt.com/c/{{ rawurlencode($chat->chat_id) }}" target="_blank" rel="noopener noreferrer">
+                        <a class="chat-history-item__link" href="{{ $chat->messages_encrypted ? route('user.chat.history.archive.view', $chat->chat_id) : 'javascript:void(0)' }}">
                             <span class="chat-history-item__main">
                                 <span class="chat-history-item__title">{{ $chat->title ?: __('Untitled chat') }}</span>
                                 <span class="chat-history-item__meta">
-                                    <span><i class="las la-robot me-1"></i>@lang('ChatGPT')</span>
+                                    <span><i class="las la-cloud me-1"></i>@lang('Server archive')</span>
+                                    @if($chat->messages_encrypted)
+                                        <span><i class="las la-comments me-1"></i>{{ (int) $chat->message_count }} @lang('messages')</span>
+                                    @else
+                                        <span>@lang('Archive pending')</span>
+                                    @endif
                                     @if($chat->last_seen_at)
                                         <span><i class="las la-clock me-1"></i>{{ showDateTime($chat->last_seen_at, 'd M Y, h:i A') }}</span>
                                     @endif
                                 </span>
                             </span>
-                            <span class="chat-history-item__open">@lang('Open chat') <i class="las la-external-link-alt"></i></span>
+                            <span class="chat-history-item__open">{{ $chat->messages_encrypted ? __('Open archive') : __('Waiting for messages') }} <i class="las la-arrow-right"></i></span>
                         </a>
-                        <form method="POST" action="{{ route('user.chat.history.delete') }}" onsubmit="return confirm('@lang('Remove this chat from your history?')');">
-                            @csrf
-                            <input type="hidden" name="chat_id" value="{{ $chat->chat_id }}">
-                            <button type="submit" class="chat-history-delete" title="@lang('Delete chat')" aria-label="@lang('Delete chat')"><i class="las la-trash"></i></button>
-                        </form>
+                        <div class="d-flex align-items-center gap-2">
+                            @if($chat->messages_encrypted)
+                                <form method="POST" action="{{ route('user.chat.history.share') }}">
+                                    @csrf
+                                    <input type="hidden" name="chat_id" value="{{ $chat->chat_id }}">
+                                    <input type="hidden" name="public" value="{{ $chat->is_public ? 0 : 1 }}">
+                                    <button type="submit" class="chat-history-share" title="{{ $chat->is_public ? __('Revoke public link') : __('Create public link') }}">
+                                        <i class="las {{ $chat->is_public ? 'la-link' : 'la-share-alt' }}"></i>
+                                    </button>
+                                </form>
+                            @endif
+                            <form method="POST" action="{{ route('user.chat.history.delete') }}" onsubmit="return confirm('@lang('Remove this chat from your history?')');">
+                                @csrf
+                                <input type="hidden" name="chat_id" value="{{ $chat->chat_id }}">
+                                <button type="submit" class="chat-history-delete" title="@lang('Delete chat')" aria-label="@lang('Delete chat')"><i class="las la-trash"></i></button>
+                            </form>
+                        </div>
                     </div>
+                    @if($chat->is_public && $chat->share_token)
+                        <div class="chat-history-share-url">
+                            <i class="las la-link me-1"></i><a href="{{ route('chat.share', $chat->share_token) }}" target="_blank" rel="noopener noreferrer">{{ route('chat.share', $chat->share_token) }}</a>
+                        </div>
+                    @endif
                 @endforeach
             </div>
         @else
             <div class="chat-history-empty">
                 <i class="las la-comments"></i>
                 <h5 class="text-white">@lang('No saved chats yet')</h5>
-                <p class="mb-0">@lang('Open a ChatGPT conversation while the ToolsByDcx Social extension is active and it will appear here.')</p>
+                <p class="mb-0">@lang('Open a conversation while the ToolsByDcx Social extension is active; its messages will be archived here automatically.')</p>
             </div>
         @endif
     </div>
