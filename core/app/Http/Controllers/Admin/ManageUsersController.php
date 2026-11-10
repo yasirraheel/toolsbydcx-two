@@ -222,12 +222,13 @@ class ManageUsersController extends Controller
     {
         $pageTitle = 'Add New User';
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
+        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price']);
         $accounts = \App\Models\AccountListing::with('socialMedia')
             ->orderBy('social_media_id', 'asc')
             ->orderBy('id', 'asc')
             ->get();
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
-        return view('admin.users.create', compact('pageTitle', 'accounts', 'domain', 'googleFlowAccounts'));
+        return view('admin.users.create', compact('pageTitle', 'accounts', 'domain', 'googleFlowAccounts', 'plans'));
     }
 
     public function store(Request $request)
@@ -239,6 +240,12 @@ class ManageUsersController extends Controller
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
             'google_flow_account_id' => 'nullable|integer|exists:google_flow_accounts,id',
+            'plan_id' => [
+                'nullable',
+                'integer',
+                'min:0',
+                \Illuminate\Validation\Rule::in(array_merge([0], \App\Models\Plan::active()->pluck('id')->all())),
+            ],
             'validity_days' => 'nullable|integer|min:1|max:3650',
             'expires_at' => 'nullable|date',
             'tts_access' => 'nullable|boolean',
@@ -290,7 +297,9 @@ class ManageUsersController extends Controller
             $user->country_code = 'US';
             $user->dial_code = '1';
             $user->mobile = null;
-            $user->plan_id = 0;
+            // Zero is the explicit Free / No plan state. Paid plans are assigned
+            // from the admin form using the selected plan record.
+            $user->plan_id = (int) ($request->input('plan_id') ?: 0);
             $user->account_prices = [];
             $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
             if ($request->filled('expires_at')) {
@@ -349,6 +358,7 @@ class ManageUsersController extends Controller
             ->get();
 
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
+        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price']);
         $currentFlowAccount = $user->flow_account;
         $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
             ->where('is_active', true)
@@ -382,6 +392,7 @@ class ManageUsersController extends Controller
             'googleFlowAccounts',
             'currentFlowAccount',
             'userPairings',
+            'plans',
             'ttsProviderCredits',
             'ttsCreditRemaining'
         ));
@@ -449,6 +460,12 @@ class ManageUsersController extends Controller
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'plan_id' => [
+                'nullable',
+                'integer',
+                'min:0',
+                \Illuminate\Validation\Rule::in(array_merge([0], \App\Models\Plan::active()->pluck('id')->all())),
+            ],
             'tts_access' => 'nullable|boolean',
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
         ]);
@@ -478,6 +495,10 @@ class ManageUsersController extends Controller
 
         if ($request->has('account_ids_submitted')) {
             $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+        }
+
+        if ($request->has('plan_submitted')) {
+            $user->plan_id = (int) ($request->input('plan_id') ?: 0);
         }
 
         if ($request->has('privileges_submitted')) {

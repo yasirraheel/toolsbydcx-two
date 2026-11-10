@@ -169,12 +169,12 @@
                         <div class="form-group">
                             <label>@lang('Assign to Plan')</label>
                             <select class="form-control" name="plan_id">
-                                <option value="0">@lang('All Active Plans (Available to everyone)')</option>
+                                <option value="0">@lang('No Plan (Direct Access)')</option>
                                 @foreach($plans as $plan)
                                     <option value="{{ $plan->id }}">{{ $plan->name }}</option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">@lang('Select a specific plan, or leave as All Active Plans to make available to all users.')</small>
+                            <small class="text-muted">@lang('Select a specific plan for plan-based access, or use No Plan for users assigned directly by an administrator.')</small>
                         </div>
                         <div class="form-group">
                             <label>@lang('Platform URL') <span class="text-danger">*</span></label>

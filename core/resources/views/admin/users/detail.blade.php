@@ -67,6 +67,7 @@
                     <form action="{{ route('admin.users.update', [$user->id]) }}" method="POST">
                         @csrf
                         <input type="hidden" name="account_ids_submitted" value="1">
+                        <input type="hidden" name="plan_submitted" value="1">
 
                         <div class="row g-3 user-edit-grid">
                             {{-- Full Name --}}
@@ -112,6 +113,26 @@
                                             <i class="las la-copy" style="font-size: 18px; color: #fff;"></i>
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+
+                            {{-- Subscription Plan --}}
+                            <div class="col-lg-4 col-md-6 col-12">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold mb-2">
+                                        <i class="las la-layer-group text--primary"></i> @lang('Subscription Plan')
+                                    </label>
+                                    <select name="plan_id" class="form-control select2" id="user-plan-selector">
+                                        <option value="0" @selected((int) old('plan_id', $user->plan_id ?: 0) === 0)>@lang('Free / No plan')</option>
+                                        @foreach($plans as $plan)
+                                            <option value="{{ $plan->id }}" @selected((string) old('plan_id', $user->plan_id) === (string) $plan->id)>
+                                                {{ __($plan->name) }} — {{ showAmount($plan->price) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
+                                        <i class="las la-info-circle"></i> @lang('Free / No plan users only receive directly assigned accounts.')
+                                    </small>
                                 </div>
                             </div>
 

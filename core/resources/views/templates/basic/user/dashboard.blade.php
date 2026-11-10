@@ -165,7 +165,7 @@
                                 @lang('Trial Active')
                             @endif
                         @else
-                            {{ $user->plan ? __($user->plan->name) : 'Standard Access' }}
+                            {{ $user->plan ? __($user->plan->name) : __('Free / No plan') }}
                         @endif
                     </h3>
                     <div class="mt-auto pt-2 text-muted small">

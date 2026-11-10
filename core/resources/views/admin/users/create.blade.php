@@ -69,6 +69,26 @@
                                 </div>
                             </div>
 
+                            {{-- Subscription Plan --}}
+                            <div class="col-xl-4 col-md-6 col-12">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold mb-2">
+                                        <i class="las la-layer-group text--primary"></i> @lang('Subscription Plan')
+                                    </label>
+                                    <select name="plan_id" class="form-control select2" id="user-plan-selector">
+                                        <option value="0" @selected((string) old('plan_id', '0') === '0')>@lang('Free / No plan')</option>
+                                        @foreach($plans as $plan)
+                                            <option value="{{ $plan->id }}" @selected((string) old('plan_id') === (string) $plan->id)>
+                                                {{ __($plan->name) }} — {{ showAmount($plan->price) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
+                                        <i class="las la-info-circle"></i> @lang('Choose the user subscription. Directly assigned accounts remain separate.')
+                                    </small>
+                                </div>
+                            </div>
+
                             {{-- Assign Available Accounts --}}
                             <div class="col-lg-6 col-12">
                                 <div class="form-group mb-0">
