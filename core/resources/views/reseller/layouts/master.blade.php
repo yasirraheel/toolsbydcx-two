@@ -300,6 +300,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/theme-switcher.css') }}">
 </head>
 <body>
+    <div class="dcx-theme-fallback">@include('partials.theme_toggle')</div>
 
     {{-- Top Reseller Navbar --}}
     @include('reseller.partials.topnav')

@@ -397,6 +397,15 @@ html[data-theme="light"] .dcx-theme-toggle i { color: #4f46e5; }
 /* These controls are inside flex action lists on admin/user top bars. */
 .navbar__action-list .dcx-theme-toggle-item { display: flex; align-items: center; }
 .dcx-theme-toggle-item .dcx-theme-toggle { margin-inline: .15rem; }
+.dcx-theme-fallback {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2000;
+}
+body:has(.navbar-wrapper) .dcx-theme-fallback,
+body:has(.reseller-navbar) .dcx-theme-fallback,
+body:has(.landing-header) .dcx-theme-fallback { display: none; }
 @media (max-width: 575px) {
     .dcx-theme-toggle { min-width: 36px; padding-inline: .55rem; }
 }

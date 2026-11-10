@@ -36,6 +36,7 @@
 @php echo loadExtension('google-analytics') @endphp
 
 <body>
+    <div class="dcx-theme-fallback">@include('partials.theme_toggle')</div>
 
     <div class="preloader">
         <div class="loader-p"></div>
