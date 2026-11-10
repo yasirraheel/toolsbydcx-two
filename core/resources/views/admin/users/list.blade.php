@@ -37,6 +37,31 @@
         .admin-users-table { font-size:.86rem; }
         .admin-users-table .admin-actions .btn { padding-left:.45rem; padding-right:.45rem; }
     }
+    .admin-user-filter-bar {
+        border-bottom:1px solid rgba(148,163,184,.16);
+        background:rgba(15,23,42,.72);
+    }
+    .admin-user-filter-grid {
+        display:grid;
+        grid-template-columns:minmax(220px,1.25fr) minmax(220px,1fr) auto auto;
+        gap:10px;
+        align-items:end;
+    }
+    .admin-user-filter-field label {
+        display:block;
+        margin:0 0 6px;
+        color:#94a3b8;
+        font-size:.72rem;
+        font-weight:700;
+        letter-spacing:.04em;
+        text-transform:uppercase;
+    }
+    .admin-user-filter-field .form-select { min-height:42px; }
+    .admin-user-filter-actions { display:flex; gap:8px; }
+    @media (max-width: 760px) {
+        .admin-user-filter-grid { grid-template-columns:1fr; }
+        .admin-user-filter-actions .btn { flex:1; }
+    }
 </style>
 @endpush
 @section('panel')
@@ -44,6 +69,64 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body p-0">
+                    @php
+                        $userPlans = \App\Models\Plan::query()->orderBy('name')->get(['id', 'name', 'status']);
+                        $selectedUserFilter = request()->input('user_filter', '');
+                        $selectedPlanFilter = request()->input('plan_filter', '');
+                    @endphp
+                    <form method="GET" action="{{ request()->url() }}" class="admin-user-filter-bar p-3">
+                        @if(request()->filled('account_id'))
+                            <input type="hidden" name="account_id" value="{{ request()->input('account_id') }}">
+                        @endif
+                        @if(request()->filled('sort'))
+                            <input type="hidden" name="sort" value="{{ request()->input('sort') }}">
+                        @endif
+                        @if(request()->filled('search'))
+                            <input type="hidden" name="search" value="{{ request()->input('search') }}">
+                        @endif
+                        <div class="admin-user-filter-grid">
+                            <div class="admin-user-filter-field">
+                                <label for="admin-user-filter-status"><i class="las la-filter me-1"></i>@lang('User filter')</label>
+                                <select id="admin-user-filter-status" name="user_filter" class="form-select">
+                                    <option value="">@lang('Keep current list') ({{ __($pageTitle) }})</option>
+                                    <option value="all" @selected($selectedUserFilter === 'all')>@lang('All users')</option>
+                                    <option value="active" @selected($selectedUserFilter === 'active')>@lang('Active users')</option>
+                                    <option value="expired" @selected($selectedUserFilter === 'expired')>@lang('Expired users')</option>
+                                    <option value="expiring_5" @selected($selectedUserFilter === 'expiring_5')>@lang('Expires within 5 days')</option>
+                                    <option value="banned" @selected($selectedUserFilter === 'banned')>@lang('Banned users')</option>
+                                    <option value="never_logged_in" @selected($selectedUserFilter === 'never_logged_in')>@lang('Never logged in')</option>
+                                    <option value="with_balance" @selected($selectedUserFilter === 'with_balance')>@lang('With balance')</option>
+                                    <option value="no_balance" @selected($selectedUserFilter === 'no_balance')>@lang('No balance')</option>
+                                    <option value="email_verified" @selected($selectedUserFilter === 'email_verified')>@lang('Email verified')</option>
+                                    <option value="email_unverified" @selected($selectedUserFilter === 'email_unverified')>@lang('Email unverified')</option>
+                                    <option value="mobile_verified" @selected($selectedUserFilter === 'mobile_verified')>@lang('Mobile verified')</option>
+                                    <option value="mobile_unverified" @selected($selectedUserFilter === 'mobile_unverified')>@lang('Mobile unverified')</option>
+                                    <option value="kyc_unverified" @selected($selectedUserFilter === 'kyc_unverified')>@lang('KYC unverified')</option>
+                                    <option value="kyc_pending" @selected($selectedUserFilter === 'kyc_pending')>@lang('KYC pending')</option>
+                                </select>
+                            </div>
+                            <div class="admin-user-filter-field">
+                                <label for="admin-user-filter-plan"><i class="las la-layer-group me-1"></i>@lang('Plan')</label>
+                                <select id="admin-user-filter-plan" name="plan_filter" class="form-select">
+                                    <option value="">@lang('All plans')</option>
+                                    <option value="free" @selected($selectedPlanFilter === 'free')>@lang('Free / No plan')</option>
+                                    @foreach($userPlans as $userPlan)
+                                        <option value="{{ $userPlan->id }}" @selected((string) $selectedPlanFilter === (string) $userPlan->id)>
+                                            {{ __($userPlan->name) }}{{ !$userPlan->status ? ' (Inactive)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="admin-user-filter-actions">
+                                <button type="submit" class="btn btn--primary">
+                                    <i class="las la-check"></i> @lang('Apply filters')
+                                </button>
+                                <a href="{{ request()->url() }}{{ request()->filled('account_id') ? '?account_id=' . urlencode(request()->input('account_id')) : '' }}" class="btn btn-outline--dark">
+                                    <i class="las la-undo"></i> @lang('Reset')
+                                </a>
+                            </div>
+                        </div>
+                    </form>
                     <div class="table-responsive admin-users-table-wrap">
                         <table class="table table--light style--two mb-0 admin-users-table">
                             <thead>

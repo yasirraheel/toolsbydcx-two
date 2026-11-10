@@ -116,13 +116,77 @@ class ManageUsersController extends Controller
 
 
     protected function userData($scope = null){
-        if ($scope) {
+        $requestedFilter = request()->input('user_filter');
+
+        // The sidebar links still provide the default scope for each page,
+        // while the top filter bar can switch the same list without leaving
+        // the page (for example, Active Users -> Expiring in 5 days).
+        if (filled($requestedFilter)) {
+            $users = User::query();
+
+            switch ($requestedFilter) {
+                case 'all':
+                    break;
+                case 'active':
+                    $users->active();
+                    break;
+                case 'expired':
+                    $users->expired();
+                    break;
+                case 'expiring_5':
+                    $users->whereNotNull('expires_at')
+                        ->where('expires_at', '>', now())
+                        ->where('expires_at', '<=', now()->copy()->addDays(5));
+                    break;
+                case 'banned':
+                    $users->banned();
+                    break;
+                case 'email_unverified':
+                    $users->emailUnverified();
+                    break;
+                case 'mobile_unverified':
+                    $users->mobileUnverified();
+                    break;
+                case 'kyc_unverified':
+                    $users->kycUnverified();
+                    break;
+                case 'kyc_pending':
+                    $users->kycPending();
+                    break;
+                case 'email_verified':
+                    $users->emailVerified();
+                    break;
+                case 'mobile_verified':
+                    $users->mobileVerified();
+                    break;
+                case 'with_balance':
+                    $users->withBalance();
+                    break;
+                case 'no_balance':
+                    $users->where(function ($query) {
+                        $query->whereNull('balance')->orWhere('balance', '<=', 0);
+                    });
+                    break;
+                case 'never_logged_in':
+                    $users->whereNull('last_seen');
+                    break;
+            }
+        } elseif ($scope) {
             $users = User::$scope();
-        }else{
+        } else {
             $users = User::query();
         }
 
         $users = $users->nonResellers();
+
+        $planFilter = request()->input('plan_filter');
+        if ($planFilter === 'free') {
+            $users->where(function ($query) {
+                $query->whereNull('plan_id')->orWhere('plan_id', 0);
+            });
+        } elseif (filled($planFilter) && ctype_digit((string) $planFilter)) {
+            $users->where('plan_id', (int) $planFilter);
+        }
 
         if (request()->account_id) {
             $accId = (int) request()->account_id;
