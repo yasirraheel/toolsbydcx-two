@@ -7,6 +7,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ gs()->siteName(__($pageTitle ?? 'User Portal')) }}</title>
     @include('partials.seo')
+    <script>
+        (function () {
+            try { document.documentElement.setAttribute('data-theme', localStorage.getItem('toolsbydcx-theme') === 'light' ? 'light' : 'dark'); }
+            catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+        })();
+    </script>
 
     <link rel="shortcut icon" type="image/png" href="{{ siteFavicon() }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -543,6 +549,7 @@
     </style>
 
     @stack('style')
+    <link href="{{ asset('assets/css/theme-switcher.css') }}" rel="stylesheet">
 </head>
 
 <body>
@@ -825,5 +832,6 @@
     @auth
     <script src="{{ asset('assets/js/flow-bridge.js') }}?v={{ config('app.version', '1') }}" defer></script>
     @endauth
+    <script src="{{ asset('assets/js/theme-switcher.js') }}"></script>
 </body>
 </html>

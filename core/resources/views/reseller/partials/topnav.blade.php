@@ -9,6 +9,8 @@
     </div>
 
     <div class="d-flex align-items-center gap-2 gap-sm-3">
+        @include('partials.theme_toggle')
+
         {{-- Wallet Balance Pill --}}
         <div class="balance-pill">
             <i class="las la-wallet fs-5"></i>

@@ -7,7 +7,8 @@
             </a>
 
             {{-- Right Action Button: ONLY ONE BUTTON (Login for guest, Dashboard for logged-in user/reseller) --}}
-            <div class="header-action-wrapper">
+            <div class="header-action-wrapper d-flex align-items-center gap-2">
+                @include('partials.theme_toggle')
                 @guest
                     <a href="{{ route('user.login') }}" class="btn btn--base d-inline-flex align-items-center gap-2 fw-semibold px-4 py-2" style="border-radius: 9999px; box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45); font-size: 14px; transition: all 0.25s ease;">
                         <i class="las la-sign-in-alt fs-5"></i>

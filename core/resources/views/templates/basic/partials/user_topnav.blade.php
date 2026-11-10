@@ -17,6 +17,9 @@
     </div>
     <div class="navbar__right">
         <ul class="navbar__action-list">
+            <li class="dcx-theme-toggle-item">
+                @include('partials.theme_toggle')
+            </li>
 
             {{-- Visit Website --}}
             <li>

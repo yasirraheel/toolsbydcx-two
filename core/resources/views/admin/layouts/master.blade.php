@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ gs()->siteName($pageTitle ?? '') }}</title>
+    <script>
+        (function () {
+            try { document.documentElement.setAttribute('data-theme', localStorage.getItem('toolsbydcx-theme') === 'light' ? 'light' : 'dark'); }
+            catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+        })();
+    </script>
 
     <link rel="shortcut icon" type="image/png" href="{{siteFavicon()}}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -596,6 +602,7 @@
     </style>
 
     @stack('style')
+    <link rel="stylesheet" href="{{asset('assets/css/theme-switcher.css')}}">
 </head>
 <body>
 @yield('content')
@@ -658,6 +665,7 @@
 </script>
 
 @stack('script')
+<script src="{{ asset('assets/js/theme-switcher.js') }}"></script>
 
 
 </body>

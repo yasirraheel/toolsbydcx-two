@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ gs()->siteName($pageTitle ?? 'Reseller Portal') }}</title>
+    <script>
+        (function () {
+            try { document.documentElement.setAttribute('data-theme', localStorage.getItem('toolsbydcx-theme') === 'light' ? 'light' : 'dark'); }
+            catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+        })();
+    </script>
     <link rel="shortcut icon" type="image/png" href="{{ siteFavicon() }}">
 
     {{-- Bootstrap & Icons --}}
@@ -291,6 +297,7 @@
         }
     </style>
     @stack('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/theme-switcher.css') }}">
 </head>
 <body>
 
@@ -327,5 +334,6 @@
     @include('partials.notify')
     @stack('script-lib')
     @stack('script')
+    <script src="{{ asset('assets/js/theme-switcher.js') }}"></script>
 </body>
 </html>

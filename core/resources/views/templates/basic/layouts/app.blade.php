@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title> {{ gs()->siteName(__($pageTitle)) }}</title>
     @include('partials.seo')
+    <script>
+        (function () {
+            try { document.documentElement.setAttribute('data-theme', localStorage.getItem('toolsbydcx-theme') === 'light' ? 'light' : 'dark'); }
+            catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+        })();
+    </script>
     <!-- Bootstrap CSS -->
     <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
 
@@ -22,6 +28,7 @@
     @stack('style-lib')
 
     @stack('style')
+    <link href="{{ asset('assets/css/theme-switcher.css') }}" rel="stylesheet">
 
 
 </head>
@@ -118,6 +125,7 @@
     @endif
 
     @stack('script')
+    <script src="{{ asset('assets/js/theme-switcher.js') }}"></script>
 
     <script>
         (function($) {
