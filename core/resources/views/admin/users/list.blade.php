@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const userKey = 'toolsbydcx.admin.users.user_filter';
     const planKey = 'toolsbydcx.admin.users.plan_filter';
     const params = new URLSearchParams(window.location.search);
+    const allowedUserFilters = new Set(['', 'all', 'active', 'expired', 'expiring_5', 'banned']);
 
     const storageGet = (key) => { try { return window.localStorage.getItem(key) || ''; } catch (_) { return ''; } };
     const storageSet = (key, value) => { try { window.localStorage.setItem(key, value); } catch (_) {} };
@@ -98,7 +99,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Query-string filters always win. If the page was opened without them,
     // restore the last pill selection from this admin browser.
     if (!params.has('user_filter') && !params.has('plan_filter')) {
-        const savedUser = storageGet(userKey);
+        const savedUserValue = storageGet(userKey);
+        const savedUser = allowedUserFilters.has(savedUserValue) ? savedUserValue : '';
+        if (savedUserValue !== savedUser) storageRemove(userKey);
         const savedPlan = storageGet(planKey);
         if (savedUser || savedPlan) {
             userInput.value = savedUser;
@@ -138,7 +141,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="card-body p-0">
                     @php
                         $userPlans = \App\Models\Plan::query()->orderBy('name')->get(['id', 'name', 'status']);
-                        $selectedUserFilter = request()->input('user_filter', '');
+                        $allowedTopFilters = ['', 'all', 'active', 'expired', 'expiring_5', 'banned'];
+                        $selectedUserFilter = in_array(request()->input('user_filter', ''), $allowedTopFilters, true)
+                            ? request()->input('user_filter', '')
+                            : '';
                         $selectedPlanFilter = request()->input('plan_filter', '');
                     @endphp
                     <form method="GET" action="{{ request()->url() }}" class="admin-user-filter-bar p-3">
@@ -165,15 +171,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                             'expired' => __('Expired'),
                                             'expiring_5' => __('Expires ≤ 5 days'),
                                             'banned' => __('Banned'),
-                                            'never_logged_in' => __('Never logged in'),
-                                            'with_balance' => __('With balance'),
-                                            'no_balance' => __('No balance'),
-                                            'email_verified' => __('Email verified'),
-                                            'email_unverified' => __('Email unverified'),
-                                            'mobile_verified' => __('Mobile verified'),
-                                            'mobile_unverified' => __('Mobile unverified'),
-                                            'kyc_unverified' => __('KYC unverified'),
-                                            'kyc_pending' => __('KYC pending'),
                                         ];
                                     @endphp
                                     @foreach($userFilterPills as $filterValue => $filterLabel)

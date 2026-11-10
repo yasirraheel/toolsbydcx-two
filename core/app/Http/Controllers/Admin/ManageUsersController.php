@@ -117,6 +117,10 @@ class ManageUsersController extends Controller
 
     protected function userData($scope = null){
         $requestedFilter = request()->input('user_filter');
+        $allowedTopFilters = ['all', 'active', 'expired', 'expiring_5', 'banned'];
+        if (!in_array($requestedFilter, $allowedTopFilters, true)) {
+            $requestedFilter = null;
+        }
 
         // The sidebar links still provide the default scope for each page,
         // while the top filter bar can switch the same list without leaving
