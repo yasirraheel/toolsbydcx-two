@@ -2,6 +2,8 @@
 
 @section('content')
 
+<div class="dcx-homepage">
+
 {{-- =========================================================================
      1. HERO SECTION
 ========================================================================= --}}
@@ -392,6 +394,8 @@
     </div>
 </section>
 
+</div>
+
 @auth
     <x-confirmation-modal addClass="custom--modal" :customButton=true />
 @endauth
@@ -580,6 +584,182 @@
 
     html {
         scroll-behavior: smooth;
+    }
+
+    /* Light mode landing page: keep the same layout, but replace the dark
+       presentation with a calm, high-contrast surface and the brand orange. */
+    html[data-theme="light"] .dcx-homepage {
+        --landing-bg: #f7f8fc;
+        --landing-card: #ffffff;
+        --landing-card-border: #e2e8f0;
+        --landing-primary: #f97316;
+        --landing-primary-hover: #ea580c;
+        color: #334155;
+        background: #f7f8fc;
+    }
+
+    html[data-theme="light"] body {
+        background: #f7f8fc !important;
+        color: #334155 !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section {
+        min-height: 74vh !important;
+        background:
+            radial-gradient(circle at 50% -22%, rgba(249, 115, 22, .16) 0%, rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #fffaf5 0%, #ffffff 72%) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section > .position-absolute {
+        background: radial-gradient(circle, rgba(249, 115, 22, .13) 0%, transparent 70%) !important;
+        opacity: .75;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .text-white,
+    html[data-theme="light"] .dcx-homepage .hero-section .text-white-50,
+    html[data-theme="light"] .dcx-homepage .hero-section h1,
+    html[data-theme="light"] .dcx-homepage .hero-section h2,
+    html[data-theme="light"] .dcx-homepage .hero-section h3,
+    html[data-theme="light"] .dcx-homepage .hero-section span.fw-semibold {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .lead {
+        color: #64748b !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .d-inline-flex.rounded-pill {
+        background: rgba(249, 115, 22, .08) !important;
+        border-color: rgba(249, 115, 22, .25) !important;
+        box-shadow: 0 8px 22px rgba(249, 115, 22, .1) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .badge {
+        background: #f97316 !important;
+        color: #fff !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .text-gradient-primary {
+        background: linear-gradient(135deg, #c2410c 0%, #f97316 55%, #fb923c 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .btn-primary,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-action-primary {
+        color: #fff !important;
+        background: linear-gradient(135deg, #f97316, #ea580c) !important;
+        border-color: #f97316 !important;
+        box-shadow: 0 12px 26px rgba(249, 115, 22, .22) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .hero-section .btn-primary:hover,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-action-primary:hover,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-action-primary:focus-visible {
+        color: #fff !important;
+        background: linear-gradient(135deg, #fb923c, #f97316) !important;
+        box-shadow: 0 16px 30px rgba(249, 115, 22, .28) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage > section:nth-of-type(2),
+    html[data-theme="light"] .dcx-homepage > section:nth-of-type(4),
+    html[data-theme="light"] .dcx-homepage > section:nth-of-type(5) {
+        background: #f7f8fc !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage > section:nth-of-type(3) {
+        background:
+            radial-gradient(circle at 50% 0%, rgba(249, 115, 22, .08), transparent 56%),
+            #ffffff !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .text-white,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-feature,
+    html[data-theme="light"] .dcx-homepage .feature-card h4,
+    html[data-theme="light"] .dcx-homepage .feature-card h5,
+    html[data-theme="light"] .dcx-homepage .pricing-card h4,
+    html[data-theme="light"] .dcx-homepage .pricing-card h5,
+    html[data-theme="light"] .dcx-homepage .pricing-card .dcx-plan-price,
+    html[data-theme="light"] .dcx-homepage .pricing-card .card-body span {
+        color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .text-muted,
+    html[data-theme="light"] .dcx-homepage .text-white-50,
+    html[data-theme="light"] .dcx-homepage p.text-muted,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-period,
+    html[data-theme="light"] .dcx-homepage .dcx-plan-feature span {
+        color: #64748b !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .feature-card,
+    html[data-theme="light"] .dcx-homepage .pricing-card,
+    html[data-theme="light"] .dcx-homepage .custom-dark-accordion .accordion-item,
+    html[data-theme="light"] .dcx-homepage .card {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .06) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .feature-card:hover,
+    html[data-theme="light"] .dcx-homepage .pricing-card:hover {
+        border-color: rgba(249, 115, 22, .52) !important;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, .1), 0 0 0 4px rgba(249, 115, 22, .06) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .dcx-pricing-section {
+        background: linear-gradient(180deg, #ffffff 0%, #fffaf5 100%) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .dcx-plan-badge {
+        color: #c2410c !important;
+        background: rgba(249, 115, 22, .1) !important;
+        border-color: rgba(249, 115, 22, .3) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .dcx-plan-action-current {
+        color: #047857 !important;
+        background: #ecfdf5 !important;
+        border-color: #a7f3d0 !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .custom-dark-accordion .accordion-button {
+        color: #0f172a !important;
+        background: #ffffff !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .custom-dark-accordion .accordion-button:not(.collapsed) {
+        color: #c2410c !important;
+        border-bottom-color: #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .custom-dark-accordion .accordion-body {
+        color: #64748b !important;
+        background: #f8fafc !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .icon-box {
+        background: rgba(249, 115, 22, .1) !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .icon-box i,
+    html[data-theme="light"] .dcx-homepage .text-primary,
+    html[data-theme="light"] .dcx-homepage .letter-spacing-1 {
+        color: #ea580c !important;
+    }
+
+    html[data-theme="light"] .dcx-homepage .border-top,
+    html[data-theme="light"] .dcx-homepage .border-secondary {
+        border-color: #e2e8f0 !important;
+    }
+
+    @media (max-width: 767px) {
+        html[data-theme="light"] .dcx-homepage .hero-section {
+            min-height: auto !important;
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
     }
 </style>
 
