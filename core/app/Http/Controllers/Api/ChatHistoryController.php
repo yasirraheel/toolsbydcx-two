@@ -120,7 +120,9 @@ class ChatHistoryController extends Controller
             'chat_id' => $validated['chat_id'],
         ]);
 
-        $chat->title = isset($validated['title']) ? trim($validated['title']) : ($chat->title ?: null);
+        if (filled($validated['title'] ?? null)) {
+            $chat->title = trim($validated['title']);
+        }
         $chat->last_seen_at = now();
 
         // A partially rendered DOM must never replace a more complete archive.
