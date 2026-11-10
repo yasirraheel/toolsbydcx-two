@@ -41,12 +41,7 @@
         border-bottom:1px solid rgba(148,163,184,.16);
         background:rgba(15,23,42,.72);
     }
-    .admin-user-filter-grid {
-        display:grid;
-        grid-template-columns:minmax(220px,1.25fr) minmax(220px,1fr) auto auto;
-        gap:10px;
-        align-items:end;
-    }
+    .admin-user-filter-grid { display:grid; gap:14px; }
     .admin-user-filter-field label {
         display:block;
         margin:0 0 6px;
@@ -56,13 +51,85 @@
         letter-spacing:.04em;
         text-transform:uppercase;
     }
-    .admin-user-filter-field .form-select { min-height:42px; }
-    .admin-user-filter-actions { display:flex; gap:8px; }
+    .admin-user-filter-pills { display:flex; flex-wrap:wrap; gap:8px; }
+    .admin-user-filter-pill {
+        display:inline-flex;
+        align-items:center;
+        gap:5px;
+        min-height:34px;
+        padding:6px 12px;
+        border:1px solid rgba(148,163,184,.28);
+        border-radius:999px;
+        color:#cbd5e1;
+        background:rgba(30,41,59,.72);
+        font-size:.78rem;
+        font-weight:600;
+        line-height:1.2;
+        cursor:pointer;
+        transition:color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .admin-user-filter-pill:hover { color:#fff; border-color:rgba(129,140,248,.75); transform:translateY(-1px); }
+    .admin-user-filter-pill.is-active { color:#fff; border-color:#6d5dfc; background:linear-gradient(135deg,#4f46e5,#6d5dfc); box-shadow:0 5px 16px rgba(79,70,229,.24); }
+    .admin-user-filter-pill--plan.is-active { border-color:#22c55e; background:linear-gradient(135deg,#15803d,#22c55e); }
+    .admin-user-filter-actions { display:flex; align-items:center; gap:8px; }
+    .admin-user-filter-actions .btn { min-height:36px; }
     @media (max-width: 760px) {
-        .admin-user-filter-grid { grid-template-columns:1fr; }
-        .admin-user-filter-actions .btn { flex:1; }
+        .admin-user-filter-actions { justify-content:flex-start; }
     }
 </style>
+@endpush
+
+@push('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('.admin-user-filter-bar');
+    if (!form) return;
+
+    const userInput = form.querySelector('input[name="user_filter"]');
+    const planInput = form.querySelector('input[name="plan_filter"]');
+    const userKey = 'toolsbydcx.admin.users.user_filter';
+    const planKey = 'toolsbydcx.admin.users.plan_filter';
+    const params = new URLSearchParams(window.location.search);
+
+    const storageGet = (key) => { try { return window.localStorage.getItem(key) || ''; } catch (_) { return ''; } };
+    const storageSet = (key, value) => { try { window.localStorage.setItem(key, value); } catch (_) {} };
+    const storageRemove = (key) => { try { window.localStorage.removeItem(key); } catch (_) {} };
+
+    // Query-string filters always win. If the page was opened without them,
+    // restore the last pill selection from this admin browser.
+    if (!params.has('user_filter') && !params.has('plan_filter')) {
+        const savedUser = storageGet(userKey);
+        const savedPlan = storageGet(planKey);
+        if (savedUser || savedPlan) {
+            userInput.value = savedUser;
+            planInput.value = savedPlan;
+            form.submit();
+            return;
+        }
+    } else {
+        storageSet(userKey, userInput.value);
+        storageSet(planKey, planInput.value);
+    }
+
+    form.querySelectorAll('[data-filter-type]').forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            const type = pill.dataset.filterType;
+            const value = pill.dataset.filterValue || '';
+            if (type === 'user') userInput.value = value;
+            if (type === 'plan') planInput.value = value;
+            storageSet(userKey, userInput.value);
+            storageSet(planKey, planInput.value);
+            form.submit();
+        });
+    });
+
+    const reset = form.querySelector('[data-clear-user-filters]');
+    if (reset) reset.addEventListener('click', function () {
+        storageRemove(userKey);
+        storageRemove(planKey);
+    });
+});
+</script>
 @endpush
 @section('panel')
     <div class="row">
@@ -84,46 +151,53 @@
                         @if(request()->filled('search'))
                             <input type="hidden" name="search" value="{{ request()->input('search') }}">
                         @endif
+                        <input type="hidden" name="user_filter" value="{{ $selectedUserFilter }}">
+                        <input type="hidden" name="plan_filter" value="{{ $selectedPlanFilter }}">
                         <div class="admin-user-filter-grid">
                             <div class="admin-user-filter-field">
-                                <label for="admin-user-filter-status"><i class="las la-filter me-1"></i>@lang('User filter')</label>
-                                <select id="admin-user-filter-status" name="user_filter" class="form-select">
-                                    <option value="">@lang('Keep current list') ({{ __($pageTitle) }})</option>
-                                    <option value="all" @selected($selectedUserFilter === 'all')>@lang('All users')</option>
-                                    <option value="active" @selected($selectedUserFilter === 'active')>@lang('Active users')</option>
-                                    <option value="expired" @selected($selectedUserFilter === 'expired')>@lang('Expired users')</option>
-                                    <option value="expiring_5" @selected($selectedUserFilter === 'expiring_5')>@lang('Expires within 5 days')</option>
-                                    <option value="banned" @selected($selectedUserFilter === 'banned')>@lang('Banned users')</option>
-                                    <option value="never_logged_in" @selected($selectedUserFilter === 'never_logged_in')>@lang('Never logged in')</option>
-                                    <option value="with_balance" @selected($selectedUserFilter === 'with_balance')>@lang('With balance')</option>
-                                    <option value="no_balance" @selected($selectedUserFilter === 'no_balance')>@lang('No balance')</option>
-                                    <option value="email_verified" @selected($selectedUserFilter === 'email_verified')>@lang('Email verified')</option>
-                                    <option value="email_unverified" @selected($selectedUserFilter === 'email_unverified')>@lang('Email unverified')</option>
-                                    <option value="mobile_verified" @selected($selectedUserFilter === 'mobile_verified')>@lang('Mobile verified')</option>
-                                    <option value="mobile_unverified" @selected($selectedUserFilter === 'mobile_unverified')>@lang('Mobile unverified')</option>
-                                    <option value="kyc_unverified" @selected($selectedUserFilter === 'kyc_unverified')>@lang('KYC unverified')</option>
-                                    <option value="kyc_pending" @selected($selectedUserFilter === 'kyc_pending')>@lang('KYC pending')</option>
-                                </select>
+                                <label><i class="las la-filter me-1"></i>@lang('User filter')</label>
+                                <div class="admin-user-filter-pills" role="group" aria-label="@lang('User filter')">
+                                    @php
+                                        $userFilterPills = [
+                                            '' => __('Current list'),
+                                            'all' => __('All users'),
+                                            'active' => __('Active'),
+                                            'expired' => __('Expired'),
+                                            'expiring_5' => __('Expires ≤ 5 days'),
+                                            'banned' => __('Banned'),
+                                            'never_logged_in' => __('Never logged in'),
+                                            'with_balance' => __('With balance'),
+                                            'no_balance' => __('No balance'),
+                                            'email_verified' => __('Email verified'),
+                                            'email_unverified' => __('Email unverified'),
+                                            'mobile_verified' => __('Mobile verified'),
+                                            'mobile_unverified' => __('Mobile unverified'),
+                                            'kyc_unverified' => __('KYC unverified'),
+                                            'kyc_pending' => __('KYC pending'),
+                                        ];
+                                    @endphp
+                                    @foreach($userFilterPills as $filterValue => $filterLabel)
+                                        <button type="button" class="admin-user-filter-pill {{ $selectedUserFilter === $filterValue ? 'is-active' : '' }}" data-filter-type="user" data-filter-value="{{ $filterValue }}">
+                                            @if($selectedUserFilter === $filterValue)<i class="las la-check"></i>@endif{{ $filterLabel }}
+                                        </button>
+                                    @endforeach
+                                </div>
                             </div>
                             <div class="admin-user-filter-field">
-                                <label for="admin-user-filter-plan"><i class="las la-layer-group me-1"></i>@lang('Plan')</label>
-                                <select id="admin-user-filter-plan" name="plan_filter" class="form-select">
-                                    <option value="">@lang('All plans')</option>
-                                    <option value="free" @selected($selectedPlanFilter === 'free')>@lang('Free / No plan')</option>
+                                <label><i class="las la-layer-group me-1"></i>@lang('Plan')</label>
+                                <div class="admin-user-filter-pills" role="group" aria-label="@lang('Plan')">
+                                    <button type="button" class="admin-user-filter-pill admin-user-filter-pill--plan {{ $selectedPlanFilter === '' ? 'is-active' : '' }}" data-filter-type="plan" data-filter-value="">@lang('All plans')</button>
+                                    <button type="button" class="admin-user-filter-pill admin-user-filter-pill--plan {{ $selectedPlanFilter === 'free' ? 'is-active' : '' }}" data-filter-type="plan" data-filter-value="free">@lang('Free / No plan')</button>
                                     @foreach($userPlans as $userPlan)
-                                        <option value="{{ $userPlan->id }}" @selected((string) $selectedPlanFilter === (string) $userPlan->id)>
+                                        <button type="button" class="admin-user-filter-pill admin-user-filter-pill--plan {{ (string) $selectedPlanFilter === (string) $userPlan->id ? 'is-active' : '' }}" data-filter-type="plan" data-filter-value="{{ $userPlan->id }}">
                                             {{ __($userPlan->name) }}{{ !$userPlan->status ? ' (Inactive)' : '' }}
-                                        </option>
+                                        </button>
                                     @endforeach
-                                </select>
+                                </div>
                             </div>
                             <div class="admin-user-filter-actions">
-                                <button type="submit" class="btn btn--primary">
-                                    <i class="las la-check"></i> @lang('Apply filters')
-                                </button>
-                                <a href="{{ request()->url() }}{{ request()->filled('account_id') ? '?account_id=' . urlencode(request()->input('account_id')) : '' }}" class="btn btn-outline--dark">
-                                    <i class="las la-undo"></i> @lang('Reset')
-                                </a>
+                                <button type="submit" class="btn btn--primary"><i class="las la-check"></i> @lang('Apply')</button>
+                                <a data-clear-user-filters href="{{ request()->url() }}{{ request()->filled('account_id') ? '?account_id=' . urlencode(request()->input('account_id')) : '' }}" class="btn btn-outline--dark"><i class="las la-undo"></i> @lang('Reset')</a>
                             </div>
                         </div>
                     </form>
