@@ -87,28 +87,35 @@ class TextToSpeechController extends Controller
 
         $payload = $upstream->json();
         $payload = is_array($payload) ? $payload : [];
-        $remote = $this->cloneRows($payload);
+        // The upstream API key belongs to the platform, so its clone catalog
+        // can contain clones created by other ToolsByDcx users. Never expose
+        // those rows; use the local ownership table as the source of truth
+        // and only use the upstream response to enrich matching records.
+        $remote = collect($this->cloneRows($payload))
+            ->keyBy(fn (array $clone) => (string) ($clone['voice_id'] ?? ''));
         $local = TtsVoiceClone::query()
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get()
-            ->map(fn (TtsVoiceClone $clone) => [
-                'id' => $clone->clone_id,
-                'voice_id' => $clone->clone_id,
-                'name' => $clone->name,
-                'description' => $clone->description,
-                'preview_url' => ($clone->metadata ?? [])['preview_url'] ?? ($clone->metadata ?? [])['previewUrl'] ?? null,
-                'language' => ($clone->metadata ?? [])['language'] ?? null,
-                'gender' => ($clone->metadata ?? [])['gender'] ?? null,
-                'provider' => 'clone',
-            ])
+            ->map(function (TtsVoiceClone $clone) use ($remote) {
+                $id = (string) $clone->clone_id;
+                $upstream = $remote->get($id, []);
+                $metadata = is_array($clone->metadata) ? $clone->metadata : [];
+
+                return [
+                    'id' => $id,
+                    'voice_id' => $id,
+                    'name' => $clone->name ?: ($upstream['name'] ?? 'Voice clone'),
+                    'description' => $clone->description ?: ($upstream['description'] ?? null),
+                    'preview_url' => $metadata['preview_url'] ?? $metadata['previewUrl'] ?? ($upstream['preview_url'] ?? null),
+                    'language' => $metadata['language'] ?? ($upstream['language'] ?? null),
+                    'gender' => $metadata['gender'] ?? ($upstream['gender'] ?? null),
+                    'provider' => 'clone',
+                ];
+            })
             ->all();
 
-        $merged = collect(array_merge($local, $remote))
-            ->filter(fn ($clone) => filled($clone['voice_id'] ?? null))
-            ->unique(fn ($clone) => (string) ($clone['voice_id'] ?? $clone['id'] ?? ''))
-            ->values()
-            ->all();
+        $merged = collect($local)->filter(fn ($clone) => filled($clone['voice_id'] ?? null))->values()->all();
 
         if (array_key_exists('data', $payload)) {
             $payload['data'] = $merged;
