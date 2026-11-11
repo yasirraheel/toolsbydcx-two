@@ -406,6 +406,24 @@ class TextToSpeechController extends Controller
 
         $upstream = $this->tts->task($task);
         if (!$upstream->successful()) {
+            // OpenRadio can briefly return a transient 409/425/429/5xx while
+            // an asynchronous task is being materialized. Let the browser
+            // continue polling instead of turning a temporary provider state
+            // into a failed generation.
+            if (in_array($upstream->status(), [409, 425, 429, 500, 502, 503, 504], true)) {
+                return response()->json([
+                    'success' => true,
+                    'status' => 'processing',
+                    'retryable' => true,
+                    'message' => 'Audio is still processing.',
+                    'remaining_credits' => $this->credits->remaining($request->user()),
+                ], 202)->header('Cache-Control', 'no-store');
+            }
+
+            // A terminal provider error must release the reservation created
+            // by generate(), otherwise a failed task permanently consumes the
+            // user's assigned quota.
+            $this->settleTaskCredit($request->user(), $task, true);
             return $this->forward($upstream);
         }
 
@@ -527,13 +545,13 @@ class TextToSpeechController extends Controller
 
         if (!$upstream->successful()) {
             $payload = $upstream->json();
-            $message = is_array($payload)
-                ? ($payload['message'] ?? $payload['error'] ?? null)
-                : null;
+            $message = $this->upstreamMessage($payload);
 
             return response()->json([
                 'success' => false,
-                'message' => filled($message) ? 'The speech request could not be completed.' : 'The speech service is temporarily unavailable.',
+                'message' => filled($message)
+                    ? 'Speech generation failed: ' . $message
+                    : 'The speech service is temporarily unavailable.',
             ], $upstream->status())
                 ->header('Cache-Control', 'no-store');
         }
@@ -545,6 +563,47 @@ class TextToSpeechController extends Controller
 
         return response()->json($payload, $upstream->status())
             ->header('Cache-Control', 'no-store');
+    }
+
+    /**
+     * Read only a short, safe message from an upstream JSON error. The old
+     * implementation discarded the useful provider detail and always showed
+     * the same generic message, making real validation/rate-limit failures
+     * impossible to diagnose from the UI.
+     */
+    private function upstreamMessage(mixed $payload): ?string
+    {
+        if (is_string($payload)) {
+            $message = $payload;
+        } elseif (is_array($payload)) {
+            $message = null;
+            foreach (['message', 'error', 'detail', 'title'] as $key) {
+                $candidate = $payload[$key] ?? null;
+                if (is_string($candidate) && trim($candidate) !== '') {
+                    $message = $candidate;
+                    break;
+                }
+                if (is_array($candidate)) {
+                    $message = $this->upstreamMessage($candidate);
+                    if ($message) {
+                        break;
+                    }
+                }
+            }
+        } else {
+            $message = null;
+        }
+
+        if (!filled($message)) {
+            return null;
+        }
+
+        $message = trim(preg_replace('/\s+/', ' ', strip_tags((string) $message)));
+        // Never reflect credentials or a long signed provider URL to a user.
+        $message = preg_replace('/bearer\s+[A-Za-z0-9._-]+/i', 'authorization token', $message);
+        $message = preg_replace('/https?:\/\/[^\s]+/i', 'provider URL', $message);
+
+        return mb_substr($message, 0, 240);
     }
 
     private function forwardClone(Response $upstream)
