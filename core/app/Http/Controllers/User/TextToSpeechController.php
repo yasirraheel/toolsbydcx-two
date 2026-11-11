@@ -602,6 +602,7 @@ class TextToSpeechController extends Controller
         // Never reflect credentials or a long signed provider URL to a user.
         $message = preg_replace('/bearer\s+[A-Za-z0-9._-]+/i', 'authorization token', $message);
         $message = preg_replace('/https?:\/\/[^\s]+/i', 'provider URL', $message);
+        $message = preg_replace('/\bopenradio(?:\.io)?\b/i', 'speech service', $message);
 
         return mb_substr($message, 0, 240);
     }
