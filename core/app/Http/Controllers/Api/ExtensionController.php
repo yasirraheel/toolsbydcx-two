@@ -62,6 +62,44 @@ class ExtensionController extends Controller
     }
 
     /**
+     * Return the account listings that this extension user is allowed to use.
+     *
+     * A non-empty account_ids value is an explicit per-user allow-list. It
+     * must take precedence over a plan so assigning one account cannot silently
+     * expose every other account belonging to that plan. Users without direct
+     * assignments fall back to the accounts attached to their plan.
+     */
+    private function accessibleAccounts(User $user, bool $isAdmin = false)
+    {
+        $query = AccountListing::with('socialMedia')
+            ->where('status', Status::LISTING_ACTIVE)
+            ->whereHas('socialMedia', function ($q) {
+                $q->active();
+            });
+
+        if ($isAdmin) {
+            return $query;
+        }
+
+        $directIds = collect((array) ($user->account_ids ?? []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($directIds)) {
+            return $query->whereIn('id', $directIds);
+        }
+
+        if ($user->plan_id) {
+            return $query->where('plan_id', (int) $user->plan_id);
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    /**
      * Mobile App Login endpoint
      */
     public function mobileLogin(Request $request)
@@ -146,42 +184,9 @@ class ExtensionController extends Controller
 
         $isAdmin = auth()->guard('admin')->check() || session()->get('is_admin_testing') === true || (bool) $user->is_tester;
 
-        // All accounts the user can access via their plan OR specific assigned account_ids (same as web panel UserController)
-        $assignedAccounts = collect();
-
-        if ($isAdmin) {
-            $adminAccounts = AccountListing::with('socialMedia')
-                ->where('status', Status::LISTING_ACTIVE)
-                ->whereHas('socialMedia', function($q) {
-                    $q->active();
-                })
-                ->get();
-            $assignedAccounts = $assignedAccounts->merge($adminAccounts);
-        }
-
-        if ($user->plan_id) {
-            $planAccounts = AccountListing::with('socialMedia')
-                ->where('plan_id', $user->plan_id)
-                ->where('status', Status::LISTING_ACTIVE)
-                ->whereHas('socialMedia', function($q) {
-                    $q->active();
-                })
-                ->get();
-            $assignedAccounts = $assignedAccounts->merge($planAccounts);
-        }
-
-        if (!empty($user->account_ids)) {
-            $accountIds = (array) $user->account_ids;
-            $specificAccounts = AccountListing::with('socialMedia')
-                ->whereIn('id', $accountIds)
-                ->whereHas('socialMedia', function($q) {
-                    $q->active();
-                })
-                ->get();
-            $assignedAccounts = $assignedAccounts->merge($specificAccounts);
-        }
-
-        $assignedAccounts = $assignedAccounts->unique('id')->values();
+        // Direct per-user account assignments are an allow-list. Only users
+        // without direct assignments fall back to their plan's accounts.
+        $assignedAccounts = $this->accessibleAccounts($user, $isAdmin)->get();
 
         $platformCounters = [];
         $accountsList = $assignedAccounts;
@@ -250,37 +255,24 @@ class ExtensionController extends Controller
             return response()->json(['success' => false, 'message' => 'Your subscription is expired. Please contact administrator.'], 403);
         }
 
-        $query = AccountListing::with('socialMedia');
-
         $targetAccountId = $accountId ?: $request->account_id;
 
+        $query = $this->accessibleAccounts($user, $isAdmin);
         if ($targetAccountId) {
-            $query->where('id', $targetAccountId);
-            if (!$isAdmin) {
-                $allowedIds = (array) ($user->account_ids ?? []);
-                if (!in_array((int)$targetAccountId, array_map('intval', $allowedIds))) {
-                    $query->where('status', Status::LISTING_ACTIVE);
-                }
-            }
+            $query->whereKey((int) $targetAccountId);
         } else {
-            $query->where('social_media_id', $platformId);
-            if (!$isAdmin) {
-                $allowedIds = (array) ($user->account_ids ?? []);
-                $query->where(function($q) use ($user, $allowedIds) {
-                    if ($user->plan_id) {
-                        $q->where('plan_id', $user->plan_id)->where('status', Status::LISTING_ACTIVE);
-                    }
-                    if (!empty($allowedIds)) {
-                        $q->orWhereIn('id', $allowedIds);
-                    }
-                });
-            }
+            $query->where('social_media_id', (int) $platformId);
         }
 
         $account = $query->first();
 
         if (!$account) {
-            return response()->json(['success' => false, 'message' => 'No account available for this platform'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => $targetAccountId
+                    ? 'This account is not assigned to your user.'
+                    : 'No account available for this platform.',
+            ], $targetAccountId ? 403 : 404);
         }
 
         $cookies = $account->account_info;
