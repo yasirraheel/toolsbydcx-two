@@ -239,6 +239,63 @@ html[data-theme="light"] .account-form .account-form__icon {
     border-color: #cbd5e1 !important;
 }
 
+/* Chat history page had its own dark-only card palette. */
+html[data-theme="light"] .dcx-chat-history .chat-history-card {
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .06) !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-card__header {
+    background: #f1f5f9 !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-card__header h4,
+html[data-theme="light"] .dcx-chat-history .chat-history-item__title {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-card__header p,
+html[data-theme="light"] .dcx-chat-history .chat-history-item__meta,
+html[data-theme="light"] .dcx-chat-history .chat-history-empty {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-item {
+    background: #f8fafc !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-item:hover,
+html[data-theme="light"] .dcx-chat-history .chat-history-item:focus-visible {
+    background: #eef2ff !important;
+    border-color: #a5b4fc !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-item__open,
+html[data-theme="light"] .dcx-chat-history .chat-history-share-url {
+    color: #4338ca !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-share-url {
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-count {
+    color: #4338ca !important;
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+
+html[data-theme="light"] .dcx-chat-history .chat-history-delete-all,
+html[data-theme="light"] .dcx-chat-history .chat-history-delete {
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
 html[data-theme="light"] .dropdown-menu,
 html[data-theme="light"] .select2-dropdown,
 html[data-theme="light"] .modal-content {
