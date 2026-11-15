@@ -237,6 +237,8 @@ Route::middleware('admin')->group(function () {
     // Plans
     Route::controller('PlanController')->prefix('plan')->name('plan.')->group(function () {
         Route::get('index', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::get('edit/{id}', 'edit')->name('edit');
         Route::post('store', 'store')->name('store');
         Route::post('store/{id}', 'store')->name('update');
         Route::post('status/{id}', 'status')->name('status');

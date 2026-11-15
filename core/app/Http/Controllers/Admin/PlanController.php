@@ -10,6 +10,41 @@ use App\Models\AccountListing;
 
 class PlanController extends Controller
 {
+    private function formData(?Plan $plan = null): array
+    {
+        if ($plan) {
+            $plan->features = $this->normalizeFeatures($plan->features);
+        }
+
+        $accounts = AccountListing::with('socialMedia')
+            ->orderBy('social_media_id')
+            ->orderBy('title')
+            ->get();
+
+        return [
+            'plan' => $plan ?: new Plan(['features' => []]),
+            'accounts' => $accounts,
+        ];
+    }
+
+    public function create()
+    {
+        return view('admin.plan.form', array_merge(
+            ['pageTitle' => 'Create Subscription Plan'],
+            $this->formData()
+        ));
+    }
+
+    public function edit($id)
+    {
+        $plan = Plan::with('accounts')->findOrFail($id);
+
+        return view('admin.plan.form', array_merge(
+            ['pageTitle' => 'Update Subscription Plan'],
+            $this->formData($plan)
+        ));
+    }
+
     public function index()
     {
         $pageTitle = 'Subscription Plans';
