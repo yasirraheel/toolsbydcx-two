@@ -31,7 +31,7 @@ class UserController extends Controller
             return redirect()->route('reseller.dashboard');
         }
 
-        $isAdmin = auth()->guard('admin')->check() || session()->get('is_admin_testing') === true || (bool) $user->is_tester;
+        $isAdmin = auth()->guard('admin')->check() || session()->get('is_admin_testing') === true;
 
         $adminAccounts = null;
         if ($isAdmin) {

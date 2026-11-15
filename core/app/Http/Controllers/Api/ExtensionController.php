@@ -182,13 +182,8 @@ class ExtensionController extends Controller
             ]);
         }
 
-        // Tester mode keeps the legacy all-accounts view only when no direct
-        // account assignment exists. An explicit assignment must remain an
-        // allow-list even for test users.
-        $hasDirectAssignments = !empty(array_filter((array) ($user->account_ids ?? [])));
         $isAdmin = auth()->guard('admin')->check()
-            || session()->get('is_admin_testing') === true
-            || ((bool) $user->is_tester && !$hasDirectAssignments);
+            || session()->get('is_admin_testing') === true;
 
         // Direct per-user account assignments are an allow-list. Only users
         // without direct assignments fall back to their plan's accounts.
@@ -249,10 +244,8 @@ class ExtensionController extends Controller
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
-        $hasDirectAssignments = !empty(array_filter((array) ($user->account_ids ?? [])));
         $isAdmin = auth()->guard('admin')->check()
-            || session()->get('is_admin_testing') === true
-            || ((bool) ($user->is_tester ?? false) && !$hasDirectAssignments);
+            || session()->get('is_admin_testing') === true;
 
 
         if (!$isAdmin && !$user->plan_id && empty($user->account_ids)) {

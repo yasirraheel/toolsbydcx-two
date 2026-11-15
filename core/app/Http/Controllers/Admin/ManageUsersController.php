@@ -309,7 +309,9 @@ class ManageUsersController extends Controller
                 $user->expires_at = now()->addDays(max(1, $validityDays));
             }
             $user->is_trial = 0;
-            $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
+            // Tester mode has been retired; every newly created user follows
+            // the normal plan/account assignment rules.
+            $user->is_tester = 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
             $user->tts_access = $request->boolean('tts_access');
             $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
@@ -502,7 +504,8 @@ class ManageUsersController extends Controller
         }
 
         if ($request->has('privileges_submitted')) {
-            $user->is_tester = $request->boolean('is_tester') ? 1 : 0;
+            // Tester mode is retired and cannot be re-enabled from admin.
+            $user->is_tester = 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
         }
 

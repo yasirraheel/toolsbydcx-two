@@ -224,11 +224,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <span class="small d-block">
                                             <a href="{{ route('admin.users.detail', $user->id) }}"><span>@</span>{{ $user->username }}</a>
                                         </span>
-                                        @if($user->is_tester || $user->is_exclusive)
+                                        @if($user->is_exclusive)
                                             <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
-                                                @if($user->is_tester)
-                                                    <span class="badge badge--warning" title="@lang('Tester User Mode Active')"><i class="las la-vial"></i> @lang('Tester')</span>
-                                                @endif
                                                 @if($user->is_exclusive)
                                                     <span class="badge badge--info" title="@lang('Cookie Extraction & Copy Allowed')"><i class="las la-cookie-bite"></i> @lang('Cookie Access')</span>
                                                 @endif
@@ -310,6 +307,19 @@ document.addEventListener('DOMContentLoaded', function () {
                                         @else
                                             <span class="badge badge--dark">@lang('N/A')</span>
                                         @endif
+                                        <button type="button" class="btn btn-xs btn--warning text-dark py-0 px-2 mt-1 btn-adjust-expiry text-nowrap fw-bold"
+                                                data-id="{{ $user->id }}"
+                                                data-username="{{ $user->username }}"
+                                                data-fullname="{{ $user->fullname }}"
+                                                data-action-url="{{ route('admin.users.update.expiry', $user->id) }}"
+                                                data-expiry="{{ $user->expires_at ? $user->expires_at->format('Y-m-d\TH:i') : '' }}"
+                                                data-expiry-iso="{{ $user->expires_at ? $user->expires_at->toIso8601String() : '' }}"
+                                                data-expiry-formatted="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y, h:i A') : 'N/A' }}"
+                                                data-is-expired="{{ $isExpired ? '1' : '0' }}"
+                                                data-days-remaining="{{ ceil($daysRemaining) }}"
+                                                title="@lang('Adjust Expiration Date')">
+                                            <i class="las la-calendar-plus"></i> @lang('Adjust Expiry')
+                                        </button>
                                     </div>
                                 </td>
 
@@ -325,6 +335,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 data-expiry="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y') : 'N/A' }}"
                                                 title="@lang('Copy Welcome Details')">
                                             <i class="las la-clipboard-check"></i> @lang('Copy Details')
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn--warning text-dark w-100 text-center btn-adjust-expiry fw-semibold"
+                                                data-id="{{ $user->id }}"
+                                                data-username="{{ $user->username }}"
+                                                data-fullname="{{ $user->fullname }}"
+                                                data-action-url="{{ route('admin.users.update.expiry', $user->id) }}"
+                                                data-expiry="{{ $user->expires_at ? $user->expires_at->format('Y-m-d\TH:i') : '' }}"
+                                                data-expiry-iso="{{ $user->expires_at ? $user->expires_at->toIso8601String() : '' }}"
+                                                data-expiry-formatted="{{ $user->expires_at ? showDateTime($user->expires_at, 'd M Y, h:i A') : 'N/A' }}"
+                                                data-is-expired="{{ $isExpired ? '1' : '0' }}"
+                                                data-days-remaining="{{ ceil($daysRemaining) }}">
+                                            <i class="las la-calendar-plus"></i> @lang('Extend Expiry')
                                         </button>
                                         @if (request()->routeIs('admin.users.kyc.pending'))
                                         <a href="{{ route('admin.users.kyc.details', $user->id) }}" target="_blank" class="btn btn-sm btn-outline--dark w-100 text-center">
@@ -375,6 +397,105 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="modal-footer">
                             <button class="btn btn--dark" data-bs-dismiss="modal" type="button">@lang('No, Cancel')</button>
                             <button class="btn btn--danger" type="submit"><i class="las la-trash me-1"></i> @lang('Yes, Delete Selected')</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Adjust Expiry Modal for User List --}}
+        <div id="adjustExpiryModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="las la-calendar-plus text--warning me-1"></i> @lang('Extend / Adjust Expiry') — <span id="modalTargetUser" class="text--warning"></span>
+                        </h5>
+                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="las la-times"></i>
+                        </button>
+                    </div>
+                    <form action="" method="POST" id="adjustExpiryForm">
+                        @csrf
+                        <div class="modal-body">
+                            {{-- Current status banner --}}
+                            <div class="alert alert-dark border-secondary d-flex justify-content-between align-items-center py-2 mb-3">
+                                <div>
+                                    <strong class="text-white">@lang('Current Status'):</strong>
+                                    <span id="modalCurrentStatusBadge" class="badge ms-1"></span>
+                                    <div class="small mt-1 text-muted" id="modalCurrentExpiryText"></div>
+                                </div>
+                            </div>
+
+                            {{-- Action selector --}}
+                            <div class="form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('Select Action')</label>
+                                <select name="action" id="modalActionSelect" class="form-control">
+                                    <option value="extend" selected>➕ @lang('Extend Expiry (Add Days)')</option>
+                                    <option value="decrease">➖ @lang('Decrease Expiry (Subtract Days)')</option>
+                                    <option value="set_date">📅 @lang('Set Specific Date & Time')</option>
+                                    <option value="expire_now">⛔ @lang('Expire Immediately')</option>
+                                </select>
+                            </div>
+
+                            {{-- Days selector (for extend and decrease) --}}
+                            <div id="modalDaysWrapper" class="form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('Number of Days')</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="days" id="modalDaysInput" value="30" min="1" max="3650">
+                                    <span class="input-group-text bg--primary text-white">@lang('Days')</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="7">+7d</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="15">+15d</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip active" data-days="30">30d (1 Mo)</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="60">60d (2 Mo)</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="90">90d (3 Mo)</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="180">180d (6 Mo)</button>
+                                    <button type="button" class="btn btn-xs btn-outline--primary modal-day-chip" data-days="365">365d (1 Yr)</button>
+                                </div>
+                            </div>
+
+                            {{-- Base Date (for extend: from now vs from current expiry) --}}
+                            <div id="modalBaseFromWrapper" class="form-group mb-3">
+                                <label class="fw-bold mb-1">@lang('Calculate Days From')</label>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="base_from" id="baseFromCurrent" value="current" checked>
+                                        <label class="form-check-label" for="baseFromCurrent">
+                                            @lang('From Current Expiry Date') (<span id="modalBaseCurrentLabel"></span>)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="base_from" id="baseFromNow" value="now">
+                                        <label class="form-check-label" for="baseFromNow">
+                                            @lang('From Today / Now') ({{ now()->format('d M Y') }})
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Custom Date (for set_date) --}}
+                            <div id="modalCustomDateWrapper" class="form-group mb-3 d-none">
+                                <label class="fw-bold mb-1">@lang('Choose Expiry Date & Time')</label>
+                                <input type="datetime-local" class="form-control" name="custom_date" id="modalCustomDateInput"
+                                       value="{{ now()->addDays(30)->format('Y-m-d\TH:i') }}">
+                            </div>
+
+                            {{-- Live Calculation Preview Box --}}
+                            <div class="card bg-dark border-secondary p-3 mt-3 text-start">
+                                <span class="text-muted small text-uppercase fw-bold"><i class="las la-calculator text--warning"></i> @lang('Preview Calculation'):</span>
+                                <div class="fs-16 fw-bold text-white mt-1" id="modalPreviewResult">
+                                    @lang('Calculating...')
+                                </div>
+                                <div class="small text-muted mt-1" id="modalPreviewHint"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn--dark" data-bs-dismiss="modal">@lang('Cancel')</button>
+                            <button type="submit" class="btn btn--warning text-dark fw-bold" id="modalSubmitBtn">
+                                <i class="las la-check me-1"></i> @lang('Apply Expiry Update')
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -474,6 +595,193 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.body.removeChild(tempArea);
                 notify('success', 'User details copied to clipboard!');
             });
+        });
+
+        // ==========================================
+        // ADJUST EXPIRY MODAL HANDLER
+        // ==========================================
+        function pad(n) { return n < 10 ? '0' + n : n; }
+        function toDatetimeLocal(d) {
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+        function formatReadable(d) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            let day = d.getDate();
+            let month = months[d.getMonth()];
+            let year = d.getFullYear();
+            let hours = d.getHours();
+            let minutes = pad(d.getMinutes());
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+        }
+
+        let currentModalUser = null;
+
+        $(document).on('click', '.btn-adjust-expiry', function(e) {
+            e.preventDefault();
+            let btn = $(this);
+            currentModalUser = {
+                id: btn.data('id'),
+                username: btn.data('username'),
+                fullname: btn.data('fullname'),
+                actionUrl: btn.data('action-url'),
+                expiryIso: btn.data('expiry-iso'),
+                expiryFormatted: btn.data('expiry-formatted'),
+                isExpired: btn.data('is-expired') == '1',
+                daysRemaining: btn.data('days-remaining')
+            };
+
+            let modal = $('#adjustExpiryModal');
+            $('#adjustExpiryForm').attr('action', currentModalUser.actionUrl);
+            $('#modalTargetUser').text('@' + currentModalUser.username + (currentModalUser.fullname ? ' (' + currentModalUser.fullname + ')' : ''));
+
+            let badgeEl = $('#modalCurrentStatusBadge');
+            let textEl = $('#modalCurrentExpiryText');
+
+            if (currentModalUser.expiryIso) {
+                if (currentModalUser.isExpired) {
+                    badgeEl.removeClass('badge--success badge--dark').addClass('badge--danger').text('Expired');
+                    textEl.text('Expired on: ' + currentModalUser.expiryFormatted);
+                    $('#baseFromNow').prop('checked', true);
+                    $('#baseFromCurrent').prop('checked', false);
+                } else {
+                    badgeEl.removeClass('badge--danger badge--dark').addClass('badge--success').text(currentModalUser.daysRemaining + ' Days Active');
+                    textEl.text('Active until: ' + currentModalUser.expiryFormatted);
+                    $('#baseFromCurrent').prop('checked', true);
+                    $('#baseFromNow').prop('checked', false);
+                }
+                $('#modalBaseCurrentLabel').text(currentModalUser.expiryFormatted);
+            } else {
+                badgeEl.removeClass('badge--success badge--danger').addClass('badge--dark').text('No Expiry Set');
+                textEl.text('User currently has no expiry limit.');
+                $('#modalBaseCurrentLabel').text('N/A');
+                $('#baseFromNow').prop('checked', true);
+            }
+
+            // Reset action to extend, days to 30
+            $('#modalActionSelect').val('extend');
+            $('#modalDaysInput').val(30);
+            $('.modal-day-chip').removeClass('btn--primary text-white active').addClass('btn-outline--primary');
+            $('.modal-day-chip[data-days="30"]').removeClass('btn-outline--primary').addClass('btn--primary text-white active');
+
+            let defaultFuture = new Date();
+            defaultFuture.setDate(defaultFuture.getDate() + 30);
+            $('#modalCustomDateInput').val(toDatetimeLocal(defaultFuture));
+
+            updateListModalState();
+            modal.modal('show');
+        });
+
+        function updateListModalState() {
+            let action = $('#modalActionSelect').val();
+
+            if (action === 'extend') {
+                $('#modalDaysWrapper').removeClass('d-none');
+                $('#modalBaseFromWrapper').removeClass('d-none');
+                $('#modalCustomDateWrapper').addClass('d-none');
+                $('#modalSubmitBtn').removeClass('btn--danger').addClass('btn--warning text-dark').html('<i class="las la-check me-1"></i> Apply Expiry Extension');
+            } else if (action === 'decrease') {
+                $('#modalDaysWrapper').removeClass('d-none');
+                $('#modalBaseFromWrapper').addClass('d-none');
+                $('#modalCustomDateWrapper').addClass('d-none');
+                $('#modalSubmitBtn').removeClass('btn--warning text-dark').addClass('btn--danger').html('<i class="las la-minus me-1"></i> Decrease Expiry');
+            } else if (action === 'set_date') {
+                $('#modalDaysWrapper').addClass('d-none');
+                $('#modalBaseFromWrapper').addClass('d-none');
+                $('#modalCustomDateWrapper').removeClass('d-none');
+                $('#modalSubmitBtn').removeClass('btn--danger').addClass('btn--warning text-dark').html('<i class="las la-check me-1"></i> Set New Date');
+            } else if (action === 'expire_now') {
+                $('#modalDaysWrapper').addClass('d-none');
+                $('#modalBaseFromWrapper').addClass('d-none');
+                $('#modalCustomDateWrapper').addClass('d-none');
+                $('#modalSubmitBtn').removeClass('btn--warning text-dark').addClass('btn--danger').html('<i class="las la-ban me-1"></i> Expire Account Now');
+            }
+
+            updateListModalPreview();
+        }
+
+        function updateListModalPreview() {
+            if (!currentModalUser) return;
+            let action = $('#modalActionSelect').val();
+            let resultEl = $('#modalPreviewResult');
+            let hintEl = $('#modalPreviewHint');
+            let now = new Date();
+            let targetDate = new Date();
+
+            if (action === 'extend') {
+                let days = parseInt($('#modalDaysInput').val() || 30, 10);
+                let baseFrom = $('input[name="base_from"]:checked').val() || 'now';
+
+                if (baseFrom === 'current' && currentModalUser.expiryIso) {
+                    let cur = new Date(currentModalUser.expiryIso);
+                    if (!isNaN(cur.getTime()) && cur > now) {
+                        targetDate = new Date(cur.getTime());
+                    } else {
+                        targetDate = new Date();
+                    }
+                } else {
+                    targetDate = new Date();
+                }
+
+                targetDate.setDate(targetDate.getDate() + days);
+                let diffDays = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+                resultEl.html(`<span class="text--success"><i class="las la-calendar-check"></i> ${formatReadable(targetDate)}</span> <span class="badge badge--success ms-2">${diffDays} Days Active</span>`);
+                hintEl.html('User will have full access until this date. Flow pairings will be updated.');
+            } else if (action === 'decrease') {
+                let days = parseInt($('#modalDaysInput').val() || 7, 10);
+                let cur = currentModalUser.expiryIso ? new Date(currentModalUser.expiryIso) : new Date();
+                if (isNaN(cur.getTime()) || cur < now) cur = new Date();
+
+                targetDate = new Date(cur.getTime());
+                targetDate.setDate(targetDate.getDate() - days);
+
+                let isStillActive = targetDate > now;
+                let diffDays = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+
+                if (isStillActive) {
+                    resultEl.html(`<span class="text--warning"><i class="las la-calendar-minus"></i> ${formatReadable(targetDate)}</span> <span class="badge badge--warning text-dark ms-2">${diffDays} Days Remaining</span>`);
+                    hintEl.html('User expiry will be reduced.');
+                } else {
+                    resultEl.html(`<span class="text--danger"><i class="las la-calendar-times"></i> ${formatReadable(targetDate)}</span> <span class="badge badge--danger ms-2">Expired</span>`);
+                    hintEl.html('This reduction sets the expiry to the past (account will expire).');
+                }
+            } else if (action === 'set_date') {
+                let customVal = $('#modalCustomDateInput').val();
+                if (!customVal) {
+                    resultEl.html('<span class="text-muted">Please select a valid date/time</span>');
+                    hintEl.html('');
+                    return;
+                }
+                targetDate = new Date(customVal);
+                let isFuture = targetDate > now;
+                let diffDays = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+
+                if (isFuture) {
+                    resultEl.html(`<span class="text--success"><i class="las la-calendar-check"></i> ${formatReadable(targetDate)}</span> <span class="badge badge--success ms-2">${diffDays} Days Active</span>`);
+                    hintEl.html('Account will remain active until this exact moment.');
+                } else {
+                    resultEl.html(`<span class="text--danger"><i class="las la-calendar-times"></i> ${formatReadable(targetDate)}</span> <span class="badge badge--danger ms-2">Expired</span>`);
+                    hintEl.html('Date is in the past; account will be marked expired.');
+                }
+            } else if (action === 'expire_now') {
+                resultEl.html('<span class="text--danger"><i class="las la-ban"></i> Expire Account Immediately</span>');
+                hintEl.html('The user will immediately lose access to tools and Google Flow extensions.');
+            }
+        }
+
+        $('#modalActionSelect').on('change', updateListModalState);
+        $('#modalDaysInput').on('input', updateListModalPreview);
+        $('input[name="base_from"]').on('change', updateListModalPreview);
+        $('#modalCustomDateInput').on('input change', updateListModalPreview);
+
+        $(document).on('click', '.modal-day-chip', function() {
+            let days = $(this).data('days');
+            $('#modalDaysInput').val(days);
+            $('.modal-day-chip').removeClass('btn--primary text-white active').addClass('btn-outline--primary');
+            $(this).removeClass('btn-outline--primary').addClass('btn--primary text-white active');
+            updateListModalPreview();
         });
     })(jQuery);
 </script>
