@@ -256,6 +256,52 @@ html[data-theme="light"] .account-form input:-moz-autofill {
     box-shadow: 0 0 0 1000px #ffffff inset !important;
 }
 
+/* Admin user filters were authored with a dark-only palette. Keep the pills
+ * and their container aligned with the rest of the light admin surface. */
+html[data-theme="light"] .admin-user-filter-bar {
+    background: #ffffff !important;
+    border-bottom-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .admin-user-filter-field label {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .admin-user-filter-pill {
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .admin-user-filter-pill:hover {
+    color: #312e81 !important;
+    background: #eef2ff !important;
+    border-color: #818cf8 !important;
+}
+
+html[data-theme="light"] .admin-user-filter-pill.is-active {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #4f46e5, #6d5dfc) !important;
+    border-color: #6d5dfc !important;
+}
+
+html[data-theme="light"] .admin-user-filter-pill--plan.is-active {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #15803d, #22c55e) !important;
+    border-color: #22c55e !important;
+}
+
+html[data-theme="light"] .admin-user-filter-actions .btn-outline--dark {
+    color: #334155 !important;
+    border-color: #94a3b8 !important;
+    background: #ffffff !important;
+}
+
+html[data-theme="light"] .admin-user-filter-actions .btn-outline--dark:hover {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+}
+
 html[data-theme="light"] .account-form .forgot-password,
 html[data-theme="light"] .account-form .have-account__link {
     color: #4338ca !important;
