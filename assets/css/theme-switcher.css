@@ -523,6 +523,296 @@ html[data-theme="light"] .dcx-clone-recorder__bar {
     color: var(--clone-text) !important;
 }
 
+/* Final light-theme contrast pass for the user tools. These pages contain
+ * legacy inline dark-theme colors, so keep the overrides scoped and explicit
+ * instead of changing the dark theme defaults. */
+html[data-theme="light"] .dcx-music .dcx-music__heading p,
+html[data-theme="light"] .dcx-music .dcx-music__field small,
+html[data-theme="light"] .dcx-music .dcx-music__toggle-row span,
+html[data-theme="light"] .dcx-music .dcx-music__cost small,
+html[data-theme="light"] .dcx-music .dcx-music__balance,
+html[data-theme="light"] .dcx-music .dcx-music__note,
+html[data-theme="light"] .dcx-music .dcx-music__history-item small,
+html[data-theme="light"] .dcx-music .dcx-music__player-meta,
+html[data-theme="light"] .dcx-music .dcx-music__empty {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__field textarea::placeholder,
+html[data-theme="light"] .dcx-music .dcx-music__field input::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__submit:disabled {
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+    background: #e2e8f0 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__status,
+html[data-theme="light"] .dcx-music .dcx-music__message {
+    border-color: #86efac !important;
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__message {
+    border: 0 !important;
+    background: transparent !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__message.is-error,
+html[data-theme="light"] .dcx-music .dcx-music__history-item .status.failed {
+    color: #b91c1c !important;
+}
+
+html[data-theme="light"] .dcx-music .dcx-music__history-item .status.completed {
+    color: #047857 !important;
+}
+
+/* The Studio has many small controls and an inline dark palette. Retheme the
+ * entire component so placeholders, disabled actions, providers and audio
+ * output remain legible on a white surface. */
+html[data-theme="light"] .dcx-tts-studio {
+    --surface: #ffffff;
+    --surface-raised: #f8fafc;
+    --field: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: #dbe3ef;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .08) !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-head,
+html[data-theme="light"] .dcx-tts-studio .studio-side,
+html[data-theme="light"] .dcx-tts-studio .studio-composer,
+html[data-theme="light"] .dcx-tts-studio .studio-script,
+html[data-theme="light"] .dcx-tts-studio .studio-tab {
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-head h1,
+html[data-theme="light"] .dcx-tts-studio .studio-label,
+html[data-theme="light"] .dcx-tts-studio .studio-field__top label,
+html[data-theme="light"] .dcx-tts-studio .studio-tab.is-active,
+html[data-theme="light"] .dcx-tts-studio .studio-audio-player__title,
+html[data-theme="light"] .dcx-tts-studio .studio-history__item strong {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-script::placeholder,
+html[data-theme="light"] .dcx-tts-studio .studio-tip,
+html[data-theme="light"] .dcx-tts-studio .studio-count,
+html[data-theme="light"] .dcx-tts-studio .studio-cost small,
+html[data-theme="light"] .dcx-tts-studio .studio-status,
+html[data-theme="light"] .dcx-tts-studio .studio-output__state,
+html[data-theme="light"] .dcx-tts-studio .studio-audio-player__time,
+html[data-theme="light"] .dcx-tts-studio .studio-history__item small,
+html[data-theme="light"] .dcx-tts-studio .studio-history__loading,
+html[data-theme="light"] .dcx-tts-studio .studio-history__empty,
+html[data-theme="light"] .dcx-tts-studio .studio-model-note {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-helper__button,
+html[data-theme="light"] .dcx-tts-studio .studio-language,
+html[data-theme="light"] .dcx-tts-studio .studio-select,
+html[data-theme="light"] .dcx-tts-studio .studio-voice-picker,
+html[data-theme="light"] .dcx-tts-studio .studio-provider {
+    color: #334155 !important;
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-helper__button:hover,
+html[data-theme="light"] .dcx-tts-studio .studio-helper__button[aria-expanded="true"],
+html[data-theme="light"] .dcx-tts-studio .studio-provider:hover,
+html[data-theme="light"] .dcx-tts-studio .studio-provider.is-active,
+html[data-theme="light"] .dcx-tts-studio .studio-voice-picker:hover:not(:disabled) {
+    color: #c2410c !important;
+    background: #fff7ed !important;
+    border-color: #fdba74 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-provider i {
+    color: #334155 !important;
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--elevenlabs { color: #be185d !important; }
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--minimax { color: #be123c !important; }
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--edge { color: #92400e !important; }
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--fishaudio { color: #0e7490 !important; }
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--cloned { color: #c2410c !important; }
+html[data-theme="light"] .dcx-tts-studio .studio-provider__icon--library { color: #1d4ed8 !important; }
+
+html[data-theme="light"] .dcx-tts-studio .studio-cost,
+html[data-theme="light"] .dcx-tts-studio .studio-output,
+html[data-theme="light"] .dcx-tts-studio .studio-audio-player,
+html[data-theme="light"] .dcx-tts-studio .studio-history__item {
+    color: #334155 !important;
+    background: #f8fafc !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-cost__line,
+html[data-theme="light"] .dcx-tts-studio .studio-output__label,
+html[data-theme="light"] .dcx-tts-studio .studio-audio-player__meta {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-cost strong,
+html[data-theme="light"] .dcx-tts-studio .studio-output__label i,
+html[data-theme="light"] .dcx-tts-studio .studio-provider-badge,
+html[data-theme="light"] .dcx-tts-studio .studio-library-link,
+html[data-theme="light"] .dcx-tts-studio .studio-voice-picker > i {
+    color: #c2410c !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-generate:disabled {
+    color: #475569 !important;
+    background: #e2e8f0 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-status.is-error {
+    color: #b91c1c !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-modal__providers,
+html[data-theme="light"] .dcx-tts-studio .studio-modal__filters,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-filter input,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-filter select,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-card__tag,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-language-pill,
+html[data-theme="light"] .dcx-tts-studio .studio-modal__pagination button,
+html[data-theme="light"] .dcx-tts-studio .studio-modal__page {
+    color: #334155 !important;
+    background: #f8fafc !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-modal__heading p,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-filter label,
+html[data-theme="light"] .dcx-tts-studio .studio-modal__summary,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-language-pill small {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dcx-tts-studio .studio-modal__heading h2,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-card__name,
+html[data-theme="light"] .dcx-tts-studio .studio-modal-language-pill strong {
+    color: #0f172a !important;
+}
+
+/* Extensions and dashboard product rows used the dark base palette even
+ * after the surrounding card switched to light mode. */
+html[data-theme="light"] .dashboard-section .card.custom--card .card-header,
+html[data-theme="light"] .dcx-user-dashboard .card.custom--card .card-header {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dashboard-section .card.custom--card .card-title.text-white,
+html[data-theme="light"] .dcx-user-dashboard .card-title.text-white,
+html[data-theme="light"] .dcx-user-dashboard h3.text-white,
+html[data-theme="light"] .dcx-user-dashboard h5.text-white {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dashboard-section .product-item,
+html[data-theme="light"] .dcx-user-dashboard .product-item {
+    color: #334155 !important;
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dashboard-section .product-item__title,
+html[data-theme="light"] .dashboard-section .product-item__title .text--base,
+html[data-theme="light"] .dcx-user-dashboard .product-item__title,
+html[data-theme="light"] .dcx-user-dashboard .product-item__title .text--base,
+html[data-theme="light"] .dashboard-section .product-item__content .text-white,
+html[data-theme="light"] .dcx-user-dashboard .product-item__content .text-white {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dashboard-section .product-item__content .text-muted,
+html[data-theme="light"] .dashboard-section .product-item__content .small,
+html[data-theme="light"] .dcx-user-dashboard .product-item__content .text-muted,
+html[data-theme="light"] .dcx-user-dashboard .product-item__content .small {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dashboard-section .badge--dark,
+html[data-theme="light"] .dcx-user-dashboard .badge--dark {
+    color: #334155 !important;
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .dashboard-section .badge--secondary,
+html[data-theme="light"] .dcx-user-dashboard .badge--secondary {
+    color: #475569 !important;
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .dashboard-section .badge--success,
+html[data-theme="light"] .dcx-user-dashboard .badge--success,
+html[data-theme="light"] .dcx-user-dashboard .text-success,
+html[data-theme="light"] .dcx-user-dashboard .text--success {
+    color: #047857 !important;
+}
+
+html[data-theme="light"] .dashboard-section .product-item__button .btn--base {
+    color: #ffffff !important;
+    background: #f97316 !important;
+    border-color: #ea580c !important;
+}
+
+html[data-theme="light"] .dashboard-section .product-item__button .btn--base:hover,
+html[data-theme="light"] .dashboard-section .product-item__button .btn--base:focus-visible {
+    color: #ffffff !important;
+    background: #ea580c !important;
+    border-color: #c2410c !important;
+}
+
+html[data-theme="light"] .dcx-user-dashboard > .row > [class*="col-"] > .card:not(.custom--card),
+html[data-theme="light"] .dcx-user-dashboard .card.p-4 {
+    color: #334155 !important;
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-user-dashboard .text-muted,
+html[data-theme="light"] .dcx-user-dashboard .small,
+html[data-theme="light"] .dcx-user-dashboard p {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dcx-user-dashboard .dcx-action-success {
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+    border-color: #86efac !important;
+}
+
+html[data-theme="light"] .dcx-user-dashboard .dcx-action-success:hover,
+html[data-theme="light"] .dcx-user-dashboard .dcx-action-success:focus-visible {
+    color: #065f46 !important;
+    background: #d1fae5 !important;
+    border-color: #34d399 !important;
+}
+
 /* Theme control */
 .dcx-theme-toggle {
     display: inline-flex;
