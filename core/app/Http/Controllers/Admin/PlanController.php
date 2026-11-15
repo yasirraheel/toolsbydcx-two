@@ -30,8 +30,12 @@ class PlanController extends Controller
         $request->validate([
             'name'  => 'required',
             'price' => 'required|numeric|min:0',
+            'features' => 'nullable',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'flow_access' => 'nullable|boolean',
+            'tts_access' => 'nullable|boolean',
+            'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
         ]);
 
         if ($id) {
@@ -45,19 +49,33 @@ class PlanController extends Controller
         $plan->name  = $request->name;
         $plan->price = $request->price;
         
-        $features = [];
-        if ($request->features) {
-            $featuresArray = explode("\n", $request->features);
-            foreach ($featuresArray as $feature) {
-                $feature = trim($feature);
-                if ($feature) {
-                    $features[] = $feature;
-                }
-            }
+        $rawFeatures = $request->input('features', []);
+        if (is_string($rawFeatures)) {
+            $decodedFeatures = json_decode($rawFeatures, true);
+            $rawFeatures = is_array($decodedFeatures)
+                ? $decodedFeatures
+                : preg_split('/\r?\n/', $rawFeatures);
         }
-        $plan->features = $features;
+        $plan->features = collect((array) $rawFeatures)
+            ->map(fn ($feature) => trim((string) $feature))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $plan->flow_access = $request->boolean('flow_access');
+        $plan->tts_access = $request->boolean('tts_access');
+        $plan->tts_credit_limit = $plan->tts_access && $request->filled('tts_credit_limit')
+            ? (int) $request->input('tts_credit_limit')
+            : null;
 
         $plan->save();
+        // Keep existing subscribers in sync when an administrator changes a
+        // plan's TTS entitlement. Usage is preserved; only the limit/access
+        // policy follows the updated plan.
+        $plan->users()->update([
+            'tts_access' => $plan->tts_access,
+            'tts_credit_limit' => $plan->tts_access ? $plan->tts_credit_limit : null,
+        ]);
         $accountIds = collect((array) $request->input('account_ids', []))
             ->map(fn ($id) => (int) $id)
             ->filter(fn (int $id) => $id > 0)

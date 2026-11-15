@@ -208,6 +208,9 @@ class UserController extends Controller
         // Deduct balance
         $user->balance -= $plan->price;
         $user->plan_id = $plan->id;
+        $user->tts_access = (bool) $plan->tts_access;
+        $user->tts_credit_limit = $plan->tts_access ? $plan->tts_credit_limit : null;
+        $user->tts_credits_used = 0;
         $user->save();
 
         if ($plan->price > 0) {

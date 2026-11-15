@@ -13,8 +13,19 @@ class FlowAccess
 {
     public static function eligible(?User $user): bool
     {
-        return $user && $user->status == 1 && $user->ev == 1 && $user->sv == 1
-            && $user->expires_at && $user->expires_at->isFuture();
+        if (!$user || $user->status != 1 || $user->ev != 1 || $user->sv != 1
+            || !$user->expires_at || !$user->expires_at->isFuture()) {
+            return false;
+        }
+
+        // Paid-plan users inherit Flow access from their plan. No-plan users
+        // remain eligible when an administrator directly assigns a Flow account.
+        if ((int) $user->plan_id > 0) {
+            $plan = $user->relationLoaded('plan') ? $user->plan : $user->plan()->first();
+            return (bool) ($plan?->status && $plan?->flow_access);
+        }
+
+        return true;
     }
 
     public static function revoke($query): void

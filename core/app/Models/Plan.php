@@ -13,6 +13,9 @@ class Plan extends Model
 
     protected $casts = [
         'features' => 'array',
+        'flow_access' => 'boolean',
+        'tts_access' => 'boolean',
+        'tts_credit_limit' => 'integer',
     ];
 
     public function users()

@@ -78,7 +78,11 @@
                                     <select name="plan_id" class="form-control select2" id="user-plan-selector">
                                         <option value="0" @selected((string) old('plan_id', '0') === '0')>@lang('Free / No plan')</option>
                                         @foreach($plans as $plan)
-                                            <option value="{{ $plan->id }}" @selected((string) old('plan_id') === (string) $plan->id)>
+                                            <option value="{{ $plan->id }}"
+                                                data-tts-access="{{ $plan->tts_access ? 1 : 0 }}"
+                                                data-tts-credits="{{ $plan->tts_credit_limit ?? '' }}"
+                                                data-flow-access="{{ $plan->flow_access ? 1 : 0 }}"
+                                                @selected((string) old('plan_id') === (string) $plan->id)>
                                                 {{ __($plan->name) }} — {{ showAmount($plan->price) }}
                                             </option>
                                         @endforeach
@@ -137,13 +141,20 @@
                             {{-- Assign Text-to-Speech access --}}
                             <div class="col-lg-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
-                                <label class="dcx-tts-assignment d-flex align-items-start gap-2 p-3 rounded mb-0">
-                                    <input type="checkbox" name="tts_access" value="1" class="mt-1" @checked(old('tts_access'))>
-                                    <span class="d-flex flex-column gap-1">
-                                        <strong><i class="las la-microphone text--primary"></i> @lang('Assign Text-to-Speech access')</strong>
-                                        <small class="text-muted">@lang('Allow this user to use the server-side OpenRadio voice tool.')</small>
-                                    </span>
-                                </label>
+                                <div class="dcx-tts-assignment p-3 rounded mb-0 h-100">
+                                    <label class="d-flex align-items-start gap-2 mb-2">
+                                        <input type="checkbox" name="tts_access" value="1" class="mt-1" id="create-tts-access" @checked(old('tts_access'))>
+                                        <span class="d-flex flex-column gap-1">
+                                            <strong><i class="las la-microphone text--primary"></i> @lang('Assign Text-to-Speech access')</strong>
+                                            <small class="text-muted">@lang('Allow this user to use TTS and AI Music. Plans can provide this automatically.')</small>
+                                        </span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="tts_credit_limit" id="create-tts-credit-limit" min="0" max="1000000000" placeholder="@lang('Unlimited')" value="{{ old('tts_credit_limit') }}">
+                                        <span class="input-group-text">@lang('credits')</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">@lang('Plan users inherit the plan quota; No Plan users can use this per-user quota.')</small>
+                                </div>
                             </div>
 
                             <div class="col-12 mt-3">
@@ -382,8 +393,19 @@
             if (hasPlan) selector.val(null).trigger('change');
             selector.closest('.form-group').find('small').first().toggleClass('text-muted', !hasPlan);
         }
+        function syncPlanEntitlements() {
+            const option = $('#user-plan-selector option:selected');
+            const hasPlan = String(option.val() || '0') !== '0';
+            const planTts = option.data('tts-access') == 1;
+            const planCredits = option.data('tts-credits');
+            $('#create-tts-access').prop('checked', hasPlan ? planTts : $('#create-tts-access').prop('checked'));
+            $('#create-tts-credit-limit').val(hasPlan ? (planCredits ?? '') : $('#create-tts-credit-limit').val());
+            $('#create-tts-access, #create-tts-credit-limit').prop('disabled', hasPlan);
+        }
         $('#user-plan-selector').on('change', syncAccountAssignmentState);
+        $('#user-plan-selector').on('change', syncPlanEntitlements);
         syncAccountAssignmentState();
+        syncPlanEntitlements();
 
 
     })(jQuery);

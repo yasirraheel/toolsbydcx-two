@@ -125,7 +125,11 @@
                                     <select name="plan_id" class="form-control select2" id="user-plan-selector">
                                         <option value="0" @selected((int) old('plan_id', $user->plan_id ?: 0) === 0)>@lang('Free / No plan')</option>
                                         @foreach($plans as $plan)
-                                            <option value="{{ $plan->id }}" @selected((string) old('plan_id', $user->plan_id) === (string) $plan->id)>
+                                            <option value="{{ $plan->id }}"
+                                                data-tts-access="{{ $plan->tts_access ? 1 : 0 }}"
+                                                data-tts-credits="{{ $plan->tts_credit_limit ?? '' }}"
+                                                data-flow-access="{{ $plan->flow_access ? 1 : 0 }}"
+                                                @selected((string) old('plan_id', $user->plan_id) === (string) $plan->id)>
                                                 {{ __($plan->name) }} — {{ showAmount($plan->price) }}
                                             </option>
                                         @endforeach
@@ -200,7 +204,7 @@
                                         <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
                                     </label>
                                     <label class="dcx-tts-assignment d-flex gap-2 rounded mb-0">
-                                        <input type="checkbox" name="tts_access" value="1" @checked(old('tts_access', $user->tts_access))>
+                                        <input type="checkbox" name="tts_access" value="1" id="ttsAccessCheckbox" @checked(old('tts_access', $user->tts_access))>
                                         <span>@lang('Enable access')</span>
                                     </label>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
@@ -825,8 +829,21 @@
             selector.prop('disabled', hasPlan);
             if (hasPlan) selector.val(null).trigger('change');
         }
+        function syncPlanEntitlements() {
+            const option = $('#user-plan-selector option:selected');
+            const hasPlan = String(option.val() || '0') !== '0';
+            const planTts = option.data('tts-access') == 1;
+            const planCredits = option.data('tts-credits');
+            if (hasPlan) {
+                $('#ttsAccessCheckbox').prop('checked', planTts);
+                $('#ttsCreditLimitInput').val(planCredits ?? '');
+            }
+            $('#ttsAccessCheckbox, #ttsCreditLimitInput, .tts-credit-preset').prop('disabled', hasPlan);
+        }
         $('#user-plan-selector').on('change', syncAccountAssignmentState);
+        $('#user-plan-selector').on('change', syncPlanEntitlements);
         syncAccountAssignmentState();
+        syncPlanEntitlements();
 
         // Initialize preview on modal open
         $('#adjustExpiryModal').on('show.bs.modal', function () {

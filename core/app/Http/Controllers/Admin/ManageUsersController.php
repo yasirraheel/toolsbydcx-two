@@ -222,7 +222,7 @@ class ManageUsersController extends Controller
     {
         $pageTitle = 'Add New User';
         $domain = parse_url(config('app.url') ?: url('/'), PHP_URL_HOST) ?: request()->getHost();
-        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price']);
+        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price', 'flow_access', 'tts_access', 'tts_credit_limit']);
         $accounts = \App\Models\AccountListing::with('socialMedia')
             ->orderBy('social_media_id', 'asc')
             ->orderBy('id', 'asc')
@@ -306,6 +306,7 @@ class ManageUsersController extends Controller
             $user->account_ids = $user->plan_id > 0
                 ? []
                 : array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+            $selectedPlan = $user->plan_id > 0 ? \App\Models\Plan::active()->find($user->plan_id) : null;
             if ($request->filled('expires_at')) {
                 $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
             } else {
@@ -317,8 +318,10 @@ class ManageUsersController extends Controller
             // the normal plan/account assignment rules.
             $user->is_tester = 0;
             $user->is_exclusive = $request->boolean('is_exclusive') ? 1 : 0;
-            $user->tts_access = $request->boolean('tts_access');
-            $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
+            $user->tts_access = $selectedPlan ? (bool) $selectedPlan->tts_access : $request->boolean('tts_access');
+            $user->tts_credit_limit = $selectedPlan
+                ? ($selectedPlan->tts_access ? $selectedPlan->tts_credit_limit : null)
+                : ($request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null);
             $user->tts_credits_used = 0;
 
             // Force all verifications and active profile so user can log in immediately
@@ -364,7 +367,7 @@ class ManageUsersController extends Controller
             ->get();
 
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
-        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price']);
+        $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price', 'flow_access', 'tts_access', 'tts_credit_limit']);
         $currentFlowAccount = $user->flow_account;
         $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
             ->where('is_active', true)
@@ -538,6 +541,16 @@ class ManageUsersController extends Controller
             if ($request->has('tts_credit_limit_submitted')) {
                 $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
             }
+        }
+
+        // A selected plan is the source of truth for all plan entitlements.
+        // Manual TTS values are only valid for users on No Plan.
+        if ((int) $user->plan_id > 0) {
+            $selectedPlan = \App\Models\Plan::active()->find($user->plan_id);
+            $user->tts_access = (bool) ($selectedPlan?->tts_access);
+            $user->tts_credit_limit = ($selectedPlan && $selectedPlan->tts_access)
+                ? $selectedPlan->tts_credit_limit
+                : null;
         }
 
         if ($request->has('expires_at_submitted') || $request->filled('expires_at') || $request->filled('validity_days')) {
