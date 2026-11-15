@@ -301,21 +301,18 @@ class AccountListingController extends Controller
         $account->title           = $request->title;
         $account->social_media_id = $request->social_media_id;
         $account->category_id     = $request->category_id;
-        $account->plan_id         = $request->plan_id ?: 0;
+        // Plan access is controlled at platform level from the Plan editor.
+        // Individual account records must not be attached to plans anymore.
+        $account->plan_id         = 0;
         $account->url             = $request->url;
         $account->account_info    = $cleanCookies;
         $account->instructions    = $request->instructions;
         $account->status          = Status::LISTING_ACTIVE;
         $account->save();
 
-        // Keep the legacy account form compatible with the plan pivot. The
-        // plan editor remains the source of truth and can assign many
-        // accounts to one plan.
-        if ($previousPlanId && $previousPlanId !== (int) $account->plan_id) {
+        // Remove any legacy account-level plan link when an account is edited.
+        if ($previousPlanId) {
             \App\Models\Plan::find($previousPlanId)?->accounts()->detach($account->id);
-        }
-        if ((int) $account->plan_id > 0) {
-            \App\Models\Plan::find((int) $account->plan_id)?->accounts()->syncWithoutDetaching([$account->id]);
         }
 
         // Perform instant live cookie verification & extract live account name
@@ -448,16 +445,12 @@ class AccountListingController extends Controller
         $duplicate->title           = $request->title;
         $duplicate->social_media_id = $original->social_media_id;
         $duplicate->category_id     = $original->category_id;
-        $duplicate->plan_id         = $original->plan_id;
+        $duplicate->plan_id         = 0;
         $duplicate->url             = $original->url;
         $duplicate->account_info    = $original->account_info;
         $duplicate->instructions    = $original->instructions;
         $duplicate->status          = Status::LISTING_ACTIVE;
         $duplicate->save();
-
-        if ((int) $duplicate->plan_id > 0) {
-            \App\Models\Plan::find((int) $duplicate->plan_id)?->accounts()->syncWithoutDetaching([$duplicate->id]);
-        }
 
         SocialMediaController::executeLoadBalance($duplicate->social_media_id, 'override_manual');
 

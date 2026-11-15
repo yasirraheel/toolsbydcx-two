@@ -64,9 +64,9 @@ class ExtensionController extends Controller
     /**
      * Return the account listings that this extension user is allowed to use.
      *
-     * Plan users receive only the accounts explicitly attached to their plan.
-     * No-plan users receive only their direct account_ids allow-list. Nothing
-     * is inferred from an account's legacy plan_id or auto-balanced.
+     * Every user receives only the concrete account_ids assigned to them.
+     * Plan users are assigned one account per selected platform when the plan
+     * is created/assigned; no plan-level pool is exposed to the client.
      */
     private function accessibleAccounts(User $user, bool $isAdmin = false)
     {
@@ -78,12 +78,6 @@ class ExtensionController extends Controller
 
         if ($isAdmin) {
             return $query;
-        }
-
-        if ($user->plan_id) {
-            return $query->whereHas('plans', function ($q) use ($user) {
-                $q->whereKey((int) $user->plan_id);
-            });
         }
 
         $directIds = collect((array) ($user->account_ids ?? []))
@@ -164,13 +158,13 @@ class ExtensionController extends Controller
         $validity = $this->getUserValidity($user);
 
 
-        if (!$user->plan_id && empty($user->account_ids)) {
+        if (empty($user->account_ids)) {
             return response()->json([
                 'success'       => true,
                 'platforms'     => [],
                 'validity_text' => $validity['validity_text'],
                 'is_expired'    => $validity['is_expired'],
-                'message'       => 'No plan accounts or direct accounts assigned. Contact admin.',
+                'message'       => 'No platform accounts assigned. Contact admin.',
             ]);
         }
 
@@ -187,8 +181,7 @@ class ExtensionController extends Controller
         $isAdmin = auth()->guard('admin')->check()
             || session()->get('is_admin_testing') === true;
 
-        // Direct per-user account assignments are an allow-list. Only users
-        // without direct assignments fall back to their plan's accounts.
+        // The account_ids allow-list is the complete server-side entitlement.
         $assignedAccounts = $this->accessibleAccounts($user, $isAdmin)->get();
 
         $platformCounters = [];
@@ -250,7 +243,7 @@ class ExtensionController extends Controller
             || session()->get('is_admin_testing') === true;
 
 
-        if (!$isAdmin && !$user->plan_id && empty($user->account_ids)) {
+        if (!$isAdmin && empty($user->account_ids)) {
             return response()->json(['success' => false, 'message' => 'No plan accounts or direct accounts assigned'], 403);
         }
         

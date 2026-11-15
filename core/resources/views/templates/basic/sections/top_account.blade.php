@@ -37,11 +37,9 @@
                                     @auth
                                         @php
                                             $account = null;
-                                            $userHasAccess = auth()->user()->plan_id || (!empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->exists());
+                                            $userHasAccess = !empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->where('status', \App\Constants\Status::LISTING_ACTIVE)->exists();
                                             if ($userHasAccess) {
-                                                if (auth()->user()->plan_id) {
-                                                    $account = $platform->accountListing()->where('plan_id', auth()->user()->plan_id)->where('status', \App\Constants\Status::LISTING_ACTIVE)->first();
-                                                } elseif (!empty(auth()->user()->account_ids)) {
+                                                if (!empty(auth()->user()->account_ids)) {
                                                     $account = $platform->accountListing()->whereIn('id', auth()->user()->account_ids)->where('status', \App\Constants\Status::LISTING_ACTIVE)->first();
                                                 }
                                             }
@@ -60,7 +58,7 @@
                                 <div class="product-item__button">
                                     @auth
                                         @php
-                                            $userHasAccess = auth()->user()->plan_id || (!empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->exists());
+                                            $userHasAccess = !empty(auth()->user()->account_ids) && \App\Models\AccountListing::whereIn('id', auth()->user()->account_ids)->where('social_media_id', $platform->id)->where('status', \App\Constants\Status::LISTING_ACTIVE)->exists();
                                         @endphp
                                         @if($userHasAccess)
                                             <a href="{{ route('user.extensions') }}" class="btn btn-outline--base social-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">

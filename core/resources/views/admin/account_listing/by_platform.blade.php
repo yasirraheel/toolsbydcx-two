@@ -166,15 +166,9 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>@lang('Assign to Plan')</label>
-                            <select class="form-control" name="plan_id">
-                                <option value="0">@lang('No Plan (Direct Access)')</option>
-                                @foreach($plans as $plan)
-                                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted">@lang('Select a specific plan for plan-based access, or use No Plan for users assigned directly by an administrator.')</small>
+                        <div class="alert alert-info mb-3">
+                            <i class="las la-info-circle me-1"></i>
+                            @lang('Plan access is configured by platform from the Plans page. Each user receives one account from this platform automatically.')
                         </div>
                         <div class="form-group">
                             <label>@lang('Platform URL') <span class="text-danger">*</span></label>

@@ -286,6 +286,7 @@ class User extends Authenticatable
 
             $listings = AccountListing::where('social_media_id', $platformId)
                 ->where('status', Status::LISTING_ACTIVE)
+                ->whereHas('socialMedia', fn ($query) => $query->active())
                 ->get();
 
             if ($listings->isEmpty()) {

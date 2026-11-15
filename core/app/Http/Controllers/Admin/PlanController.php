@@ -6,8 +6,8 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\AccountListing;
 use App\Models\GoogleFlowAccount;
+use App\Models\SocialMedia;
 use App\Services\FlowAccess;
 use Illuminate\Validation\Rule;
 
@@ -19,9 +19,9 @@ class PlanController extends Controller
             $plan->features = $this->normalizeFeatures($plan->features);
         }
 
-        $accounts = AccountListing::with('socialMedia')
-            ->orderBy('social_media_id')
-            ->orderBy('title')
+        $platforms = SocialMedia::active()
+            ->withCount(['accountListing as active_accounts_count' => fn ($query) => $query->active()])
+            ->orderBy('name')
             ->get();
 
         $flowAccounts = GoogleFlowAccount::active()
@@ -31,7 +31,7 @@ class PlanController extends Controller
 
         return [
             'plan' => $plan ?: new Plan(['features' => []]),
-            'accounts' => $accounts,
+            'platforms' => $platforms,
             'flowAccounts' => $flowAccounts,
         ];
     }
@@ -46,7 +46,7 @@ class PlanController extends Controller
 
     public function edit($id)
     {
-        $plan = Plan::with('accounts')->findOrFail($id);
+        $plan = Plan::with('platforms')->findOrFail($id);
 
         return view('admin.plan.form', array_merge(
             ['pageTitle' => 'Update Subscription Plan'],
@@ -58,15 +58,11 @@ class PlanController extends Controller
     {
         $pageTitle = 'Subscription Plans';
         $plans = Plan::withCount('users')
-            ->with(['accounts' => fn ($query) => $query->with('socialMedia'), 'googleFlowAccount'])
+            ->with(['platforms', 'googleFlowAccount'])
             ->latest()
             ->paginate(getPaginate());
-        $accounts = AccountListing::with('socialMedia')
-            ->orderBy('social_media_id')
-            ->orderBy('title')
-            ->get();
 
-        return view('admin.plan.index', compact('pageTitle', 'plans', 'accounts'));
+        return view('admin.plan.index', compact('pageTitle', 'plans'));
     }
 
     public function store(Request $request, $id = null)
@@ -75,8 +71,11 @@ class PlanController extends Controller
             'name'  => 'required',
             'price' => 'required|numeric|min:0',
             'features' => 'nullable',
-            'account_ids' => 'nullable|array',
-            'account_ids.*' => 'integer|exists:account_listings,id',
+            'platform_ids' => 'nullable|array',
+            'platform_ids.*' => [
+                'integer',
+                Rule::exists('social_media', 'id')->where(fn ($query) => $query->where('status', \App\Constants\Status::ENABLE)),
+            ],
             'flow_access' => 'nullable|boolean',
             'google_flow_account_id' => [
                 Rule::requiredIf($request->boolean('flow_access')),
@@ -117,13 +116,16 @@ class PlanController extends Controller
             'tts_access' => $plan->tts_access,
             'tts_credit_limit' => $plan->tts_access ? $plan->tts_credit_limit : null,
         ]);
-        $accountIds = collect((array) $request->input('account_ids', []))
+        $platformIds = collect((array) $request->input('platform_ids', []))
             ->map(fn ($id) => (int) $id)
             ->filter(fn (int $id) => $id > 0)
             ->unique()
             ->values()
             ->all();
-        $plan->accounts()->sync($accountIds);
+        $plan->platforms()->sync($platformIds);
+        // Detach legacy account-level rows so no old path can expose every
+        // account in a platform to plan users.
+        $plan->accounts()->sync([]);
 
         // A plan's selected Flow account is the source of truth for every
         // user on that plan. Keep existing subscribers in sync immediately.
@@ -131,6 +133,8 @@ class PlanController extends Controller
         $flowAssignmentWarnings = [];
         foreach ($plan->users()->get() as $user) {
             try {
+                $user->account_ids = $user->syncPlatformsWithLoadBalancing($platformIds);
+                $user->save();
                 FlowAccess::assign($user, $flowAssignment ? (int) $flowAssignment : null, true);
             } catch (\Throwable $e) {
                 $flowAssignmentWarnings[] = $user->username ?: $user->email;

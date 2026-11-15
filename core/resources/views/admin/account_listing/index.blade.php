@@ -157,14 +157,9 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>@lang('Plan')</label>
-                            <select class="form-control" name="plan_id">
-                                <option value="">@lang('No Plan (Direct Access)')</option>
-                                @foreach($plans as $plan)
-                                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                                @endforeach
-                            </select>
+                        <div class="alert alert-info mb-3">
+                            <i class="las la-info-circle me-1"></i>
+                            @lang('This account belongs to its platform. Add the platform to a subscription plan from the Plans page; accounts are assigned automatically per user.')
                         </div>
                         <div class="form-group">
                             <label>@lang('URL')</label>

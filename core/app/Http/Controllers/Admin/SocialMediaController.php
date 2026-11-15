@@ -99,7 +99,7 @@ class SocialMediaController extends Controller
         $platform = SocialMedia::findOrFail($id);
         $updatedUsersCount = self::executeLoadBalance($platform->id, $mode);
 
-        $notify[] = ['warning', "Automatic account assignment is disabled for {$platform->name}. Assign accounts directly from each user's admin panel."];
+        $notify[] = ['success', "{$platform->name} account pool is ready. Plan users receive one account from this platform automatically when their plan is assigned."];
         return back()->withNotify($notify);
     }
 

@@ -30,6 +30,20 @@ class ManageUsersController extends Controller
         $user->google_flow_account_id = $accountId;
     }
 
+    /**
+     * Resolve one active account from every platform selected on the plan.
+     * The user stores only those concrete account IDs, so all downstream
+     * dashboard and extension endpoints expose exactly the assigned accounts.
+     */
+    private function syncPlanPlatformAccounts(User $user, ?\App\Models\Plan $plan): void
+    {
+        $platformIds = $plan
+            ? $plan->platforms()->pluck('social_media.id')->map(fn ($id) => (int) $id)->all()
+            : [];
+
+        $user->account_ids = $user->syncPlatformsWithLoadBalancing($platformIds);
+    }
+
     public function allUsers()
     {
         $pageTitle = 'All Users';
@@ -351,6 +365,8 @@ class ManageUsersController extends Controller
 
             try {
                 if ($selectedPlan) {
+                    $this->syncPlanPlatformAccounts($user, $selectedPlan);
+                    $user->save();
                     // The plan-selected account always wins for plan users.
                     $this->syncPlanFlowAssignment($user, $selectedPlan);
                 } elseif ($request->filled('google_flow_account_id')) {
@@ -576,6 +592,7 @@ class ManageUsersController extends Controller
         // manual account cannot accidentally override the plan policy.
         if ($selectedPlan) {
             try {
+                $this->syncPlanPlatformAccounts($user, $selectedPlan);
                 $this->syncPlanFlowAssignment($user, $selectedPlan);
             } catch (\Throwable $e) {
                 $notify[] = ['error', 'Could not apply the plan Google Flow account: ' . $e->getMessage()];

@@ -10,7 +10,7 @@
                                 <tr>
                                     <th>@lang('Name')</th>
                                     <th>@lang('Price')</th>
-                                    <th>@lang('Accounts')</th>
+                                    <th>@lang('Platforms')</th>
                                     <th>@lang('Access')</th>
                                     <th>@lang('Users')</th>
                                     <th>@lang('Status')</th>
@@ -24,12 +24,12 @@
                                         <td>{{ showAmount($plan->price) }}</td>
                                         <td>
                                             <div class="d-flex flex-wrap gap-1" style="max-width: 420px">
-                                                @forelse($plan->accounts as $account)
-                                                    <span class="badge badge--primary" title="{{ $account->title }}">
-                                                        {{ $account->socialMedia?->name ?: __('Account') }}: {{ $account->title ?: ('#' . $account->id) }}
+                                                @forelse($plan->platforms as $platform)
+                                                    <span class="badge badge--primary" title="{{ $platform->name }}">
+                                                        {{ $platform->name }}
                                                     </span>
                                                 @empty
-                                                    <span class="text-muted">@lang('No accounts assigned')</span>
+                                                    <span class="text-muted">@lang('No platforms assigned')</span>
                                                 @endforelse
                                             </div>
                                         </td>

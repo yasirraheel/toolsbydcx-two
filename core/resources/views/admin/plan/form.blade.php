@@ -7,7 +7,7 @@
                 <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
                     <div>
                         <h4 class="mb-1">{{ $plan->exists ? __('Update Plan') : __('Create Subscription Plan') }}</h4>
-                        <p class="text-muted mb-0">@lang('Configure features, accounts, Flow access, and TTS credits in one place.')</p>
+                        <p class="text-muted mb-0">@lang('Configure features, platforms, Flow access, and TTS credits in one place.')</p>
                     </div>
                     <a class="btn btn-outline--secondary" href="{{ route('admin.plan.index') }}">
                         <i class="las la-arrow-left"></i> @lang('Back to Plans')
@@ -52,17 +52,17 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="fw-bold mb-2">@lang('Platform Accounts Included')</label>
-                                <select class="form-control select2" name="account_ids[]" multiple="multiple" data-placeholder="@lang('Select configured accounts')">
-                                    @php $selectedAccounts = collect(old('account_ids', $plan->accounts?->pluck('id')->all() ?? []))->map(fn($id) => (string) $id)->all(); @endphp
-                                    @foreach($accounts as $account)
-                                        <option value="{{ $account->id }}" @selected(in_array((string) $account->id, $selectedAccounts, true))>
-                                            {{ $account->socialMedia?->name ?: __('Account') }} — {{ $account->title ?: ('#' . $account->id) }}
-                                            @if($account->status != Status::LISTING_ACTIVE) ({{ __('inactive') }}) @endif
+                                <label class="fw-bold mb-2">@lang('Platforms Included')</label>
+                                <select class="form-control select2" name="platform_ids[]" multiple="multiple" data-placeholder="@lang('Select platforms')">
+                                    @php $selectedPlatforms = collect(old('platform_ids', $plan->platforms?->pluck('id')->all() ?? []))->map(fn($id) => (string) $id)->all(); @endphp
+                                    @foreach($platforms as $platform)
+                                        <option value="{{ $platform->id }}" @selected(in_array((string) $platform->id, $selectedPlatforms, true))>
+                                            {{ $platform->name }} — {{ $platform->active_accounts_count }} @lang('active account(s)')
+                                            @if(!$platform->status) ({{ __('inactive') }}) @endif
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted d-block mt-1">@lang('Users on this plan can access only the selected accounts.')</small>
+                                <small class="text-muted d-block mt-1">@lang('Select platforms only. Each user receives one active account from each selected platform, automatically load-balanced across that platform.')</small>
                             </div>
 
                             <div class="col-md-6">

@@ -29,6 +29,16 @@ class Plan extends Model
         return $this->belongsTo(GoogleFlowAccount::class, 'google_flow_account_id');
     }
 
+    public function platforms()
+    {
+        return $this->belongsToMany(
+            SocialMedia::class,
+            'plan_social_media',
+            'plan_id',
+            'social_media_id'
+        );
+    }
+
     public function accounts()
     {
         return $this->belongsToMany(
@@ -41,14 +51,10 @@ class Plan extends Model
 
     public function getIncludedResourcesAttribute()
     {
-        return $this->accounts()
-            ->where('status', \App\Constants\Status::LISTING_ACTIVE)
-            ->whereHas('socialMedia', function($q){ 
-                $q->active(); 
-            })
-            ->with('socialMedia')
+        return $this->platforms()
+            ->where('social_media.status', \App\Constants\Status::ENABLE)
             ->get()
-            ->pluck('socialMedia.name')
+            ->pluck('name')
             ->unique();
     }
 }

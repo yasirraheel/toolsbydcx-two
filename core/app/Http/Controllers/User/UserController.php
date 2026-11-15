@@ -43,24 +43,15 @@ class UserController extends Controller
                 ->get();
         }
 
-        // Plan users receive only the accounts explicitly selected on their
-        // plan. No-plan users receive only directly assigned account_ids.
+        // Every user receives only concrete account IDs assigned by the admin.
+        // Plan assignment resolves one account per selected platform server-side.
         $assignedAccounts = collect();
 
-        if ($user->plan_id) {
-            $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
-                ->whereHas('plans', function ($q) use ($user) {
-                    $q->whereKey((int) $user->plan_id);
-                })
-                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
-                ->where('cookie_status', '!=', 0)
-                ->whereHas('socialMedia', function($q) {
-                    $q->where('status', \App\Constants\Status::ENABLE);
-                })
-                ->get();
-        } elseif (!empty($user->account_ids)) {
+        if (!empty($user->account_ids)) {
             $specificAccounts = \App\Models\AccountListing::with('socialMedia')
                 ->whereIn('id', $user->account_ids)
+                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
+                ->where('cookie_status', '!=', 0)
                 ->whereHas('socialMedia', function($q) {
                     $q->where('status', \App\Constants\Status::ENABLE);
                 })
