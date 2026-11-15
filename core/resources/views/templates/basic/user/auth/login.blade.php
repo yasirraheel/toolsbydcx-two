@@ -22,7 +22,7 @@
                                     <div class="col-sm-12 form-group">
                                         <div class="form--group">
                                             <label class="form--label">@lang('Username or Email')</label>
-                                            <input class="form--control" name="username" type="text" value="{{ old('username') }}" required>
+                                            <input class="form--control" name="username" type="text" value="{{ old('username') }}" autocomplete="username" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-12 form-group">
@@ -32,7 +32,7 @@
                                                 @lang('Forgot your password?') </a>
                                         </div>
                                         <div class="position-relative">
-                                            <input class="form-control form--control" id="your-password3" name="password" type="password">
+                                            <input class="form-control form--control" id="your-password3" name="password" type="password" autocomplete="current-password">
                                             <span class="password-show-hide fa toggle-password fa-eye-slash" id="#your-password3"></span>
                                         </div>
                                     </div>

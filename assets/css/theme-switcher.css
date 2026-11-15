@@ -229,6 +229,33 @@ html[data-theme="light"] .account-form .form--control::placeholder {
     color: #94a3b8 !important;
 }
 
+/* Chrome/Edge keep their own autofill text paint. Override it explicitly so
+ * saved usernames/passwords remain readable in both themes. */
+html[data-theme="light"] .account-form input:-webkit-autofill,
+html[data-theme="light"] .account-form input:-webkit-autofill:hover,
+html[data-theme="light"] .account-form input:-webkit-autofill:focus,
+html[data-theme="light"] .account-form input:-webkit-autofill:active {
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
+html[data-theme="dark"] .account-form input:-webkit-autofill,
+html[data-theme="dark"] .account-form input:-webkit-autofill:hover,
+html[data-theme="dark"] .account-form input:-webkit-autofill:focus,
+html[data-theme="dark"] .account-form input:-webkit-autofill:active {
+    -webkit-text-fill-color: #f8fafc !important;
+    caret-color: #f8fafc !important;
+    -webkit-box-shadow: 0 0 0 1000px #111827 inset !important;
+    box-shadow: 0 0 0 1000px #111827 inset !important;
+}
+
+html[data-theme="light"] .account-form input:-moz-autofill {
+    color: #0f172a !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
 html[data-theme="light"] .account-form .forgot-password,
 html[data-theme="light"] .account-form .have-account__link {
     color: #4338ca !important;

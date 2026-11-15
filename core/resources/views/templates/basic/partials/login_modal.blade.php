@@ -18,7 +18,7 @@
                                     <div class="form--group">
                                         <label class="form--label">@lang('Username or Email')</label>
                                         <input class="form--control" name="username" type="text"
-                                            value="{{ old('username') }}" required>
+                                            value="{{ old('username') }}" autocomplete="username" required>
                                     </div>
                                 </div>
                                 <div class="col-sm-12 form-group">
@@ -29,7 +29,7 @@
                                     </div>
                                     <div class="position-relative">
                                         <input class="form-control form--control" id="your-password3" name="password"
-                                            type="password">
+                                            type="password" autocomplete="current-password">
                                         <span class="password-show-hide fas fa-eye toggle-password fa-eye-slash"
                                             id="#your-password3"></span>
                                     </div>
