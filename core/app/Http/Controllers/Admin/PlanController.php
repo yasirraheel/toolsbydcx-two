@@ -49,19 +49,7 @@ class PlanController extends Controller
         $plan->name  = $request->name;
         $plan->price = $request->price;
         
-        $rawFeatures = $request->input('features', []);
-        if (is_string($rawFeatures)) {
-            $decodedFeatures = json_decode($rawFeatures, true);
-            $rawFeatures = is_array($decodedFeatures)
-                ? $decodedFeatures
-                : preg_split('/\r?\n/', $rawFeatures);
-        }
-        $plan->features = collect((array) $rawFeatures)
-            ->map(fn ($feature) => trim((string) $feature))
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        $plan->features = $this->normalizeFeatures($request->input('features', []));
         $plan->flow_access = $request->boolean('flow_access');
         $plan->tts_access = $request->boolean('tts_access');
         $plan->tts_credit_limit = $plan->tts_access && $request->filled('tts_credit_limit')
@@ -86,6 +74,60 @@ class PlanController extends Controller
 
         $notify[] = ['success', $msg];
         return back()->withNotify($notify);
+    }
+
+    /**
+     * Normalize current and legacy feature payloads into one flat list.
+     * Older plans may contain a JSON array nested inside the JSON column or a
+     * comma-joined string; both are safely converted when the plan is saved.
+     */
+    private function normalizeFeatures($value): array
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return [];
+            }
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : preg_split('/\r?\n/', $value);
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $features = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $features = array_merge($features, $this->normalizeFeatures($item));
+                continue;
+            }
+
+            $item = trim((string) $item);
+            if ($item === '') {
+                continue;
+            }
+
+            $decoded = json_decode($item, true);
+            if (is_array($decoded)) {
+                $features = array_merge($features, $this->normalizeFeatures($decoded));
+                continue;
+            }
+
+            // Legacy forms sometimes stored all feature labels in one string.
+            if (count($value) === 1 && str_contains($item, ',')) {
+                $features = array_merge($features, preg_split('/\s*,\s*/', $item));
+            } else {
+                $features[] = $item;
+            }
+        }
+
+        return collect($features)
+            ->map(fn ($feature) => trim((string) $feature))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function status($id)

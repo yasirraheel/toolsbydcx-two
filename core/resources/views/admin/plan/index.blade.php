@@ -89,7 +89,7 @@
     </div>
 
     <div class="modal fade" id="cuModal" role="dialog" tabindex="-1">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"></h5>
@@ -180,11 +180,7 @@
         $('.editBtn').on('click', function () {
             var modal = $('#cuModal');
             var resource = $(this).data('resource');
-            var features = resource ? resource.features : [];
-            if (typeof features === 'string') {
-                try { features = JSON.parse(features); } catch (e) { features = features.split(/\r?\n/); }
-            }
-            setPlanFeatures(Array.isArray(features) ? features : []);
+            setPlanFeatures(normalizeFeatures(resource ? resource.features : []));
             var accountIds = (resource && Array.isArray(resource.accounts))
                 ? resource.accounts.map(function (account) { return String(account.id); })
                 : [];
@@ -215,6 +211,33 @@
             (features.length ? features : ['']).forEach(function (feature) {
                 list.append(featureRow(feature));
             });
+        }
+
+        function normalizeFeatures(value) {
+            if (typeof value === 'string') {
+                var text = value.trim();
+                if (!text) return [];
+                try { value = JSON.parse(text); } catch (e) { value = text.split(/\r?\n/); }
+            }
+            if (!Array.isArray(value)) return [];
+            var result = [];
+            value.forEach(function (item) {
+                if (Array.isArray(item)) {
+                    result = result.concat(normalizeFeatures(item));
+                    return;
+                }
+                item = String(item || '').trim();
+                if (!item) return;
+                if (item.charAt(0) === '[') {
+                    try { result = result.concat(normalizeFeatures(JSON.parse(item))); return; } catch (e) {}
+                }
+                if (value.length === 1 && item.indexOf(',') !== -1) {
+                    result = result.concat(item.split(/\s*,\s*/));
+                } else {
+                    result.push(item);
+                }
+            });
+            return result.map(function (item) { return String(item).trim(); }).filter(Boolean);
         }
 
         function syncPlanTtsControls() {
