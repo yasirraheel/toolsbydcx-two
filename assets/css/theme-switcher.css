@@ -936,6 +936,34 @@ html[data-theme="light"] .sidebar-submenu-box .nav-link.active span {
     color: #4338ca !important;
 }
 
+/* Compact, readable subscription cards in the light theme. */
+html[data-theme="light"] .dcx-plans-page .dcx-plan-card {
+    background: #ffffff !important;
+    border-color: #dbe3ef !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .07) !important;
+}
+
+html[data-theme="light"] .dcx-plans-page .dcx-plan-card-header {
+    background: #f1f5f9 !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .dcx-plans-page .dcx-plan-name,
+html[data-theme="light"] .dcx-plans-page .dcx-plan-price,
+html[data-theme="light"] .dcx-plans-page .dcx-plan-feature {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dcx-plans-page .dcx-plan-feature i {
+    color: #047857 !important;
+}
+
+html[data-theme="light"] .dcx-plans-page .dcx-plan-action-current {
+    color: #4338ca !important;
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+
 /* Theme control */
 .dcx-theme-toggle {
     display: inline-flex;

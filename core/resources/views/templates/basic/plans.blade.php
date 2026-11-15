@@ -13,9 +13,9 @@
             </div>
         </div>
         
-        <div class="row justify-content-center g-4">
+        <div class="row justify-content-center g-3 dcx-plans-grid">
             @forelse ($plans as $plan)
-                <div class="col-xl-4 col-md-6 col-sm-10">
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-10">
                     @php
                         $flattenFeatures = function ($items) use (&$flattenFeatures) {
                             $result = [];
@@ -40,14 +40,14 @@
                         $planFeatures = $flattenFeatures($plan->features);
                     @endphp
                     <div class="card dcx-plan-card h-100">
-                        <div class="card-header dcx-plan-card-header text-center pt-4 pb-3">
+                        <div class="card-header dcx-plan-card-header text-center py-3">
                             <h5 class="text-white mb-2 dcx-plan-name">{{ __($plan->name) }}</h5>
                             <h3 class="my-2 text--primary dcx-plan-price" >
                                 {{ showAmount($plan->price) }}
                             </h3>
                         </div>
 
-                        <div class="card-body p-4">
+                        <div class="card-body p-3">
                             <ul class="list-group list-group-flush">
                                 @if(count($planFeatures) > 0)
                                     @foreach($planFeatures as $feature)
@@ -134,17 +134,17 @@
     }
 
     .dcx-plans-page .dcx-plan-name {
-        font-size: 1.05rem;
+        font-size: .98rem;
         letter-spacing: 0.01em;
     }
 
     .dcx-plans-page .dcx-plan-price {
-        font-size: clamp(1.8rem, 4vw, 2.35rem);
+        font-size: clamp(1.55rem, 3vw, 2rem);
         letter-spacing: -0.03em;
     }
 
     .dcx-plans-page .dcx-plan-feature {
-        font-size: 0.9rem;
+        font-size: 0.82rem;
         line-height: 1.45;
         color: #e2e8f0 !important;
     }
@@ -154,9 +154,10 @@
     }
 
     .dcx-plans-page .dcx-plan-action {
-        min-height: 44px;
+        min-height: 38px;
         border-radius: 10px !important;
         font-weight: 700;
+        font-size: .78rem;
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
@@ -176,9 +177,18 @@
     }
 
     .dcx-plans-page .dcx-plan-action-current {
-        color: #6ee7b7 !important;
-        background: rgba(16, 185, 129, 0.08) !important;
-        border: 1px solid rgba(52, 211, 153, 0.45) !important;
+        color: #c7d2fe !important;
+        background: rgba(99, 102, 241, 0.14) !important;
+        border: 1px solid rgba(129, 140, 248, 0.45) !important;
+    }
+
+    .dcx-plans-grid > [class*="col-"] {
+        max-width: 330px;
+        flex: 0 0 auto;
+    }
+
+    @media (max-width: 767px) {
+        .dcx-plans-grid > [class*="col-"] { max-width: 410px; }
     }
 </style>
 @endpush
