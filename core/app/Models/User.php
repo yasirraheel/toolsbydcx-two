@@ -36,7 +36,6 @@ class User extends Authenticatable
         'expires_at' => 'datetime',
         'last_seen' => 'datetime',
         'account_prices' => 'array',
-        'is_tester' => 'integer',
         'is_exclusive' => 'integer',
         'is_reseller' => 'integer',
         'reseller_id' => 'integer',

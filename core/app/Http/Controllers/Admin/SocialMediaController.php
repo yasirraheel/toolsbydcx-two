@@ -132,7 +132,7 @@ class SocialMediaController extends Controller
             $q->whereNull('expires_at')
               ->orWhere('expires_at', '<=', now())
               ->orWhere('status', '!=', Status::USER_ACTIVE);
-        })->where('is_tester', 0)->get();
+        })->get();
 
         foreach ($expiredUsers as $expiredUser) {
             $currentAccountIds = (array) ($expiredUser->account_ids ?? []);
