@@ -64,10 +64,10 @@ class ExtensionController extends Controller
     /**
      * Return the account listings that this extension user is allowed to use.
      *
-     * A non-empty account_ids value is an explicit per-user allow-list. It
+     * A non-empty account_ids value is the only user-facing allow-list. It
      * must take precedence over a plan so assigning one account cannot silently
      * expose every other account belonging to that plan. Users without direct
-     * assignments fall back to the accounts attached to their plan.
+     * assignments receive no account access; plans never auto-assign accounts.
      */
     private function accessibleAccounts(User $user, bool $isAdmin = false)
     {
@@ -92,10 +92,8 @@ class ExtensionController extends Controller
             return $query->whereIn('id', $directIds);
         }
 
-        if ($user->plan_id) {
-            return $query->where('plan_id', (int) $user->plan_id);
-        }
-
+        // No plan fallback: every extension account must be assigned directly
+        // to this user from the admin user form.
         return $query->whereRaw('1 = 0');
     }
 
@@ -146,7 +144,7 @@ class ExtensionController extends Controller
     }
 
     /**
-     * Get all platforms the user has access to via their plan
+     * Get only the platforms backed by explicit account assignments.
      */
     public function platforms(Request $request)
     {
@@ -162,13 +160,13 @@ class ExtensionController extends Controller
         $validity = $this->getUserValidity($user);
 
 
-        if (!$user->plan_id && empty($user->account_ids)) {
+        if (empty($user->account_ids)) {
             return response()->json([
                 'success'       => true,
                 'platforms'     => [],
                 'validity_text' => $validity['validity_text'],
                 'is_expired'    => $validity['is_expired'],
-                'message'       => 'No plan or accounts assigned. Contact admin.',
+                'message'       => 'No accounts assigned. Contact admin.',
             ]);
         }
 
@@ -248,8 +246,8 @@ class ExtensionController extends Controller
             || session()->get('is_admin_testing') === true;
 
 
-        if (!$isAdmin && !$user->plan_id && empty($user->account_ids)) {
-            return response()->json(['success' => false, 'message' => 'No active plan or accounts'], 403);
+        if (!$isAdmin && empty($user->account_ids)) {
+            return response()->json(['success' => false, 'message' => 'No accounts assigned'], 403);
         }
         
         $validity = $this->getUserValidity($user);
