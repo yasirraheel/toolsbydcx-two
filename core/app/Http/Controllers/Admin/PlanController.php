@@ -79,6 +79,7 @@ class PlanController extends Controller
             'account_ids.*' => 'integer|exists:account_listings,id',
             'flow_access' => 'nullable|boolean',
             'google_flow_account_id' => [
+                Rule::requiredIf($request->boolean('flow_access')),
                 'nullable',
                 'integer',
                 Rule::exists('google_flow_accounts', 'id')->where(fn ($query) => $query->where('status', 'active')),
