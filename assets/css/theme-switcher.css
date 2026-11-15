@@ -144,6 +144,101 @@ html[data-theme="light"] .form-select:focus {
     border-color: var(--base-color, #4634ff) !important;
 }
 
+/* Admin user forms: these cards previously used dark-only local colors, so
+ * they became grey blocks with low-contrast text in the light theme. */
+html[data-theme="light"] .dcx-tts-assignment,
+html[data-theme="light"] .dcx-expiry-panel,
+html[data-theme="light"] .dcx-tts-credit-card {
+    background: #f8fafc !important;
+    background-color: #f8fafc !important;
+    border-color: #dbe3ef !important;
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .dcx-tts-assignment strong,
+html[data-theme="light"] .dcx-tts-assignment small,
+html[data-theme="light"] .dcx-tts-credit-card small,
+html[data-theme="light"] .dcx-tts-credit-card .small,
+html[data-theme="light"] .dcx-expiry-panel small {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .dcx-tts-assignment strong,
+html[data-theme="light"] .dcx-tts-credit-card label,
+html[data-theme="light"] .dcx-expiry-panel label {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .dcx-tts-credit-card .input-group-text,
+html[data-theme="light"] .dcx-expiry-panel .input-group-text,
+html[data-theme="light"] .bg--dark {
+    background: #e2e8f0 !important;
+    background-color: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .form-control:disabled,
+html[data-theme="light"] .form-select:disabled,
+html[data-theme="light"] input:disabled {
+    background-color: #eef2f7 !important;
+    color: #64748b !important;
+    border-color: #dbe3ef !important;
+    opacity: 1 !important;
+}
+
+/* Public authentication pages use legacy hsl(white/opacity) rules. In light
+ * mode those rules make labels, password fields, and helper links disappear.
+ */
+html[data-theme="light"] .account-section {
+    background-color: #f8fafc !important;
+    background-image: none !important;
+}
+
+html[data-theme="light"] .account-section::before {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%) !important;
+}
+
+html[data-theme="light"] .account-form {
+    background: #ffffff !important;
+    border: 1px solid #dbe3ef !important;
+    border-radius: 18px !important;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, .10) !important;
+    padding: 34px !important;
+}
+
+html[data-theme="light"] .account-form__desc,
+html[data-theme="light"] .account-form .form--label,
+html[data-theme="light"] .account-form .form-check-label,
+html[data-theme="light"] .account-form .have-account__text,
+html[data-theme="light"] .account-form .account-form__icon,
+html[data-theme="light"] .account-form .text-muted {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .account-form .form--control,
+html[data-theme="light"] .account-form input.form-control,
+html[data-theme="light"] .account-form input.form--control {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="light"] .account-form .form--control::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="light"] .account-form .forgot-password,
+html[data-theme="light"] .account-form .have-account__link {
+    color: #4338ca !important;
+}
+
+html[data-theme="light"] .account-form .account-form__icon {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
 html[data-theme="light"] .dropdown-menu,
 html[data-theme="light"] .select2-dropdown,
 html[data-theme="light"] .modal-content {
