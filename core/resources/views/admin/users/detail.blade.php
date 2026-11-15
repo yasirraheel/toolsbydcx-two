@@ -823,11 +823,22 @@
             $('#ttsCreditLimitInput').val($(this).data('credits'));
         });
 
+        let lastPlanState = String($('#user-plan-selector').val() || '0') !== '0';
+
+        function resetPlanAssignmentsForNoPlan() {
+            $('#account-selector').val(null).trigger('change');
+            $('#google-flow-account-selector').val('').trigger('change');
+            $('#ttsAccessCheckbox').prop('checked', false);
+            $('#ttsCreditLimitInput').val('');
+        }
+
         function syncAccountAssignmentState() {
             const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
             const selector = $('#account-selector');
             selector.prop('disabled', hasPlan);
             if (hasPlan) selector.val(null).trigger('change');
+            if (!hasPlan && lastPlanState) resetPlanAssignmentsForNoPlan();
+            lastPlanState = hasPlan;
         }
         function syncPlanEntitlements() {
             const option = $('#user-plan-selector option:selected');

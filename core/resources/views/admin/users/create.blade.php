@@ -157,6 +157,32 @@
                                 </div>
                             </div>
 
+                            {{-- Account Validity Duration --}}
+                            <div class="col-lg-6 col-12">
+                                <div class="p-3 rounded h-100" style="border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45);">
+                                    <label class="fw-bold mb-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="las la-calendar-check text--primary"></i> @lang('Account Validity (Duration)')</span>
+                                        <span class="text-muted small fw-normal">@lang('From today')</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="validity_days" id="validityDaysInput" value="{{ old('validity_days', 30) }}" min="1" max="3650" placeholder="30">
+                                        <span class="input-group-text bg--primary text-white">@lang('Days')</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1 mt-2">
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="7">+7d</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="15">+15d</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="30">30d (1 Mo)</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="60">60d (2 Mo)</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="90">90d (3 Mo)</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="180">180d (6 Mo)</button>
+                                        <button type="button" class="btn btn-xs btn-outline--primary btn-validity-preset" data-days="365">365d (1 Yr)</button>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block" style="font-size: 11.5px;">
+                                        <i class="las la-info-circle"></i> @lang('User will remain active for this duration from creation date.')
+                                    </small>
+                                </div>
+                            </div>
+
                             <div class="col-12 mt-3">
                                 <button type="submit" class="btn btn--primary btn-lg w-100 h-45 shadow-sm fw-bold">
                                     <i class="las la-check me-1"></i> @lang('Create User & Activate Access')
@@ -386,11 +412,22 @@
             $(this).removeClass('btn-outline--primary').addClass('btn--primary text-white');
         });
 
+        let lastPlanState = String($('#user-plan-selector').val() || '0') !== '0';
+
+        function resetPlanAssignmentsForNoPlan() {
+            $('#account-selector').val(null).trigger('change');
+            $('#google-flow-account-selector').val('').trigger('change');
+            $('#create-tts-access').prop('checked', false);
+            $('#create-tts-credit-limit').val('');
+        }
+
         function syncAccountAssignmentState() {
             const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
             const selector = $('#account-selector');
             selector.prop('disabled', hasPlan);
             if (hasPlan) selector.val(null).trigger('change');
+            if (!hasPlan && lastPlanState) resetPlanAssignmentsForNoPlan();
+            lastPlanState = hasPlan;
             selector.closest('.form-group').find('small').first().toggleClass('text-muted', !hasPlan);
         }
         function syncPlanEntitlements() {
