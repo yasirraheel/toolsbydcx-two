@@ -813,6 +813,129 @@ html[data-theme="light"] .dcx-user-dashboard .dcx-action-success:focus-visible {
     border-color: #34d399 !important;
 }
 
+/* Payment/deposit screens still inherit the legacy dark-only payment rules. */
+html[data-theme="light"] .deposit-form .gateway-card .card-header {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+    border-color: #dbe3ef !important;
+}
+
+html[data-theme="light"] .deposit-form .gateway-card .card-header .card-title,
+html[data-theme="light"] .deposit-form .gateway-card .card-header .card-title.text-white {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .deposit-form .gateway-card .card-body,
+html[data-theme="light"] .deposit-form .gateway-card .payment-system-list {
+    color: #334155 !important;
+    background: #ffffff !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item {
+    color: #334155 !important;
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item:hover {
+    background: #fff7ed !important;
+    border-color: #fdba74 !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item:has(.payment-item__radio:checked),
+html[data-theme="light"] .deposit-form .payment-item.check {
+    color: #0f172a !important;
+    background: #eef2ff !important;
+    border-color: #6366f1 !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item__name {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item__check {
+    border-color: #94a3b8 !important;
+    background: #ffffff !important;
+}
+
+html[data-theme="light"] .deposit-form .payment-item:has(.payment-item__radio:checked) .payment-item__check,
+html[data-theme="light"] .deposit-form .payment-item.check .payment-item__check {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .18) !important;
+}
+
+html[data-theme="light"] .deposit-form .deposit-info .text,
+html[data-theme="light"] .deposit-form .deposit-info__title p,
+html[data-theme="light"] .deposit-form .deposit-info__input p,
+html[data-theme="light"] .deposit-form .deposit-info__input p span,
+html[data-theme="light"] .deposit-form .info-text p {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .deposit-form .deposit-info__title p,
+html[data-theme="light"] .deposit-form .info-text p {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .deposit-form .deposit-info__input-group .form-control {
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .deposit-form .deposit-info__input-group-text {
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] .deposit-form hr {
+    border-color: #dbe3ef !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] .deposit-form .btn--base {
+    color: #ffffff !important;
+    background: #f97316 !important;
+    border-color: #ea580c !important;
+}
+
+html[data-theme="light"] .deposit-form .btn--base:hover,
+html[data-theme="light"] .deposit-form .btn--base:focus-visible {
+    color: #ffffff !important;
+    background: #ea580c !important;
+    border-color: #c2410c !important;
+}
+
+/* The original nav rule accidentally put the active background on the inner
+ * span as well, which looks like browser text selection. Keep the active pill
+ * on the link itself and make its children transparent. */
+.nav-pills .nav-link.active span,
+.nav-pills .nav-link.active i,
+.sidebar-submenu-box .nav-link.active span,
+.sidebar-submenu-box .nav-link.active i {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="light"] .nav-pills .nav-link.active,
+html[data-theme="light"] .nav-pills .nav-link.active i,
+html[data-theme="light"] .nav-pills .nav-link.active span {
+    color: #ffffff !important;
+}
+
+html[data-theme="light"] .sidebar-submenu-box .nav-link.active {
+    color: #4338ca !important;
+    background: #eef2ff !important;
+    box-shadow: inset 3px 0 0 #6366f1 !important;
+}
+
+html[data-theme="light"] .sidebar-submenu-box .nav-link.active i,
+html[data-theme="light"] .sidebar-submenu-box .nav-link.active span {
+    color: #4338ca !important;
+}
+
 /* Theme control */
 .dcx-theme-toggle {
     display: inline-flex;
