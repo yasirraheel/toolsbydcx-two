@@ -602,7 +602,7 @@
     </style>
 
     @stack('style')
-    <link rel="stylesheet" href="{{asset('assets/css/theme-switcher.css')}}">
+    <link rel="stylesheet" href="{{ asset('assets/css/theme-switcher.css') }}?v={{ @filemtime(base_path('../assets/css/theme-switcher.css')) }}">
 </head>
 <body>
 <div class="dcx-theme-fallback">@include('partials.theme_toggle')</div>
