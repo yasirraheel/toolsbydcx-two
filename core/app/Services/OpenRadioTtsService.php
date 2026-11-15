@@ -102,14 +102,16 @@ class OpenRadioTtsService
         ];
     }
 
-    public function synthesize(string $text, string $voiceId, ?string $model = null): Response
+    public function synthesize(string $text, string $voiceId, ?string $modelId = null, bool $async = false): Response
     {
         $payload = [
             'text' => $text,
             'voice_id' => $voiceId,
+            'async' => $async,
         ];
-        if (filled($model)) {
-            $payload['model'] = $model;
+        if (filled($modelId)) {
+            // OpenRadio's documented field is `model_id` (not `model`).
+            $payload['model_id'] = $modelId;
         }
 
         return $this->client()->post($this->url('tts'), $payload);
@@ -182,7 +184,9 @@ class OpenRadioTtsService
             ->asJson()
             // Do not follow redirects with an Authorization header.
             ->withOptions(['allow_redirects' => false])
-            ->timeout(45)
+            // Keep enough headroom for synchronous generations. Long-form
+            // requests use the async task flow, so PHP is not held open.
+            ->timeout(120)
             ->connectTimeout(10);
     }
 

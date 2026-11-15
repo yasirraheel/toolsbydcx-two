@@ -315,13 +315,14 @@ class TextToSpeechController extends Controller
 
         $validated = $request->validate([
             'audio_url' => ['required', 'url', 'max:2000'],
-            'text' => ['required', 'string', 'max:60000'],
+            'text' => ['required', 'string', 'max:100000'],
             'voice_id' => ['required', 'string', 'max:160'],
         ]);
 
         $source = Http::accept('*/*')
-            ->timeout(45)
-            ->connectTimeout(10)
+            // Long-form OpenRadio results can be several minutes long.
+            ->timeout(300)
+            ->connectTimeout(15)
             ->get($validated['audio_url']);
 
         if (!$source->successful() || !str_starts_with(strtolower((string) $source->header('Content-Type')), 'audio/')) {
@@ -339,9 +340,10 @@ class TextToSpeechController extends Controller
         }
 
         $validated = $request->validate([
-            'text' => ['required', 'string', 'max:60000'],
+            'text' => ['required', 'string', 'max:100000'],
             'voice_id' => ['nullable', 'string', 'max:160'],
             'model' => ['nullable', 'string', 'in:eleven_v4,eleven_v4_turbo,eleven_v3,eleven_turbo_v2_5'],
+            'model_id' => ['nullable', 'string', 'in:eleven_multilingual_v2,eleven_turbo_v2_5,eleven_v3'],
         ]);
 
         $voiceId = trim((string) ($validated['voice_id'] ?? ''));
@@ -363,7 +365,13 @@ class TextToSpeechController extends Controller
         }
 
         try {
-            $upstream = $this->tts->synthesize($text, $voiceId, $validated['model'] ?? null);
+            $modelId = $this->normalizeModelId($validated['model_id'] ?? $validated['model'] ?? null);
+            // OpenRadio automatically stitches scripts over 5,000 characters.
+            // Start anything beyond roughly two minutes asynchronously as well,
+            // because even a sub-5,000-character script can exceed the HTTP
+            // timeout when rendered with a premium or cloned voice.
+            $isLongForm = mb_strlen($text) > 2000;
+            $upstream = $this->tts->synthesize($text, $voiceId, $modelId, $isLongForm);
             if ($upstream->successful() && str_starts_with(strtolower((string) $upstream->header('Content-Type')), 'audio/')) {
                 return $this->saveAudio($request->user(), $text, $voiceId, $upstream->body(), (string) $upstream->header('Content-Type'));
             }
@@ -779,6 +787,25 @@ class TextToSpeechController extends Controller
         // integer amount before the request so concurrent generations cannot
         // overspend a user's assigned quota.
         return max(1, (int) ceil(mb_strlen($text) * 1.2));
+    }
+
+    /**
+     * Keep the existing Studio model IDs working while sending the field and
+     * values documented by OpenRadio's public API.
+     */
+    private function normalizeModelId(?string $model): ?string
+    {
+        if (!filled($model)) {
+            return null;
+        }
+
+        return match ($model) {
+            'eleven_v4' => 'eleven_multilingual_v2',
+            'eleven_v4_turbo', 'eleven_turbo_v2_5' => 'eleven_turbo_v2_5',
+            'eleven_v3' => 'eleven_v3',
+            'eleven_multilingual_v2' => 'eleven_multilingual_v2',
+            default => null,
+        };
     }
 
     private function saveAudio($user, string $text, string $voiceId, string $contents, string $mimeType)
