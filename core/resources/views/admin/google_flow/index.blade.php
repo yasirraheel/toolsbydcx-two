@@ -10,7 +10,7 @@
                                 <tr>
                                     <th>@lang('Label/Email')</th>
                                     <th>@lang('Status')</th>
-                                    <th>@lang('Assigned To')</th>
+                                    <th>@lang('Assignment')</th>
                                     <th>@lang('Active Sessions')</th>
                                     <th>@lang('Action')</th>
                                 </tr>
@@ -32,23 +32,13 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @php
-                                                $assignedUsers = $account->users;
-                                                if ($assignedUsers->isEmpty() && $account->user) {
-                                                    $assignedUsers = collect([$account->user]);
-                                                }
-                                            @endphp
-                                            @if($assignedUsers->isNotEmpty())
-                                                <div class="d-flex flex-column gap-1">
-                                                    @foreach($assignedUsers as $u)
-                                                        <a href="{{ route('admin.users.detail', $u->id) }}" class="fw-bold text--primary d-inline-flex align-items-center gap-1">
-                                                            <i class="las la-user"></i> {{ $u->fullname ?: $u->username }}
-                                                            <small class="text-muted">({{ $u->email }})</small>
-                                                        </a>
-                                                    @endforeach
-                                                </div>
+                                            @if($account->users->isNotEmpty() || $account->assigned_to_user_id)
+                                                <span class="badge badge--success"><i class="las la-user-check"></i> @lang('Assigned')</span>
+                                                @if($account->users->count() > 0)
+                                                    <small class="text-muted d-block mt-1">{{ $account->users->count() }} @lang('user(s)')</small>
+                                                @endif
                                             @else
-                                                <span class="badge badge--dark">@lang('Unassigned')</span>
+                                                <span class="badge badge--dark"><i class="las la-user-slash"></i> @lang('Available')</span>
                                             @endif
                                         </td>
                                         <td>{{ $account->active_sessions }}</td>

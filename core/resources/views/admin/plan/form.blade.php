@@ -68,10 +68,23 @@
                             <div class="col-md-6">
                                 <div class="border rounded p-3 h-100">
                                     <label class="d-flex align-items-center gap-2 mb-2 fw-bold">
-                                        <input type="checkbox" name="flow_access" value="1" @checked((int) old('flow_access', (int) $plan->flow_access) === 1)>
+                                        <input type="checkbox" name="flow_access" value="1" id="plan-flow-access" @checked((int) old('flow_access', (int) $plan->flow_access) === 1)>
                                         @lang('Google Flow access')
                                     </label>
-                                    <small class="text-muted">@lang('An active Google Flow account must still be assigned to each user.')</small>
+                                    <div id="plan-flow-account-wrap" class="mt-3">
+                                        <label class="fw-bold mb-2">@lang('Flow account for this plan')</label>
+                                        @php $selectedFlowAccount = old('google_flow_account_id', $plan->google_flow_account_id); @endphp
+                                        <select name="google_flow_account_id" id="plan-flow-account" class="form-control">
+                                            <option value="">@lang('Select a saved Flow account')</option>
+                                            @foreach($flowAccounts as $flowAccount)
+                                                <option value="{{ $flowAccount->id }}" @selected((string) $selectedFlowAccount === (string) $flowAccount->id)>
+                                                    {{ $flowAccount->label ?: $flowAccount->email }} — {{ $flowAccount->email }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted d-block mt-1">@lang('This account is automatically assigned to every user on this plan.')</small>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">@lang('Enable access and choose one of your saved Flow accounts.')</small>
                                 </div>
                             </div>
 
@@ -129,9 +142,16 @@
         function syncTts() {
             $('#plan-tts-credit-limit, .plan-credit-preset').prop('disabled', !$('#plan-tts-access').is(':checked'));
         }
+        function syncFlow() {
+            const enabled = $('#plan-flow-access').is(':checked');
+            $('#plan-flow-account').prop('disabled', !enabled);
+            $('#plan-flow-account-wrap').toggleClass('opacity-50', !enabled);
+        }
         $('#plan-tts-access').on('change', syncTts);
+        $('#plan-flow-access').on('change', syncFlow);
         $('.plan-credit-preset').on('click', function () { $('#plan-tts-credit-limit').val($(this).data('credits')); });
         syncTts();
+        syncFlow();
     })(jQuery);
 </script>
 @endpush

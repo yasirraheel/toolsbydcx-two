@@ -71,6 +71,9 @@ class FlowAccess
         DB::transaction(function () use ($user, $accountId, $force) {
             $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $account = $accountId ? GoogleFlowAccount::whereKey($accountId)->lockForUpdate()->firstOrFail() : null;
+            $previousAccount = $user->google_flow_account_id
+                ? GoogleFlowAccount::whereKey($user->google_flow_account_id)->lockForUpdate()->first()
+                : null;
             if ($account && $account->status !== 'active') {
                 if ($force) {
                     $account->status = 'active';
@@ -88,6 +91,18 @@ class FlowAccess
             // Assign account to user (multiple users can share the same account!)
             $user->google_flow_account_id = $account ? $account->id : null;
             $user->save();
+
+            // Clear the legacy fallback pointer when the last user leaves an
+            // account, otherwise an old assignment can make the account look
+            // active and still grant extension access unexpectedly.
+            if ($previousAccount && (!$account || $previousAccount->id !== $account->id)
+                && (int) $previousAccount->assigned_to_user_id === (int) $user->id) {
+                $replacementUserId = User::where('google_flow_account_id', $previousAccount->id)
+                    ->where('id', '!=', $user->id)
+                    ->orderBy('id')
+                    ->value('id');
+                $previousAccount->update(['assigned_to_user_id' => $replacementUserId]);
+            }
 
             // Maintain assigned_to_user_id on account for legacy fallback if null
             if ($account && !$account->assigned_to_user_id) {

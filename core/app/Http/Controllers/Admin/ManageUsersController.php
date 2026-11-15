@@ -16,6 +16,20 @@ use App\Rules\FileTypeValidate;
 class ManageUsersController extends Controller
 {
 
+    /**
+     * Keep a plan user's Flow assignment tied to the account selected on the
+     * plan. No-plan users can still be assigned directly from the user form.
+     */
+    private function syncPlanFlowAssignment(User $user, ?\App\Models\Plan $plan): void
+    {
+        $accountId = $plan && $plan->flow_access && $plan->google_flow_account_id
+            ? (int) $plan->google_flow_account_id
+            : null;
+
+        \App\Services\FlowAccess::assign($user, $accountId, true);
+        $user->google_flow_account_id = $accountId;
+    }
+
     public function allUsers()
     {
         $pageTitle = 'All Users';
@@ -335,13 +349,16 @@ class ManageUsersController extends Controller
 
             $user->save();
 
-            if ($request->filled('google_flow_account_id')) {
-                try {
+            try {
+                if ($selectedPlan) {
+                    // The plan-selected account always wins for plan users.
+                    $this->syncPlanFlowAssignment($user, $selectedPlan);
+                } elseif ($request->filled('google_flow_account_id')) {
                     \App\Services\FlowAccess::assign($user, (int) $request->google_flow_account_id, true);
-                } catch (\Throwable $e) {
-                    $notify[] = ['warning', 'User created, but Google Flow assignment failed: ' . $e->getMessage()];
-                    return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
                 }
+            } catch (\Throwable $e) {
+                $notify[] = ['warning', 'User created, but Google Flow assignment failed: ' . $e->getMessage()];
+                return redirect()->route('admin.users.detail', $user->id)->withNotify($notify);
             }
 
             $notify[] = ['success', 'User ' . $user->username . ' created successfully'];
@@ -460,6 +477,7 @@ class ManageUsersController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $previousPlanId = (int) $user->plan_id;
 
         $request->validate([
             'name' => 'required|string|max:80',
@@ -545,12 +563,32 @@ class ManageUsersController extends Controller
 
         // A selected plan is the source of truth for all plan entitlements.
         // Manual TTS values are only valid for users on No Plan.
+        $selectedPlan = null;
         if ((int) $user->plan_id > 0) {
             $selectedPlan = \App\Models\Plan::active()->find($user->plan_id);
             $user->tts_access = (bool) ($selectedPlan?->tts_access);
             $user->tts_credit_limit = ($selectedPlan && $selectedPlan->tts_access)
                 ? $selectedPlan->tts_credit_limit
                 : null;
+        }
+
+        // Plan-selected Flow accounts are applied after the form fields so a
+        // manual account cannot accidentally override the plan policy.
+        if ($selectedPlan) {
+            try {
+                $this->syncPlanFlowAssignment($user, $selectedPlan);
+            } catch (\Throwable $e) {
+                $notify[] = ['error', 'Could not apply the plan Google Flow account: ' . $e->getMessage()];
+                return back()->withNotify($notify)->withInput();
+            }
+        } elseif ($previousPlanId > 0 && $request->has('plan_submitted') && !$request->has('google_flow_account_submitted')) {
+            // Do not leave a stale plan account attached after moving to No plan.
+            try {
+                $this->syncPlanFlowAssignment($user, null);
+            } catch (\Throwable $e) {
+                $notify[] = ['error', 'Could not clear the previous plan Google Flow account: ' . $e->getMessage()];
+                return back()->withNotify($notify)->withInput();
+            }
         }
 
         if ($request->has('expires_at_submitted') || $request->filled('expires_at') || $request->filled('validity_days')) {

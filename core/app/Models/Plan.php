@@ -14,6 +14,7 @@ class Plan extends Model
     protected $casts = [
         'features' => 'array',
         'flow_access' => 'boolean',
+        'google_flow_account_id' => 'integer',
         'tts_access' => 'boolean',
         'tts_credit_limit' => 'integer',
     ];
@@ -21,6 +22,11 @@ class Plan extends Model
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function googleFlowAccount()
+    {
+        return $this->belongsTo(GoogleFlowAccount::class, 'google_flow_account_id');
     }
 
     public function accounts()

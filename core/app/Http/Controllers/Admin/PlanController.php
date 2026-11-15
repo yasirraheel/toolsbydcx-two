@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\AccountListing;
+use App\Models\GoogleFlowAccount;
+use App\Services\FlowAccess;
+use Illuminate\Validation\Rule;
 
 class PlanController extends Controller
 {
@@ -21,9 +24,15 @@ class PlanController extends Controller
             ->orderBy('title')
             ->get();
 
+        $flowAccounts = GoogleFlowAccount::active()
+            ->orderBy('label')
+            ->orderBy('email')
+            ->get(['id', 'label', 'email', 'status']);
+
         return [
             'plan' => $plan ?: new Plan(['features' => []]),
             'accounts' => $accounts,
+            'flowAccounts' => $flowAccounts,
         ];
     }
 
@@ -49,7 +58,7 @@ class PlanController extends Controller
     {
         $pageTitle = 'Subscription Plans';
         $plans = Plan::withCount('users')
-            ->with(['accounts' => fn ($query) => $query->with('socialMedia')])
+            ->with(['accounts' => fn ($query) => $query->with('socialMedia'), 'googleFlowAccount'])
             ->latest()
             ->paginate(getPaginate());
         $accounts = AccountListing::with('socialMedia')
@@ -69,6 +78,11 @@ class PlanController extends Controller
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
             'flow_access' => 'nullable|boolean',
+            'google_flow_account_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('google_flow_accounts', 'id')->where(fn ($query) => $query->where('status', 'active')),
+            ],
             'tts_access' => 'nullable|boolean',
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
         ]);
@@ -86,6 +100,9 @@ class PlanController extends Controller
         
         $plan->features = $this->normalizeFeatures($request->input('features', []));
         $plan->flow_access = $request->boolean('flow_access');
+        $plan->google_flow_account_id = $plan->flow_access && $request->filled('google_flow_account_id')
+            ? (int) $request->input('google_flow_account_id')
+            : null;
         $plan->tts_access = $request->boolean('tts_access');
         $plan->tts_credit_limit = $plan->tts_access && $request->filled('tts_credit_limit')
             ? (int) $request->input('tts_credit_limit')
@@ -107,7 +124,22 @@ class PlanController extends Controller
             ->all();
         $plan->accounts()->sync($accountIds);
 
+        // A plan's selected Flow account is the source of truth for every
+        // user on that plan. Keep existing subscribers in sync immediately.
+        $flowAssignment = $plan->flow_access ? $plan->google_flow_account_id : null;
+        $flowAssignmentWarnings = [];
+        foreach ($plan->users()->get() as $user) {
+            try {
+                FlowAccess::assign($user, $flowAssignment ? (int) $flowAssignment : null, true);
+            } catch (\Throwable $e) {
+                $flowAssignmentWarnings[] = $user->username ?: $user->email;
+            }
+        }
+
         $notify[] = ['success', $msg];
+        if ($flowAssignmentWarnings) {
+            $notify[] = ['warning', 'Some existing plan users still need Flow assignment: ' . implode(', ', $flowAssignmentWarnings)];
+        }
         return back()->withNotify($notify);
     }
 

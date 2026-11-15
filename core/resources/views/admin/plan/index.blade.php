@@ -36,6 +36,11 @@
                                         <td>
                                             @if($plan->flow_access)
                                                 <span class="badge badge--success mb-1">@lang('Flow')</span>
+                                                @if($plan->googleFlowAccount)
+                                                    <small class="text-muted d-block"><i class="las la-user-check"></i> {{ $plan->googleFlowAccount->label ?: $plan->googleFlowAccount->email }}</small>
+                                                @else
+                                                    <small class="text--warning d-block"><i class="las la-exclamation-triangle"></i> @lang('Flow account pending')</small>
+                                                @endif
                                             @endif
                                             @if($plan->tts_access)
                                                 <span class="badge badge--warning mb-1">@lang('TTS'):
