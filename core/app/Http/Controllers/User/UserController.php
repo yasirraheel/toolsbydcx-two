@@ -43,11 +43,22 @@ class UserController extends Controller
                 ->get();
         }
 
-        // User-facing account access is explicit only. Plans do not expose or
-        // auto-assign every account attached to the plan.
+        // Plan users receive only the accounts explicitly selected on their
+        // plan. No-plan users receive only directly assigned account_ids.
         $assignedAccounts = collect();
 
-        if (!empty($user->account_ids)) {
+        if ($user->plan_id) {
+            $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
+                ->whereHas('plans', function ($q) use ($user) {
+                    $q->whereKey((int) $user->plan_id);
+                })
+                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
+                ->where('cookie_status', '!=', 0)
+                ->whereHas('socialMedia', function($q) {
+                    $q->where('status', \App\Constants\Status::ENABLE);
+                })
+                ->get();
+        } elseif (!empty($user->account_ids)) {
             $specificAccounts = \App\Models\AccountListing::with('socialMedia')
                 ->whereIn('id', $user->account_ids)
                 ->whereHas('socialMedia', function($q) {

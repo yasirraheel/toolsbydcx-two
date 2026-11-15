@@ -131,7 +131,7 @@
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Free / No plan users only receive directly assigned accounts.')
+                                        <i class="las la-info-circle"></i> @lang('Plan users receive only that plan\'s accounts. Direct assignments apply only to No plan users.')
                                     </small>
                                 </div>
                             </div>
@@ -155,7 +155,7 @@
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         @if($accounts->count() > 0)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('platform accounts available for assignment.')</span>
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('configured accounts available. Direct assignment applies only when No plan is selected.')</span>
                                         @else
                                             <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No accounts found in Accounts Manager.')</span>
                                         @endif
@@ -818,6 +818,15 @@
         $(document).on('click', '.tts-credit-preset', function () {
             $('#ttsCreditLimitInput').val($(this).data('credits'));
         });
+
+        function syncAccountAssignmentState() {
+            const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
+            const selector = $('#account-selector');
+            selector.prop('disabled', hasPlan);
+            if (hasPlan) selector.val(null).trigger('change');
+        }
+        $('#user-plan-selector').on('change', syncAccountAssignmentState);
+        syncAccountAssignmentState();
 
         // Initialize preview on modal open
         $('#adjustExpiryModal').on('show.bs.modal', function () {

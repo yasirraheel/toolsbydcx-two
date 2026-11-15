@@ -65,6 +65,16 @@ class AccountListing extends Model
         return $this->belongsTo(Plan::class);
     }
 
+    public function plans()
+    {
+        return $this->belongsToMany(
+            Plan::class,
+            'plan_account_listing',
+            'account_listing_id',
+            'plan_id'
+        );
+    }
+
     public function images()
     {
         return $this->hasMany(AccountListingImage::class);

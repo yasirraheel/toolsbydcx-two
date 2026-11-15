@@ -301,7 +301,11 @@ class ManageUsersController extends Controller
             // from the admin form using the selected plan record.
             $user->plan_id = (int) ($request->input('plan_id') ?: 0);
             $user->account_prices = [];
-            $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+            // A plan is the complete account allow-list. Direct account
+            // assignments are only valid for users with no plan.
+            $user->account_ids = $user->plan_id > 0
+                ? []
+                : array_values(array_map('intval', (array) ($request->account_ids ?? [])));
             if ($request->filled('expires_at')) {
                 $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
             } else {
@@ -501,6 +505,11 @@ class ManageUsersController extends Controller
 
         if ($request->has('plan_submitted')) {
             $user->plan_id = (int) ($request->input('plan_id') ?: 0);
+        }
+
+        // Never combine a plan allow-list with direct account assignments.
+        if ((int) $user->plan_id > 0) {
+            $user->account_ids = [];
         }
 
         if ($request->has('privileges_submitted')) {

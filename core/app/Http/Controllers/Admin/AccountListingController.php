@@ -288,9 +288,11 @@ class AccountListingController extends Controller
         if ($id) {
             $account       = AccountListing::findOrFail($id);
             $notifyMessage = 'Account updated successfully';
+            $previousPlanId = (int) $account->plan_id;
         } else {
             $account       = new AccountListing();
             $notifyMessage = 'Account added successfully';
+            $previousPlanId = 0;
         }
 
         $socialMedia = \App\Models\SocialMedia::find($request->social_media_id);
@@ -305,6 +307,16 @@ class AccountListingController extends Controller
         $account->instructions    = $request->instructions;
         $account->status          = Status::LISTING_ACTIVE;
         $account->save();
+
+        // Keep the legacy account form compatible with the plan pivot. The
+        // plan editor remains the source of truth and can assign many
+        // accounts to one plan.
+        if ($previousPlanId && $previousPlanId !== (int) $account->plan_id) {
+            \App\Models\Plan::find($previousPlanId)?->accounts()->detach($account->id);
+        }
+        if ((int) $account->plan_id > 0) {
+            \App\Models\Plan::find((int) $account->plan_id)?->accounts()->syncWithoutDetaching([$account->id]);
+        }
 
         // Perform instant live cookie verification & extract live account name
         $cronController = new \App\Http\Controllers\CronController();
@@ -442,6 +454,10 @@ class AccountListingController extends Controller
         $duplicate->instructions    = $original->instructions;
         $duplicate->status          = Status::LISTING_ACTIVE;
         $duplicate->save();
+
+        if ((int) $duplicate->plan_id > 0) {
+            \App\Models\Plan::find((int) $duplicate->plan_id)?->accounts()->syncWithoutDetaching([$duplicate->id]);
+        }
 
         SocialMediaController::executeLoadBalance($duplicate->social_media_id, 'override_manual');
 

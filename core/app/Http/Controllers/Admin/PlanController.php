@@ -13,8 +13,16 @@ class PlanController extends Controller
     public function index()
     {
         $pageTitle = 'Subscription Plans';
-        $plans = Plan::withCount('users')->latest()->paginate(getPaginate());
-        return view('admin.plan.index', compact('pageTitle', 'plans'));
+        $plans = Plan::withCount('users')
+            ->with(['accounts' => fn ($query) => $query->with('socialMedia')])
+            ->latest()
+            ->paginate(getPaginate());
+        $accounts = AccountListing::with('socialMedia')
+            ->orderBy('social_media_id')
+            ->orderBy('title')
+            ->get();
+
+        return view('admin.plan.index', compact('pageTitle', 'plans', 'accounts'));
     }
 
     public function store(Request $request, $id = null)
@@ -22,6 +30,8 @@ class PlanController extends Controller
         $request->validate([
             'name'  => 'required',
             'price' => 'required|numeric|min:0',
+            'account_ids' => 'nullable|array',
+            'account_ids.*' => 'integer|exists:account_listings,id',
         ]);
 
         if ($id) {
@@ -48,6 +58,13 @@ class PlanController extends Controller
         $plan->features = $features;
 
         $plan->save();
+        $accountIds = collect((array) $request->input('account_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+        $plan->accounts()->sync($accountIds);
 
         $notify[] = ['success', $msg];
         return back()->withNotify($notify);

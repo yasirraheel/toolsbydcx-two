@@ -84,7 +84,7 @@
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Choose the user subscription. Directly assigned accounts remain separate.')
+                                        <i class="las la-info-circle"></i> @lang('No plan users can receive direct accounts. Plan users receive only the accounts configured on that plan.')
                                     </small>
                                 </div>
                             </div>
@@ -105,7 +105,7 @@
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
                                         @if($accounts->count() > 0)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('platform accounts available for assignment.')</span>
+                                        <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('configured accounts available. Direct assignment applies only when No plan is selected.')</span>
                                         @else
                                             <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No accounts found in Accounts Manager.')</span>
                                         @endif
@@ -366,6 +366,25 @@
 
             notify('success', 'Generated: ' + fullName);
         });
+
+        // Validity Days Preset Chips
+        $(document).on('click', '.btn-validity-preset', function() {
+            let days = $(this).data('days');
+            $('#validityDaysInput').val(days);
+            $('.btn-validity-preset').removeClass('btn--primary text-white').addClass('btn-outline--primary');
+            $(this).removeClass('btn-outline--primary').addClass('btn--primary text-white');
+        });
+
+        function syncAccountAssignmentState() {
+            const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
+            const selector = $('#account-selector');
+            selector.prop('disabled', hasPlan);
+            if (hasPlan) selector.val(null).trigger('change');
+            selector.closest('.form-group').find('small').first().toggleClass('text-muted', !hasPlan);
+        }
+        $('#user-plan-selector').on('change', syncAccountAssignmentState);
+        syncAccountAssignmentState();
+
 
     })(jQuery);
 </script>

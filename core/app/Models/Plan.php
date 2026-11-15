@@ -20,9 +20,19 @@ class Plan extends Model
         return $this->hasMany(User::class);
     }
 
+    public function accounts()
+    {
+        return $this->belongsToMany(
+            \App\Models\AccountListing::class,
+            'plan_account_listing',
+            'plan_id',
+            'account_listing_id'
+        )->with('socialMedia');
+    }
+
     public function getIncludedResourcesAttribute()
     {
-        return \App\Models\AccountListing::where('plan_id', $this->id)
+        return $this->accounts()
             ->where('status', \App\Constants\Status::LISTING_ACTIVE)
             ->whereHas('socialMedia', function($q){ 
                 $q->active(); 

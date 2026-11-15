@@ -10,6 +10,7 @@
                                 <tr>
                                     <th>@lang('Name')</th>
                                     <th>@lang('Price')</th>
+                                    <th>@lang('Accounts')</th>
                                     <th>@lang('Users')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Action')</th>
@@ -20,6 +21,17 @@
                                     <tr>
                                         <td>{{ __($plan->name) }}</td>
                                         <td>{{ showAmount($plan->price) }}</td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1" style="max-width: 420px">
+                                                @forelse($plan->accounts as $account)
+                                                    <span class="badge badge--primary" title="{{ $account->title }}">
+                                                        {{ $account->socialMedia?->name ?: __('Account') }}: {{ $account->title ?: ('#' . $account->id) }}
+                                                    </span>
+                                                @empty
+                                                    <span class="text-muted">@lang('No accounts assigned')</span>
+                                                @endforelse
+                                            </div>
+                                        </td>
                                         <td>{{ $plan->users_count }}</td>
                                         <td>@php echo $plan->statusBadge; @endphp</td>
                                         <td>
@@ -87,6 +99,17 @@
                             <label>@lang('Features')</label>
                             <textarea class="form-control" name="features" rows="5" placeholder="Enter features, one per line"></textarea>
                         </div>
+                        <div class="form-group">
+                            <label>@lang('Accounts included in this plan')</label>
+                            <select class="form-control select2" name="account_ids[]" id="plan-account-selector" multiple="multiple" data-placeholder="@lang('Select configured accounts')">
+                                @foreach($accounts as $account)
+                                    <option value="{{ $account->id }}">
+                                        {{ $account->socialMedia?->name ?: __('Account') }} — {{ $account->title ?: ('#' . $account->id) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">@lang('Users assigned to this plan will see only these accounts.')</small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn--primary w-100 h-45" type="submit">@lang('Submit')</button>
@@ -117,9 +140,14 @@
             } else {
                 modal.find('[name=features]').val('');
             }
+            var accountIds = (resource && Array.isArray(resource.accounts))
+                ? resource.accounts.map(function (account) { return String(account.id); })
+                : [];
+            modal.find('#plan-account-selector').val(accountIds).trigger('change');
         });
         $('.cuModalBtn').not('.editBtn').on('click', function () {
             $('#cuModal').find('[name=features]').val('');
+            $('#cuModal').find('#plan-account-selector').val([]).trigger('change');
         });
     })(jQuery);
 </script>
