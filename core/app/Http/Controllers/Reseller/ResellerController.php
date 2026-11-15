@@ -262,7 +262,6 @@ class ResellerController extends Controller
             $user->expires_at = now()->addDays($durationDays);
             $user->is_reseller = 0;
             $user->reseller_id = $reseller->id;
-            $user->is_tester = 0;
             $user->is_exclusive = 0;
 
             // Verified flags

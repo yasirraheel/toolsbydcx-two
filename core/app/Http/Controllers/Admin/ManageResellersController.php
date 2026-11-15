@@ -139,7 +139,6 @@ class ManageResellersController extends Controller
             $reseller->account_prices = $accountPrices;
             $reseller->expires_at = $request->expires_at ? Carbon::parse($request->expires_at) : now()->addYear();
             $reseller->is_reseller = 1;
-            $reseller->is_tester = 0;
             $reseller->is_exclusive = 1; // Allow reseller to copy cookies by default if needed
             $reseller->balance = $request->initial_balance ? (float) $request->initial_balance : 0.00;
 
