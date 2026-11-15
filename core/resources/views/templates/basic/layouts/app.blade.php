@@ -28,7 +28,7 @@
     @stack('style-lib')
 
     @stack('style')
-    <link href="{{ asset('assets/css/theme-switcher.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/theme-switcher.css') }}?v={{ @filemtime(base_path('../assets/css/theme-switcher.css')) }}" rel="stylesheet">
 
 
 </head>
