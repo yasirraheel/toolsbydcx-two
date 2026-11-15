@@ -136,7 +136,6 @@
             }
 
             $flowAccount = $flowAccount ?? null;
-            $assignedToolsCount = $assignedAccounts->count() + ($flowAccount ? 1 : 0);
         @endphp
 
         @if($isExpired)
@@ -261,7 +260,7 @@
                         </span>
                     </div>
                     <div class="card-body">
-                        @if($flowAccount)
+                        @if($flowAccess)
                             <div class="product-item">
                                 <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
                                     <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
@@ -274,7 +273,11 @@
                                             <span class="text--base">@lang('Google Flow')</span>
                                         </h4>
                                         <div class="mt-1 d-flex align-items-center flex-wrap gap-2 text-muted small" style="line-height: 1.4;">
-                                            <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
+                                            @if($flowAccount)
+                                                <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
+                                            @else
+                                                <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-info-circle text--warning me-1"></i>@lang('Plan access enabled; Flow account assignment pending')</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -284,13 +287,15 @@
                                             <button type="button" class="btn btn--secondary text-nowrap" disabled style="opacity: 0.6; cursor: not-allowed;">
                                                 <i class="las la-ban me-1"></i> <span class="btn-text">@lang('Expired')</span>
                                             </button>
-                                        @else
+                                        @elseif($flowAccount)
                                             <a href="{{ route('user.extensions') }}" class="btn btn-outline--base flow-ext-missing-btn d-inline-flex align-items-center justify-content-center text-nowrap">
                                                 <i class="las la-puzzle-piece me-1"></i> <span class="btn-text">@lang('Extension Required')</span>
                                             </a>
                                             <button type="button" class="btn btn--base flow-visit-platform-btn d-inline-flex align-items-center justify-content-center text-nowrap" style="display: none !important;">
                                                 <i class="las la-external-link-square-alt me-1"></i> <span class="btn-text">@lang('Visit Platform')</span>
                                             </button>
+                                        @else
+                                            <span class="badge badge--warning">@lang('Flow account required')</span>
                                         @endif
                                     </div>
                                 </div>
@@ -396,7 +401,7 @@
                                     </div>
                                 </div>
                             @empty
-                                @unless($flowAccount)
+                                @unless($flowAccess)
                                     <div class="text-center py-5">
                                         <div class="card custom--card border-0">
                                             <div class="card-body py-5">

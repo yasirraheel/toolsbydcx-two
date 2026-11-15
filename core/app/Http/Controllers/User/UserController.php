@@ -72,6 +72,9 @@ class UserController extends Controller
         $flowAccount = ($user->assignedGoogleFlowAccount && $user->assignedGoogleFlowAccount->status === 'active')
             ? $user->assignedGoogleFlowAccount
             : $user->flow_account;
+        $flowAccess = (bool) ($user->plan?->status && $user->plan?->flow_access) || (bool) $flowAccount;
+        $flowAccountPending = $flowAccess && !$flowAccount;
+        $assignedToolsCount = $assignedAccounts->count() + ($flowAccess ? 1 : 0);
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
@@ -82,7 +85,7 @@ class UserController extends Controller
             ->whereNotNull('access_token')
             ->exists();
 
-        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'isExtensionPaired', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
+        return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'flowAccess', 'flowAccountPending', 'assignedToolsCount', 'isExtensionPaired', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
     }
 
     /**

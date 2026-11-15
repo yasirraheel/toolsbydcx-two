@@ -62,19 +62,13 @@
                             <div class="col-12 form-group">
                                 <label class="form--label">@lang('My Assigned Tools & Accounts')</label>
                                 <div class="p-3 rounded" style="background-color: hsl(var(--white)/0.03); border: 1px solid hsl(var(--white)/0.1);">
-                                    @php
-                                        $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
-                                            ->whereIn('id', (array)($user->account_ids ?? []))
-                                            ->get();
-                                        $flowAccount = $user->flow_account;
-                                    @endphp
-                                    @if($assignedAccounts->isNotEmpty() || $flowAccount)
+                                    @if($assignedAccounts->isNotEmpty() || $flowAccess)
                                         <div class="d-flex flex-wrap gap-2">
-                                            @if($flowAccount)
+                                            @if($flowAccess)
                                                 <span class="badge border p-2 d-inline-flex align-items-center gap-1" style="background-color: hsl(var(--white)/0.08); color: hsl(var(--white)/0.9); font-size: 13px; border-color: hsl(var(--white)/0.15) !important;">
                                                     <i class="las la-bolt text--primary"></i>
                                                     <strong>@lang('Google Flow')</strong>
-                                                    <span class="text-muted" style="color: hsl(var(--white)/0.6) !important;">({{ $flowAccount->label ?: $flowAccount->email }})</span>
+                                                    <span class="text-muted" style="color: hsl(var(--white)/0.6) !important;">({{ $flowAccount ? ($flowAccount->label ?: $flowAccount->email) : __('Account assignment pending') }})</span>
                                                 </span>
                                             @endif
                                             @foreach($assignedAccounts as $acc)

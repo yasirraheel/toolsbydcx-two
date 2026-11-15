@@ -15,8 +15,30 @@ class ProfileController extends Controller
     public function profile()
     {
         $pageTitle = "Profile Setting";
-        $user = auth()->user();
-        return view('Template::user.profile_setting', compact('pageTitle','user'));
+        $user = auth()->user()->load(['plan', 'assignedGoogleFlowAccount']);
+        $assignedAccounts = collect();
+
+        if ($user->plan_id) {
+            $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
+                ->whereHas('plans', fn ($query) => $query->whereKey((int) $user->plan_id))
+                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
+                ->where('cookie_status', '!=', 0)
+                ->whereHas('socialMedia', fn ($query) => $query->where('status', \App\Constants\Status::ENABLE))
+                ->get();
+        } elseif (!empty($user->account_ids)) {
+            $assignedAccounts = \App\Models\AccountListing::with('socialMedia')
+                ->whereIn('id', (array) $user->account_ids)
+                ->where('status', \App\Constants\Status::LISTING_ACTIVE)
+                ->whereHas('socialMedia', fn ($query) => $query->where('status', \App\Constants\Status::ENABLE))
+                ->get();
+        }
+
+        $flowAccount = ($user->assignedGoogleFlowAccount && $user->assignedGoogleFlowAccount->status === 'active')
+            ? $user->assignedGoogleFlowAccount
+            : $user->flow_account;
+        $flowAccess = (bool) ($user->plan?->status && $user->plan?->flow_access) || (bool) $flowAccount;
+
+        return view('Template::user.profile_setting', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'flowAccess'));
     }
 
     public function generalProfile()
