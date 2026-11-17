@@ -453,13 +453,9 @@
   }
 
   function renderCreditPill() {
-    if (!document.body || currentStatus?.access?.enabled !== true) return;
-    if (!creditPill) {
-      creditPill = document.createElement('div');
-      creditPill.id = 'toolsbydcx-flow-guard-credit-pill';
-      document.body.append(creditPill);
-    }
-    creditPill.textContent = creditText();
+    creditPill?.remove();
+    creditPill = null;
+    document.getElementById('toolsbydcx-flow-guard-credit-pill')?.remove();
   }
 
   function renderProjectPanel() {
