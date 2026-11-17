@@ -31,11 +31,17 @@ Projects
   to refresh, open, and remove that user’s saved projects.
 
 Privacy boundary
-- This extension does not request the cookies permission and never reads or copies
-  Google/browser cookies. It only manages server authentication, access, credits,
-  and the user’s own project records.
+- During normal operation this extension never reads or removes Google/browser
+  cookies. The cookies permission is present only for the paired emergency
+  watchdog response.
+- If the separately installed ToolsByDcx Flow Watchdog is disabled or removed,
+  this surviving extension clears Google/ToolsByDcx cookies for this browser
+  profile, closes protected tabs, and clears its local Flow Guard token.
+- This is a local browser-profile logout. It cannot revoke Google sessions on
+  Google’s servers; managed-browser policy is still needed to prevent extension
+  removal or access to chrome://extensions.
 
 Install
-1. Open edge://extensions or chrome://extensions.
-2. Enable Developer mode.
-3. Choose Load unpacked and select this directory.
+1. Install/load the ToolsByDcx Flow Watchdog directory first.
+2. Install/load this Flow Guard directory in the same Chrome profile.
+3. Open edge://extensions or chrome://extensions and enable Developer mode.

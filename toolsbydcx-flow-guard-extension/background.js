@@ -5,10 +5,25 @@ const TOKEN_KEY = 'flowGuardToken';
 const STATUS_KEY = 'flowGuardStatus';
 const GUARD_REDIRECT = PANEL_URL;
 const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
+const WATCHDOG_NAME = 'ToolsByDcx Flow Watchdog';
+const WATCHDOG_ARMED_KEY = 'flowGuardWatchdogArmed';
+const WATCHDOG_ID_KEY = 'flowGuardWatchdogId';
+const EMERGENCY_LOGOUT_KEY = 'flowGuardEmergencyLogout';
+const EMERGENCY_COOKIE_NAME = 'toolsbydcx_flow_watchdog_emergency';
+const WATCHDOG_ALARM = 'flow-guard-watchdog-check';
+const GOOGLE_COOKIE_URLS = [
+  'https://accounts.google.com/',
+  'https://flow.google.com/',
+  'https://www.google.com/',
+  'https://google.com/',
+  'https://toolsbydcx.com/',
+  'https://www.toolsbydcx.com/'
+];
 
 const storage = chrome.storage.local;
 let installationId = null;
 let panelSessionSyncPromise = null;
+let emergencyLogoutPromise = null;
 
 async function getInstallationId() {
   if (installationId) return installationId;
@@ -19,6 +34,7 @@ async function getInstallationId() {
 }
 
 async function savedToken() {
+  await consumeEmergencyMarker();
   return (await storage.get(TOKEN_KEY))[TOKEN_KEY] || null;
 }
 
@@ -28,6 +44,124 @@ async function setToken(token, status = null) {
     return;
   }
   await storage.set({ [TOKEN_KEY]: token, ...(status ? { [STATUS_KEY]: status } : {}) });
+}
+
+async function consumeEmergencyMarker() {
+  const marker = await chrome.cookies.get({
+    url: 'https://toolsbydcx.com/',
+    name: EMERGENCY_COOKIE_NAME
+  }).catch(() => null);
+  if (!marker) return false;
+  await chrome.cookies.remove({
+    url: 'https://toolsbydcx.com/',
+    name: EMERGENCY_COOKIE_NAME,
+    storeId: marker.storeId
+  }).catch(() => {});
+  await storage.remove([TOKEN_KEY, STATUS_KEY]);
+  await storage.set({ [EMERGENCY_LOGOUT_KEY]: { reason: 'watchdog-marker', at: Date.now() } });
+  return true;
+}
+
+function isGoogleOrPanelCookie(cookie) {
+  const domain = String(cookie?.domain || '').replace(/^\./, '').toLowerCase();
+  return domain === 'google.com'
+    || domain.endsWith('.google.com')
+    || domain === 'toolsbydcx.com'
+    || domain.endsWith('.toolsbydcx.com');
+}
+
+async function clearProfileCookies() {
+  const all = [];
+  for (const url of GOOGLE_COOKIE_URLS) {
+    const cookies = await chrome.cookies.getAll({ url }).catch(() => []);
+    all.push(...cookies);
+  }
+  const seen = new Set();
+  await Promise.all(all.map(cookie => {
+    if (!isGoogleOrPanelCookie(cookie)) return null;
+    const partition = cookie.partitionKey ? JSON.stringify(cookie.partitionKey) : '';
+    const key = [cookie.storeId || '', cookie.domain || '', cookie.path || '/', cookie.name || '', partition].join('|');
+    if (seen.has(key)) return null;
+    seen.add(key);
+    const domain = String(cookie.domain || '').replace(/^\./, '');
+    const details = {
+      url: `https://${domain}${cookie.path || '/'}`,
+      name: cookie.name,
+      storeId: cookie.storeId
+    };
+    if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
+    return chrome.cookies.remove(details).catch(() => null);
+  }));
+}
+
+async function closeProtectedTabs() {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  const tabIds = tabs
+    .filter(tab => {
+      const origin = originOf(tab.url || tab.pendingUrl || '');
+      return origin === 'https://flow.google.com'
+        || origin === 'https://accounts.google.com'
+        || origin === 'https://www.google.com'
+        || origin === 'https://toolsbydcx.com'
+        || origin === 'https://www.toolsbydcx.com';
+    })
+    .map(tab => tab.id)
+    .filter(Number.isInteger);
+  if (tabIds.length) await chrome.tabs.remove(tabIds).catch(() => {});
+}
+
+async function emergencyGoogleLogout(reason = 'watchdog-event') {
+  if (emergencyLogoutPromise) return emergencyLogoutPromise;
+  emergencyLogoutPromise = (async () => {
+    // This path is only used after the paired watchdog is disabled/removed.
+    // Normal Flow Guard operation never reads or removes browser cookies.
+    await clearProfileCookies();
+    await closeProtectedTabs();
+    await setToken(null);
+    await storage.set({
+      [WATCHDOG_ARMED_KEY]: false,
+      [EMERGENCY_LOGOUT_KEY]: { reason, at: Date.now() }
+    });
+  })().finally(() => {
+    emergencyLogoutPromise = null;
+  });
+  return emergencyLogoutPromise;
+}
+
+async function getManagementExtensions() {
+  try {
+    const result = await chrome.management.getAll();
+    if (Array.isArray(result)) return result;
+  } catch (_) {}
+  return new Promise(resolve => {
+    try {
+      chrome.management.getAll(items => resolve(Array.isArray(items) ? items : []));
+    } catch (_) {
+      resolve([]);
+    }
+  });
+}
+
+async function findWatchdog() {
+  const extensions = await getManagementExtensions();
+  return extensions.find(info => info?.type === 'extension'
+    && info.name === WATCHDOG_NAME
+    && info.id !== chrome.runtime.id) || null;
+}
+
+async function checkWatchdog(reason = 'watchdog-check') {
+  const info = await findWatchdog();
+  const saved = await storage.get([WATCHDOG_ARMED_KEY, WATCHDOG_ID_KEY]);
+  if (info?.enabled === true) {
+    if (saved[WATCHDOG_ARMED_KEY] !== true || saved[WATCHDOG_ID_KEY] !== info.id) {
+      await storage.set({ [WATCHDOG_ARMED_KEY]: true, [WATCHDOG_ID_KEY]: info.id });
+    }
+    return true;
+  }
+  if (saved[WATCHDOG_ARMED_KEY] === true) {
+    await emergencyGoogleLogout(`${reason}:${info ? 'watchdog-disabled' : 'watchdog-missing'}`);
+  }
+  return false;
 }
 
 async function api(path, body, method = null) {
@@ -258,6 +392,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   getInstallationId().catch(() => {});
+  checkWatchdog('installed').catch(() => {});
   chrome.tabs.create({ url: PANEL_URL }).catch(() => {});
   sweepOpenTabs().catch(() => {});
 });
@@ -265,8 +400,31 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
   getInstallationId().catch(() => {});
   refreshStatus().catch(() => {});
+  checkWatchdog('startup').catch(() => {});
   sweepOpenTabs().catch(() => {});
 });
+
+chrome.management?.onInstalled?.addListener(info => {
+  if (info?.name === WATCHDOG_NAME) void checkWatchdog('watchdog-installed');
+});
+
+chrome.management?.onDisabled?.addListener(info => {
+  if (info?.name === WATCHDOG_NAME) void emergencyGoogleLogout('watchdog-disabled');
+});
+
+chrome.management?.onUninstalled?.addListener(extensionId => {
+  storage.get(WATCHDOG_ID_KEY).then(saved => {
+    if (saved[WATCHDOG_ID_KEY] === extensionId) void emergencyGoogleLogout('watchdog-uninstalled');
+  }).catch(() => {});
+});
+
+chrome.alarms?.onAlarm?.addListener(alarm => {
+  if (alarm?.name === WATCHDOG_ALARM) void checkWatchdog('watchdog-alarm');
+});
+
+try {
+  chrome.alarms?.create?.(WATCHDOG_ALARM, { periodInMinutes: 0.5 });
+} catch (_) {}
 
 chrome.webNavigation?.onBeforeNavigate?.addListener(details => {
   if (details.frameId === 0) void enforceNavigation(details.tabId, details.url);
@@ -284,4 +442,7 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 
 // Also cover tabs that were already open before the unpacked extension was
 // reloaded in Developer mode.
-setTimeout(() => sweepOpenTabs().catch(() => {}), 1000);
+setTimeout(() => {
+  sweepOpenTabs().catch(() => {});
+  checkWatchdog('initial').catch(() => {});
+}, 1000);
