@@ -13,6 +13,7 @@
   let projectPanel;
   let projectButton;
   let creditPill;
+  let gateStopped = false;
 
   const send = message => chrome.runtime.sendMessage(message).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
   const textOf = element => (element?.innerText || element?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -46,11 +47,7 @@
       }
       currentStatus = result.status || { authenticated: true };
       if (currentStatus.access?.enabled === true) {
-        hideGate();
-        lockLogoutControls();
-        ensureProjectUi();
-        renderCreditPill();
-        saveProjectIfChanged();
+        location.reload();
       } else {
         showGate('Server login successful, but Flow Guard access is not enabled for this user yet.', 'locked');
       }
@@ -72,6 +69,10 @@
     overlay.style.display = 'grid';
     document.documentElement.style.overflow = 'hidden';
     removeProjectUi();
+    if (mode !== 'checking' && !currentStatus?.access?.enabled && !gateStopped) {
+      gateStopped = true;
+      try { window.stop(); } catch (_) {}
+    }
   }
 
   function hideGate() {
@@ -81,6 +82,7 @@
   }
 
   function lockLogoutControls() {
+    if (currentStatus?.access?.enabled !== true) return;
     document.querySelectorAll('button,a,[role="button"]').forEach(control => {
       const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
       if (/\b(sign\s*out|log\s*out)\b/i.test(wording)) {
@@ -270,6 +272,7 @@
     currentStatus = response?.status || { authenticated: false };
     if (!currentStatus.authenticated) { removeProjectUi(); showGate('Enter your ToolsByDcx panel credentials below to continue.', 'login'); return; }
     if (currentStatus.access?.enabled !== true) { removeProjectUi(); showGate('Your Flow Guard access is not enabled. Contact the administrator.', 'locked'); return; }
+    if (gateStopped) { location.reload(); return; }
     hideGate();
     lockLogoutControls();
     ensureProjectUi();
@@ -280,7 +283,7 @@
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
-  new MutationObserver(() => { lockLogoutControls(); saveProjectIfChanged(); watchFailures(); ensureProjectUi(); }).observe(document.documentElement, { childList: true, subtree: true });
+  setInterval(() => { if (currentStatus?.access?.enabled === true) { lockLogoutControls(); ensureProjectUi(); } }, 5000);
   setInterval(() => void refresh(false), 5000);
   setInterval(watchFailures, 2500);
   setInterval(saveProjectIfChanged, 3000);
