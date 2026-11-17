@@ -274,6 +274,11 @@
                                         <input type="checkbox" name="flow_guard_enabled" value="1" @checked(old('flow_guard_enabled', $flowGuardAccess->enabled))>
                                         <span>@lang('Enable Flow Guard')</span>
                                     </label>
+                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
+                                        <input type="checkbox" name="flow_guard_full_control" value="1" @checked(old('flow_guard_full_control', $flowGuardAccess->full_control))>
+                                        <span>@lang('Full browser control')</span>
+                                    </label>
+                                    <small class="text-muted d-block mb-2">@lang('Restricts navigation and browser-page interactions through Flow Guard. Chrome toolbar, F11, and Developer Mode require managed-browser policy.') </small>
                                     <div class="input-group mb-2">
                                         <input type="number" class="form-control" name="flow_guard_credit_limit" min="0" max="1000000000" step="1"
                                                value="{{ old('flow_guard_credit_limit', $flowGuardLimit) }}" placeholder="@lang('Unlimited')">

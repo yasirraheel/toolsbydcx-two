@@ -15,7 +15,7 @@ class FlowGuardController extends Controller
         $pageTitle = 'Flow Guard Access';
         $users = User::query()
             ->leftJoin('flow_guard_access as fga', 'fga.user_id', '=', 'users.id')
-            ->select('users.id', 'users.username', 'users.email', 'users.status', 'fga.enabled', 'fga.credit_limit', 'fga.credits_used', 'fga.generation_cost', 'fga.allowed_model', 'fga.expires_at')
+            ->select('users.id', 'users.username', 'users.email', 'users.status', 'fga.enabled', 'fga.full_control', 'fga.credit_limit', 'fga.credits_used', 'fga.generation_cost', 'fga.allowed_model', 'fga.expires_at')
             ->latest('users.id')->paginate(getPaginate());
         return view('admin.flow_guard.index', compact('pageTitle', 'users'));
     }
@@ -24,6 +24,7 @@ class FlowGuardController extends Controller
     {
         $data = $request->validate([
             'enabled' => 'nullable|boolean',
+            'full_control' => 'nullable|boolean',
             'credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'generation_cost' => 'required|integer|min:1|max:1000000',
             'allowed_model' => 'nullable|string|max:191',
@@ -35,6 +36,7 @@ class FlowGuardController extends Controller
             ['user_id' => $user->id],
             [
                 'enabled' => $request->boolean('enabled'),
+                'full_control' => $request->boolean('full_control'),
                 'credit_limit' => $data['credit_limit'] ?? null,
                 'generation_cost' => (int) $data['generation_cost'],
                 'allowed_model' => filled($data['allowed_model'] ?? null) ? trim((string) $data['allowed_model']) : null,

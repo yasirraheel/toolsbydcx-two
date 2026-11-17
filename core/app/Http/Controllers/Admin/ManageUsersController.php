@@ -530,6 +530,7 @@ class ManageUsersController extends Controller
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_generation_cost' => 'nullable|integer|min:1|max:1000000',
+            'flow_guard_full_control' => 'nullable|boolean',
             'flow_guard_model_ids' => 'nullable|array',
             'flow_guard_model_ids.*' => 'integer|exists:flow_guard_models,id',
         ]);
@@ -612,6 +613,7 @@ class ManageUsersController extends Controller
                 ['user_id' => $user->id],
                 [
                     'enabled' => $request->boolean('flow_guard_enabled'),
+                    'full_control' => $request->boolean('flow_guard_full_control'),
                     'credit_limit' => $request->filled('flow_guard_credit_limit') ? (int) $request->flow_guard_credit_limit : null,
                     'generation_cost' => (int) ($request->input('flow_guard_generation_cost') ?: 100),
                     'allowed_model' => $allowedModels[0] ?? null,

@@ -16,6 +16,7 @@
                                 <tr>
                                     <th>User</th>
                                     <th>Access</th>
+                                    <th>Control</th>
                                     <th>Credits</th>
                                     <th>Cost / video</th>
                                     <th>Allowed model</th>
@@ -38,6 +39,13 @@
                                             @endif
                                         </td>
                                         <td>
+                                            @if((int) $user->full_control === 1)
+                                                <span class="badge badge--warning">Full control</span>
+                                            @else
+                                                <span class="badge badge--secondary">Standard</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             <span class="fw-bold">{{ $user->credits_used ?? 0 }}</span>
                                             / {{ $user->credit_limit === null ? 'Unlimited' : number_format((int) $user->credit_limit) }}
                                         </td>
@@ -50,6 +58,10 @@
                                                 <label class="form-check mb-0">
                                                     <input type="checkbox" name="enabled" value="1" class="form-check-input" @checked((int) $user->enabled === 1)>
                                                     <span class="form-check-label">Allow</span>
+                                                </label>
+                                                <label class="form-check mb-0">
+                                                    <input type="checkbox" name="full_control" value="1" class="form-check-input" @checked((int) $user->full_control === 1)>
+                                                    <span class="form-check-label">Full control</span>
                                                 </label>
                                                 <input type="number" name="credit_limit" min="0" max="1000000000" class="form-control form-control-sm" style="width:120px" placeholder="Unlimited" value="{{ $user->credit_limit }}">
                                                 <input type="number" name="generation_cost" min="1" max="1000000" required class="form-control form-control-sm" style="width:100px" value="{{ (int) ($user->generation_cost ?? 100) }}">

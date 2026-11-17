@@ -78,21 +78,23 @@ function isGoogleLoginUrl(url) {
   return originOf(url) === 'https://accounts.google.com';
 }
 
-async function hasValidServerSession() {
+async function hasFullControlSession() {
   const token = await savedToken();
   if (!token) return false;
   const status = await refreshStatus();
-  return status?.authenticated === true && status.access?.enabled === true;
+  return status?.authenticated === true
+    && status.access?.enabled === true
+    && status.access?.full_control === true;
 }
 
 async function enforceNavigation(tabId, url) {
   if (!Number.isInteger(tabId) || !url || isExtensionPage(url) || /^(?:chrome|edge|brave|about|devtools):/i.test(url)) return;
   if (isPanelUrl(url)) return;
 
-  const authenticated = await hasValidServerSession();
-  // Until the user authenticates with ToolsByDcx, the browser may only show
-  // the panel login/session pages. This covers Gmail and every other site.
-  if (!authenticated || (!isFlowUrl(url) && !isGoogleLoginUrl(url))) {
+  // Standard Flow Guard only protects Flow itself. Full browser navigation
+  // restrictions are opt-in per user from the server-controlled toggle.
+  const fullControl = await hasFullControlSession();
+  if (fullControl && !isFlowUrl(url) && !isGoogleLoginUrl(url)) {
     await chrome.tabs.update(tabId, { url: GUARD_REDIRECT }).catch(() => {});
   }
 }

@@ -9,11 +9,12 @@ class FlowGuardAccess extends Model
     protected $table = 'flow_guard_access';
 
     protected $fillable = [
-        'user_id', 'enabled', 'credit_limit', 'credits_used', 'generation_cost', 'allowed_model', 'allowed_models', 'expires_at',
+        'user_id', 'enabled', 'full_control', 'credit_limit', 'credits_used', 'generation_cost', 'allowed_model', 'allowed_models', 'expires_at',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
+        'full_control' => 'boolean',
         'credit_limit' => 'integer',
         'credits_used' => 'integer',
         'generation_cost' => 'integer',

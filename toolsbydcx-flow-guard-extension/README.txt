@@ -10,6 +10,12 @@ Authentication
 - Otherwise use the extension popup to sign in with the ToolsByDcx username/email
   and password.
 - The server must have Flow Guard enabled for the user before access is granted.
+- Optional Full browser control is server-controlled per user. When enabled, the
+  extension restricts normal-tab navigation to ToolsByDcx, Google login, and
+  Flow, blocks page context menus, and blocks page-level developer shortcuts.
+- Chrome/Edge browser chrome controls (three-dot menu, Extensions toolbar/menu,
+  F11, and Developer Mode) cannot be disabled by a normal extension. Those
+  require an enterprise managed-browser policy or kiosk/assigned-access setup.
 
 Credits
 - Every detected video generation requests a server-side reservation.

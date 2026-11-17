@@ -26,7 +26,9 @@ function render(status, error = '') {
     ? access.allowed_models
     : (access.allowed_model ? [access.allowed_model] : []);
   model.textContent = `Allowed models: ${allowedModels.length ? allowedModels.join(', ') : 'No model assigned'}`;
-  statusBox.append(label, title, credits, cost, model);
+  const control = document.createElement('span');
+  control.textContent = `Browser control: ${access.full_control === true ? 'Full control enabled' : 'Standard'}`;
+  statusBox.append(label, title, credits, cost, model, control);
   message.textContent = status.access?.enabled === true
     ? 'Flow Guard is active.'
     : 'Server login detected. Flow Guard access is not enabled for this user yet.';

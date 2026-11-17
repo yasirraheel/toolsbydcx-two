@@ -181,6 +181,7 @@ class FlowGuardAccessService
             ],
             'access' => [
                 'enabled' => (bool) $access?->enabled,
+                'full_control' => (bool) $access?->full_control,
                 'expires_at' => $access?->expires_at?->toIso8601String(),
                 'credit_limit' => $access?->credit_limit,
                 'credits_used' => (int) ($access?->credits_used ?? 0),
