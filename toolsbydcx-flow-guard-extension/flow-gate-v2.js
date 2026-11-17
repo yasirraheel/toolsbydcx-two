@@ -70,11 +70,17 @@
 
   function modelLabel(element) {
     const raw = element?.innerText || element?.textContent || '';
-    return raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || raw.replace(/\s+/g, ' ').trim();
+    const firstLine = raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || raw.replace(/\s+/g, ' ').trim();
+    return firstLine.replace(/\s+(?:leaving|sunsetting|deprecated)\b.*$/i, '').trim();
   }
 
   function isModelLabel(label) {
     return /^(?:omni|veo)\b/i.test(String(label || '').trim());
+  }
+
+  function matchesAllowedModelLabel(label, normalizedAllowed) {
+    const normalized = normalizeModelName(label);
+    return normalizedAllowed.some(allowed => normalized === allowed || normalized.startsWith(`${allowed} `));
   }
 
   function isVisible(element) {
@@ -118,7 +124,7 @@
     const trigger = findModelTrigger();
     const option = Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
       .filter(isVisible)
-      .find(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))));
+      .find(element => matchesAllowedModelLabel(modelLabel(element), normalizedAllowed));
     if (option) return option;
 
     // Flow has shipped model menus with plain div/span options as well as
@@ -127,8 +133,8 @@
     return Array.from(document.querySelectorAll('body *'))
       .filter(isVisible)
       .filter(element => element !== trigger && isModelLabel(modelLabel(element)))
-      .filter(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))))
-      .filter(element => !Array.from(element.children).some(child => isVisible(child) && normalizedAllowed.includes(normalizeModelName(modelLabel(child)))))
+      .filter(element => matchesAllowedModelLabel(modelLabel(element), normalizedAllowed))
+      .filter(element => !Array.from(element.children).some(child => isVisible(child) && matchesAllowedModelLabel(modelLabel(child), normalizedAllowed)))
       .sort((left, right) => modelLabel(left).length - modelLabel(right).length)[0] || null;
   }
 
@@ -314,11 +320,11 @@
     document.querySelectorAll(selector).forEach(element => {
       if (!isVisible(element)) return;
       const label = modelLabel(element);
-      if (!isModelLabel(label) && normalizeModelName(label) !== normalizedAllowed) return;
+      if (!isModelLabel(label) && !matchesAllowedModelLabel(label, normalizedAllowed)) return;
       const optionLike = element.matches('[role="option"],[role="menuitem"],[role="menuitemradio"],li')
         || !!element.closest('[role="listbox"],[role="menu"]');
       if (!optionLike) return;
-      const enabled = normalizedAllowed.includes(normalizeModelName(label));
+      const enabled = matchesAllowedModelLabel(label, normalizedAllowed);
       element.setAttribute('data-toolsbydcx-model-option', '1');
       element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       element.style.setProperty('opacity', enabled ? '1' : '.35', 'important');
