@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flow Guard</title><link rel="stylesheet" href="popup.css"></head>
 <body>
   <main>
-    <div class="brand">ToolsByDcx <span>Flow Guard</span></div>
+    <header class="header"><div class="mark">✦</div><div><div class="brand">ToolsByDcx <span>Flow Guard</span></div><div class="subtitle">Secure browser access</div></div></header>
     <p id="message" class="message">Checking your server session…</p>
     <section id="status" class="status hidden"></section>
     <form id="login" class="hidden">
@@ -11,7 +11,8 @@
       <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
       <button>Sign in to ToolsByDcx</button>
     </form>
-    <div class="actions"><button id="panel" class="secondary">Open panel</button><button id="logout" class="danger hidden">Sign out extension</button></div>
+    <div class="actions"><button id="panel" class="secondary">Open panel</button><button id="logout" class="danger hidden">Sign out</button></div>
+    <div class="footer-note">Authentication and credits are enforced by ToolsByDcx server.</div>
   </main>
   <script type="module" src="popup.js"></script>
 </body>

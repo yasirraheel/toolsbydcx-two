@@ -12,13 +12,16 @@ function render(status, error = '') {
   login.classList.add('hidden'); logout.classList.remove('hidden'); statusBox.classList.remove('hidden');
   const access = status.access || {};
   statusBox.replaceChildren();
+  const label = document.createElement('div');
+  label.className = 'status-label';
+  label.textContent = 'Connected account';
   const title = document.createElement('strong');
   title.textContent = status.user?.name || status.user?.email || 'Authenticated';
   const credits = document.createElement('span');
   credits.textContent = `Credits: ${access.remaining_credits == null ? 'Unlimited' : `${access.remaining_credits} remaining`}`;
   const cost = document.createElement('span');
   cost.textContent = `Cost per video: ${access.generation_cost || 0}`;
-  statusBox.append(title, credits, document.createElement('br'), cost);
+  statusBox.append(label, title, credits, cost);
   message.textContent = status.access?.enabled === true
     ? 'Flow Guard is active.'
     : 'Server login detected. Flow Guard access is not enabled for this user yet.';
