@@ -19,6 +19,7 @@ const PARTITION_TOP_LEVEL_SITES = [
   'https://www.google.com',
   'https://toolsbydcx.com'
 ];
+const GOOGLE_LOGOUT_URL = 'https://accounts.google.com/Logout?continue=https://www.google.com/';
 
 const storage = chrome.storage.local;
 let emergencyPromise = null;
@@ -119,6 +120,14 @@ async function resetOpenTabs() {
       : null));
 }
 
+async function requestGoogleWebLogout() {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  const target = tabs.find(tab => Number.isInteger(tab.id));
+  if (!target) return;
+  await chrome.tabs.update(target.id, { url: GOOGLE_LOGOUT_URL }).catch(() => {});
+  await new Promise(resolve => setTimeout(resolve, 900));
+}
+
 async function emergencyLogout(reason) {
   if (emergencyPromise) return emergencyPromise;
   emergencyPromise = (async () => {
@@ -126,9 +135,10 @@ async function emergencyLogout(reason) {
     // is disabled or removed; normal watchdog checks never touch cookies.
     // The main extension has separate storage. This short-lived marker lets
     // it clear its own local token when it is enabled again.
+    await requestGoogleWebLogout();
     await resetOpenTabs();
-    // Reset pages first so an active Flow/Google document cannot immediately
-    // recreate an auth cookie while the removal pass is running.
+    // Reset pages before the final cookie pass so an active document cannot
+    // immediately recreate an auth cookie after the web logout request.
     const cookieStats = await clearProfileCookies();
     await setEmergencyMarker();
     await storage.set({

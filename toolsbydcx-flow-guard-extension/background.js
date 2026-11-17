@@ -26,6 +26,7 @@ const PARTITION_TOP_LEVEL_SITES = [
   'https://www.google.com',
   'https://toolsbydcx.com'
 ];
+const GOOGLE_LOGOUT_URL = 'https://accounts.google.com/Logout?continue=https://www.google.com/';
 
 const storage = chrome.storage.local;
 let installationId = null;
@@ -125,11 +126,20 @@ async function resetOpenTabs() {
       : null));
 }
 
+async function requestGoogleWebLogout() {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  const target = tabs.find(tab => Number.isInteger(tab.id));
+  if (!target) return;
+  await chrome.tabs.update(target.id, { url: GOOGLE_LOGOUT_URL }).catch(() => {});
+  await new Promise(resolve => setTimeout(resolve, 900));
+}
+
 async function emergencyGoogleLogout(reason = 'watchdog-event') {
   if (emergencyLogoutPromise) return emergencyLogoutPromise;
   emergencyLogoutPromise = (async () => {
     // This path is only used after the paired watchdog is disabled/removed.
     // Normal Flow Guard operation never reads or removes browser cookies.
+    await requestGoogleWebLogout();
     await resetOpenTabs();
     // Clear after pages are reset so a live document cannot recreate cookies.
     const cookieStats = await clearProfileCookies();
