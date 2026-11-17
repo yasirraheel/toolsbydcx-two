@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.2';
+  const GATE_VERSION = '1.4.3';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -356,6 +356,11 @@
     const actionLabel = `${controlText} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
     if (/generate|create|submit|send|render|produce|arrow|go/i.test(actionLabel)) return true;
     if (controlText || !promptRoot) return false;
+    const controlRect = control.getBoundingClientRect();
+    const rootRect = promptRoot.getBoundingClientRect();
+    const nearComposerSubmitPosition = controlRect.right >= rootRect.right - 96
+      && controlRect.bottom >= rootRect.bottom - 88;
+    if (!nearComposerSubmitPosition) return false;
     const promptControls = Array.from(promptRoot.querySelectorAll('button,a,[role="button"]'))
       .filter(isVisible);
     return promptControls.at(-1) === control;
@@ -472,6 +477,9 @@
     // Flow emits synthetic clicks while hydrating/re-rendering its composer;
     // only a real user gesture may reserve credits.
     if (event.isTrusted === false && !replaying) return;
+    // Model picker triggers/options are never generation controls, even when
+    // they are icon-only and live inside the same composer container.
+    if (event.target?.closest?.('[role="listbox"], [role="menu"], [role="option"], [role="menuitem"], [role="combobox"], [aria-haspopup="listbox"], [data-toolsbydcx-model-option]')) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
     if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
