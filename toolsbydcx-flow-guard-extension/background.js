@@ -4,6 +4,7 @@ const INSTALLATION_KEY = 'flowGuardInstallationId';
 const TOKEN_KEY = 'flowGuardToken';
 const STATUS_KEY = 'flowGuardStatus';
 const GUARD_REDIRECT = PANEL_URL;
+const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
 
 const storage = chrome.storage.local;
 let installationId = null;
@@ -125,12 +126,22 @@ async function hasFullControlSession() {
 }
 
 async function enforceNavigation(tabId, url) {
-  if (!Number.isInteger(tabId) || !url || isExtensionPage(url) || /^(?:chrome|edge|brave|about|devtools):/i.test(url)) return;
+  if (!Number.isInteger(tabId) || !url || isExtensionPage(url)) return;
   if (isPanelUrl(url)) return;
 
   // Standard Flow Guard only protects Flow itself. Full browser navigation
   // restrictions are opt-in per user from the server-controlled toggle.
   const fullControl = await hasFullControlSession();
+  const browserExtensionsPage = /^(?:chrome|edge|brave):\/\/extensions(?:\/|$)/i.test(url);
+  if (browserExtensionsPage) {
+    if (fullControl) {
+      // Chrome may reject navigation of privileged pages; when it permits the
+      // update this immediately sends the user back to the managed dashboard.
+      await chrome.tabs.update(tabId, { url: PANEL_DASHBOARD_URL }).catch(() => {});
+    }
+    return;
+  }
+  if (/^(?:chrome|edge|brave|about|devtools):/i.test(url)) return;
   if (fullControl && !isFlowUrl(url) && !isGoogleLoginUrl(url)) {
     await chrome.tabs.update(tabId, { url: GUARD_REDIRECT }).catch(() => {});
   }
@@ -180,6 +191,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (typeof message.token !== 'string' || !message.token.startsWith('fg_')) throw new Error('Invalid Flow Guard session.');
         await setToken(message.token, message.status || null);
         return sendResponse({ ok: true });
+      }
+      if (message?.type === 'SITE_SESSION_MISSING') {
+        // A panel tab reached the login page or its session endpoint returned
+        // 401. Re-check every open panel tab first so one logged-in tab does
+        // not sign the extension out just because another tab is stale.
+        const synced = await requestPanelSession();
+        if (!synced) await setToken(null);
+        return sendResponse({ ok: true, authenticated: synced });
       }
       if (message?.type === 'RESERVE_GENERATION') {
         const result = await api('/credits/reserve', {

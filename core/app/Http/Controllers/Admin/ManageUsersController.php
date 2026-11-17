@@ -461,6 +461,9 @@ class ManageUsersController extends Controller
     {
         $user = User::findOrFail($id);
         \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+        \App\Models\FlowGuardSession::where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now(), 'updated_at' => now()]);
         
         // Clear remember token so the "Remember Me" cookie cannot automatically log them back in
         $user->remember_token = null;
@@ -511,6 +514,8 @@ class ManageUsersController extends Controller
     {
         $user = User::findOrFail($id);
         $previousPlanId = (int) $user->plan_id;
+        $previousFlowGuardEnabled = (bool) \App\Models\FlowGuardAccess::where('user_id', $user->id)->value('enabled');
+        $flowGuardPasswordChanged = false;
 
         $request->validate([
             'name' => 'required|string|max:80',
@@ -556,6 +561,7 @@ class ManageUsersController extends Controller
         if ($request->filled('password')) {
             $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
             $user->plain_password = $request->password;
+            $flowGuardPasswordChanged = true;
         }
 
         if ($request->has('account_ids_submitted')) {
@@ -621,11 +627,17 @@ class ManageUsersController extends Controller
                 ]
             );
 
-            if (!$flowGuardAccess->enabled) {
+            if ($previousFlowGuardEnabled && !$flowGuardAccess->enabled) {
                 \App\Models\FlowGuardSession::where('user_id', $user->id)
                     ->whereNull('revoked_at')
                     ->update(['revoked_at' => now(), 'updated_at' => now()]);
             }
+        }
+
+        if ($flowGuardPasswordChanged) {
+            \App\Models\FlowGuardSession::where('user_id', $user->id)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
         }
 
         // A selected plan is the source of truth for all plan entitlements.

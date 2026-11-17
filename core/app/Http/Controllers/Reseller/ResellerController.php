@@ -486,6 +486,9 @@ class ResellerController extends Controller
         $user = User::where('reseller_id', $reseller->id)->findOrFail($id);
 
         DB::table('sessions')->where('user_id', $user->id)->delete();
+        \App\Models\FlowGuardSession::where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now(), 'updated_at' => now()]);
         $user->remember_token = null;
         $user->save();
 

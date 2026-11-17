@@ -1,7 +1,8 @@
 (() => {
   'use strict';
-  if (window.top !== window || globalThis.__toolsByDcxFlowGuardGate) return;
-  globalThis.__toolsByDcxFlowGuardGate = true;
+  const GATE_VERSION = '1.4.0';
+  if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
+  globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
   let currentStatus = null;
   let pending = null;
@@ -207,9 +208,14 @@
     overlay.querySelector('#fg-open').addEventListener('click', () => send({ type: 'OPEN_PANEL' }));
     overlay.querySelector('#fg-check').addEventListener('click', event => {
       const checkButton = event.currentTarget;
+      if (checkButton.dataset.busy === '1') return;
+      checkButton.dataset.busy = '1';
       checkButton.disabled = true;
       showGate('Checking your ToolsByDcx panel authentication…', 'checking');
-      safeAsync(() => refresh()).then(() => { checkButton.disabled = false; });
+      safeAsync(() => refresh()).then(() => {
+        checkButton.disabled = false;
+        delete checkButton.dataset.busy;
+      });
     });
   }
 
@@ -226,10 +232,8 @@
     overlay.style.display = 'grid';
     document.documentElement.style.overflow = 'hidden';
     removeProjectUi();
-    if (mode !== 'checking' && !currentStatus?.access?.enabled && !gateStopped) {
-      gateStopped = true;
-      try { window.stop(); } catch (_) {}
-    }
+    // Keep the document alive so a later panel login/logout can be reflected
+    // immediately without requiring a Flow page refresh.
   }
 
   function hideGate() {
@@ -586,7 +590,7 @@
     currentStatus = response?.status || { authenticated: false };
     if (!currentStatus.authenticated) { removeProjectUi(); showGate('No panel authentication detected. Sign in to ToolsByDcx in another tab, then press Check authentication.', 'login'); return; }
     if (currentStatus.access?.enabled !== true) { removeProjectUi(); showGate('Your Flow Guard access is not enabled. Contact the administrator.', 'locked'); return; }
-    if (gateStopped) { location.reload(); return; }
+    gateStopped = false;
     applyModelAllowlist();
     const allowedModels = allowedModelNames();
     if (!allowedModels.length) {
@@ -609,6 +613,11 @@
     saveProjectIfChanged();
   }
 
+  // If the extension was reloaded while Flow was open, an old content-script
+  // realm may have left its overlay behind. Remove that stale surface so the
+  // current realm owns the authentication button and spinner.
+  document.getElementById('toolsbydcx-flow-guard-overlay')?.remove();
+  document.documentElement.style.overflow = '';
   installHomeShield();
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');

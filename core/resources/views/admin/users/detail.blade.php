@@ -105,7 +105,7 @@
                                         </a>
                                     </div>
                                     <div class="input-group">
-                                        <input class="form-control" type="password" name="password" id="passwordField" value="{{ $user->display_password }}" placeholder="@lang('User password')">
+                                        <input class="form-control" type="password" name="password" id="passwordField" value="{{ old('password') }}" placeholder="@lang('Leave blank to keep current password')" autocomplete="new-password">
                                         <button type="button" class="btn btn--primary px-3 d-flex align-items-center justify-content-center" id="togglePassword" title="@lang('Toggle Visibility')" style="cursor:pointer;">
                                             <i class="las la-eye" style="font-size: 18px; color: #fff;"></i>
                                         </button>
