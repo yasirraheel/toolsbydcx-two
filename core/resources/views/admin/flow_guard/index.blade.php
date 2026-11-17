@@ -42,7 +42,7 @@
                                             / {{ $user->credit_limit === null ? 'Unlimited' : number_format((int) $user->credit_limit) }}
                                         </td>
                                         <td>{{ number_format((int) ($user->generation_cost ?? 100)) }}</td>
-                                        <td>{{ $user->allowed_model ?: 'All models' }}</td>
+                                        <td>{{ $user->allowed_model ?: 'No model assigned' }}</td>
                                         <td>{{ $user->expires_at ? showDateTime($user->expires_at) : 'No expiry' }}</td>
                                         <td>
                                             <form method="POST" action="{{ route('admin.flow-guard.users.update', $user->id) }}" class="d-flex flex-wrap gap-2 align-items-center">

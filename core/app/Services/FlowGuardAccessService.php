@@ -116,7 +116,10 @@ class FlowGuardAccessService
 
             $allowedModel = trim((string) ($access->allowed_model ?? ''));
             $requestedModel = trim((string) ($metadata['model'] ?? ''));
-            if ($allowedModel !== '' && strcasecmp($this->normalizeModelName($requestedModel), $this->normalizeModelName($allowedModel)) !== 0) {
+            if ($allowedModel === '') {
+                abort(403, 'No Google Flow model is assigned to this account.');
+            }
+            if ($requestedModel === '' || strcasecmp($this->normalizeModelName($requestedModel), $this->normalizeModelName($allowedModel)) !== 0) {
                 abort(403, 'This model is not enabled for your Flow Guard account.');
             }
 

@@ -289,7 +289,7 @@
                                         <input type="text" class="form-control" name="flow_guard_allowed_model" maxlength="191"
                                                value="{{ old('flow_guard_allowed_model', $flowGuardAccess->allowed_model) }}"
                                                placeholder="@lang('e.g. Omni 1.2 Flash')">
-                                        <small class="text-muted">@lang('Only this exact native Flow model is enabled. Leave blank to allow all models.') </small>
+                                        <small class="text-muted">@lang('Only this exact native Flow model is enabled. Leave blank to disable all models.') </small>
                                     </div>
                                     <div class="small text-muted mt-2">
                                         <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($flowGuardUsed) }}</strong></span>

@@ -18,9 +18,17 @@
   let homeEmptyState;
   let confirmModal;
 
-  const send = message => chrome.runtime.sendMessage(message).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
+  const send = message => {
+    try {
+      return Promise.resolve(chrome.runtime.sendMessage(message)).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
+    } catch (_) {
+      return Promise.resolve({ ok: false, error: 'Flow Guard is unavailable.' });
+    }
+  };
   const textOf = element => (element?.innerText || element?.textContent || '').replace(/\s+/g, ' ').trim();
-  const assetUrl = file => chrome.runtime.getURL(file);
+  const assetUrl = file => {
+    try { return chrome.runtime.getURL(file); } catch (_) { return ''; }
+  };
   const normalizeModelName = value => String(value ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -163,7 +171,7 @@
 
   function applyModelAllowlist() {
     const allowed = String(currentStatus?.access?.allowed_model || '').trim();
-    if (currentStatus?.access?.enabled !== true || !allowed) return;
+    if (currentStatus?.access?.enabled !== true) return;
     const normalizedAllowed = normalizeModelName(allowed);
     const selector = '[role="option"],[role="menuitem"],[role="menuitemradio"],li,[aria-selected],[role="listbox"] *,[role="menu"] *';
     document.querySelectorAll(selector).forEach(element => {
@@ -173,15 +181,15 @@
       const optionLike = element.matches('[role="option"],[role="menuitem"],[role="menuitemradio"],li')
         || !!element.closest('[role="listbox"],[role="menu"]');
       if (!optionLike) return;
-      const enabled = normalizeModelName(label) === normalizedAllowed;
+      const enabled = normalizedAllowed !== '' && normalizeModelName(label) === normalizedAllowed;
       element.setAttribute('data-toolsbydcx-model-option', '1');
       element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       element.style.setProperty('opacity', enabled ? '1' : '.35', 'important');
       element.style.setProperty('pointer-events', enabled ? 'auto' : 'none', 'important');
       if (!enabled) {
         element.setAttribute('tabindex', '-1');
-        element.setAttribute('title', `Only ${allowed} is enabled for this account.`);
-      } else if (element.getAttribute('title') === `Only ${allowed} is enabled for this account.`) {
+        element.setAttribute('title', allowed ? `Only ${allowed} is enabled for this account.` : 'No Google Flow model is assigned to this account.');
+      } else if (element.getAttribute('title') === `Only ${allowed} is enabled for this account.` || element.getAttribute('title') === 'No Google Flow model is assigned to this account.') {
         element.removeAttribute('title');
       }
     });
@@ -214,6 +222,10 @@
     const project = projectInfo();
     const allowedModel = String(currentStatus?.access?.allowed_model || '').trim();
     const selectedModel = selectedModelName();
+    if (!allowedModel) {
+      showModelNotice('No Google Flow model is assigned to your account.');
+      return;
+    }
     if (allowedModel && normalizeModelName(selectedModel) !== normalizeModelName(allowedModel)) {
       showModelNotice(`Only ${allowedModel} is enabled for your account.`);
       return;

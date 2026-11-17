@@ -22,7 +22,7 @@ function render(status, error = '') {
   const cost = document.createElement('span');
   cost.textContent = `Cost per video: ${access.generation_cost || 0}`;
   const model = document.createElement('span');
-  model.textContent = `Allowed model: ${access.allowed_model || 'All models'}`;
+  model.textContent = `Allowed model: ${access.allowed_model || 'No model assigned'}`;
   statusBox.append(label, title, credits, cost, model);
   message.textContent = status.access?.enabled === true
     ? 'Flow Guard is active.'
