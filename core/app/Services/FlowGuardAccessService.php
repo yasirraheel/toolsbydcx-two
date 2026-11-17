@@ -196,7 +196,9 @@ class FlowGuardAccessService
 
     public function normalizeModelName(?string $model): string
     {
-        return trim((string) preg_replace('/\s+/', ' ', (string) $model));
+        $normalized = (string) $model;
+        $normalized = (string) preg_replace('/\s+\[(?:lower|higher)\s+priority\]\s*$/iu', '', $normalized);
+        return trim((string) preg_replace('/\s+/', ' ', $normalized));
     }
 
     public function modelKey(?string $model): string

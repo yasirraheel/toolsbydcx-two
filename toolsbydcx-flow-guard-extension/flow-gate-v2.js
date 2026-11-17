@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.5';
+  const GATE_VERSION = '1.4.6';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -61,6 +61,7 @@
     try { return chrome.runtime.getURL(file); } catch (_) { return ''; }
   };
   const normalizeModelName = value => String(value ?? '')
+    .replace(/\s+\[(?:lower|higher)\s+priority\]\s*$/i, '')
     .replace(/[\u2010-\u2015\u2212]/g, '-')
     .replace(/\s*-\s*/g, ' - ')
     .replace(/\s+/g, ' ')
@@ -73,7 +74,10 @@
   function modelLabel(element) {
     const raw = element?.innerText || element?.textContent || '';
     const firstLine = raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || raw.replace(/\s+/g, ' ').trim();
-    return firstLine.replace(/\s+(?:leaving|sunsetting|deprecated)\b.*$/i, '').trim();
+    return firstLine
+      .replace(/\s+(?:leaving|sunsetting|deprecated)\b.*$/i, '')
+      .replace(/\s+\[(?:lower|higher)\s+priority\]\s*$/i, '')
+      .trim();
   }
 
   function isModelLabel(label) {
