@@ -142,13 +142,15 @@
 
   function maskNativeFlowCredits() {
     if (currentStatus?.access?.enabled !== true || !document.body) return;
-    if (!/sign\s+out\s+of\s+all\s+accounts/i.test(textOf(document.body))) return;
+    const pageText = textOf(document.body);
+    if (!/(?:google\s+flow\s+credits?|manage\s+subscription|create\s+avatar)/i.test(pageText)) return;
     const serverText = creditText();
-    document.querySelectorAll('div,span,p,button,[role="button"]').forEach(element => {
+    document.querySelectorAll('div,span,p,a,button,[role="button"]').forEach(element => {
       if (element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return;
       if (element.getAttribute('data-toolsbydcx-server-credit')) return;
       const label = textOf(element);
-      if (!label || label.length > 100 || !/\b(?:google\s+flow\s+)?credits?\b/i.test(label)) return;
+      if (!label || label.length > 140 || !/\b(?:google\s+flow\s+)?credits?\b/i.test(label)) return;
+      if (/upgrade|resets?\s+on|manage\s+subscription/i.test(label) || element.querySelector('button')) return;
       if (element.children.length > 2) return;
       const rect = element.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
