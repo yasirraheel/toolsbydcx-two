@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         using:function(){
             Route::middleware('api')->prefix('api')->group(base_path('routes/api.php'));
+            // Isolated Flow Guard API. This is intentionally separate from
+            // the legacy dcx-flow extension routes and pairing tables.
+            Route::middleware('api')->prefix('api')->group(base_path('routes/flow_guard.php'));
             Route::namespace('App\Http\Controllers')->middleware([VugiChugi::mdNm()])->group(function(){
                 Route::middleware(['web'])
                     ->namespace('Admin')
@@ -42,6 +45,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->group(base_path('routes/reseller.php'));
 
                 Route::middleware(['web','maintenance'])->prefix('user')->group(base_path('routes/user.php'));
+                Route::middleware(['web','maintenance'])->prefix('user')->group(base_path('routes/flow_guard_web.php'));
+                Route::middleware(['web'])->namespace('App\\Http\\Controllers')->prefix('admin/flow-guard')->name('admin.flow-guard.')->group(base_path('routes/flow_guard_admin.php'));
                 Route::middleware(['web','maintenance'])->group(base_path('routes/web.php'));
 
             });

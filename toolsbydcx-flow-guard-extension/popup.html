@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flow Guard</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <main>
+    <div class="brand">ToolsByDcx <span>Flow Guard</span></div>
+    <p id="message" class="message">Checking your server session…</p>
+    <section id="status" class="status hidden"></section>
+    <form id="login" class="hidden">
+      <label>Username or email<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <button>Sign in to ToolsByDcx</button>
+    </form>
+    <div class="actions"><button id="panel" class="secondary">Open panel</button><button id="logout" class="danger hidden">Sign out extension</button></div>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
