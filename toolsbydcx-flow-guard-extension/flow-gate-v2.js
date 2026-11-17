@@ -22,6 +22,14 @@
   let modelPreparationStartedAt = 0;
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
+  const safeAsync = task => Promise.resolve().then(task).catch(error => {
+    if (isInvalidatedContext(error)) {
+      gateStopped = true;
+      return undefined;
+    }
+    console.warn('ToolsByDcx Flow Guard task failed.', error);
+    return undefined;
+  });
   window.addEventListener('unhandledrejection', event => {
     if (isInvalidatedContext(event.reason)) event.preventDefault();
   });
@@ -32,7 +40,7 @@
   const send = message => {
     return new Promise(resolve => {
       try {
-        if (!chrome?.runtime?.id) return resolve({ ok: false, error: 'Flow Guard is unavailable.' });
+        if (typeof chrome === 'undefined' || !chrome.runtime?.id) return resolve({ ok: false, error: 'Flow Guard is unavailable.' });
         chrome.runtime.sendMessage(message, response => {
           try {
             const runtimeError = chrome.runtime.lastError;
@@ -355,7 +363,7 @@
     }
     replaying = true;
     try { control.click(); } finally { replaying = false; }
-    setTimeout(() => settle('committed'), 10000);
+    setTimeout(() => safeAsync(() => settle('committed')), 10000);
   }
 
   function generationListener(event) {
@@ -364,12 +372,12 @@
     if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    void reserveAndClick(control);
+    safeAsync(() => reserveAndClick(control));
   }
 
   function watchFailures() {
     const body = textOf(document.body);
-    if (pending && /(generation|video|render).*(failed|error|could not|unable)|try again later/i.test(body)) void settle('refunded');
+    if (pending && /(generation|video|render).*(failed|error|could not|unable)|try again later/i.test(body)) safeAsync(() => settle('refunded'));
   }
 
   function isFlowHomePage() {
@@ -464,14 +472,14 @@
     const signature = `${project.external_project_id}|${project.url}|${project.name || ''}`;
     if (signature === lastProjectSig) return;
     lastProjectSig = signature;
-    void send({ type: 'SAVE_PROJECT', project }).then(result => {
+    safeAsync(() => send({ type: 'SAVE_PROJECT', project }).then(result => {
       if (result?.data?.external_project_id) {
         const previous = projects.find(item => item.external_project_id === result.data.external_project_id);
         const merged = { ...(previous || {}), ...result.data };
         projects = [merged, ...projects.filter(item => item.external_project_id !== merged.external_project_id)];
         renderProjectPanel();
       }
-    });
+    }));
   }
 
   function creditText(access = currentStatus?.access || {}) {
@@ -511,7 +519,7 @@
     }).join('') : '<div class="fg-empty">No saved projects yet. Open a Flow project and it will be saved here for this ToolsByDcx account.</div>';
     projectPanel.innerHTML = `<section class="fg-panel" role="dialog" aria-modal="true" aria-labelledby="fg-project-title"><div class="fg-panel-head"><div><div class="fg-kicker">ToolsByDcx Flow Guard</div><h2 id="fg-project-title">My Flow projects <span class="fg-count">${projects.length}</span></h2><div class="fg-sub">Private server archive for ${escapeHtml(userName)} · ${escapeHtml(creditText())}</div></div><div class="fg-head-actions"><button class="fg-refresh-projects">Refresh</button><button class="fg-close">Close</button></div></div><div class="fg-project-grid">${content}</div></section>`;
     projectPanel.querySelector('.fg-close')?.addEventListener('click', closeProjectPanel);
-    projectPanel.querySelector('.fg-refresh-projects')?.addEventListener('click', () => void loadProjects(true));
+    projectPanel.querySelector('.fg-refresh-projects')?.addEventListener('click', () => safeAsync(() => loadProjects(true)));
     projectPanel.querySelectorAll('[data-open-project]').forEach(button => button.addEventListener('click', () => {
       const url = button.getAttribute('data-open-project');
       if (url) location.href = url;
@@ -567,12 +575,12 @@
           document.body.append(projectPanel);
         }
         renderProjectPanel();
-        void loadProjects(true);
+        safeAsync(() => loadProjects(true));
       });
       document.body.append(projectButton);
     }
     updateProjectButton();
-    void loadProjects();
+    safeAsync(() => loadProjects());
   }
 
   function removeProjectUi() { projectButton?.remove(); projectButton = null; creditPill?.remove(); creditPill = null; closeProjectPanel(); }
@@ -649,8 +657,8 @@
       ensureProjectUi();
     }
   }, 600);
-  setInterval(() => void refresh(false), 2000);
+  setInterval(() => safeAsync(() => refresh(false)), 2000);
   setInterval(watchFailures, 2500);
   setInterval(saveProjectIfChanged, 3000);
-  void refresh();
+  safeAsync(() => refresh());
 })();
