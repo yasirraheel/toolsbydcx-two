@@ -18,7 +18,7 @@ class FlowGuardCors
         return $response->withHeaders([
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Headers' => 'Authorization, Content-Type, Accept, X-Requested-With, X-Flow-Guard-Installation',
-            'Access-Control-Allow-Methods' => 'GET, POST, PUT, OPTIONS',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, OPTIONS',
             'Cache-Control' => 'no-store, private',
         ]);
     }
