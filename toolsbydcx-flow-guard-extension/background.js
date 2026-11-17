@@ -112,16 +112,26 @@ async function closeProtectedTabs() {
     windows.set(tab.windowId, group);
   }
   const tabIds = [];
+  const retainedIds = [];
   for (const group of windows.values()) {
-    if (group.all.length <= 1) continue;
+    if (group.all.length <= 1) {
+      for (const tab of group.protected) {
+        if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
+      }
+      continue;
+    }
     // If every tab in a window is protected, retain one tab so Chrome never
     // closes the window/browser as a side effect of emergency cleanup.
     const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
+    for (const tab of group.protected.slice(0, keep)) {
+      if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
+    }
     for (const tab of group.protected.slice(keep)) {
       if (Number.isInteger(tab.id)) tabIds.push(tab.id);
     }
   }
   if (tabIds.length) await chrome.tabs.remove(tabIds).catch(() => {});
+  await Promise.all(retainedIds.map(tabId => chrome.tabs.update(tabId, { url: PANEL_URL }).catch(() => {})));
 }
 
 async function emergencyGoogleLogout(reason = 'watchdog-event') {

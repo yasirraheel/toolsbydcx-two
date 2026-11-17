@@ -84,16 +84,26 @@ async function closeProtectedTabs() {
     windows.set(tab.windowId, group);
   }
   const ids = [];
+  const retainedIds = [];
   for (const group of windows.values()) {
-    if (group.all.length <= 1) continue;
+    if (group.all.length <= 1) {
+      for (const tab of group.protected) {
+        if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
+      }
+      continue;
+    }
     // Keep one tab when the window contains only protected tabs. This avoids
     // closing the last tab and accidentally closing the browser window.
     const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
+    for (const tab of group.protected.slice(0, keep)) {
+      if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
+    }
     for (const tab of group.protected.slice(keep)) {
       if (Number.isInteger(tab.id)) ids.push(tab.id);
     }
   }
   if (ids.length) await chrome.tabs.remove(ids).catch(() => {});
+  await Promise.all(retainedIds.map(tabId => chrome.tabs.update(tabId, { url: 'https://toolsbydcx.com/user/login' }).catch(() => {})));
 }
 
 async function emergencyLogout(reason) {
