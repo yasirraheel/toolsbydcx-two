@@ -18,6 +18,8 @@
   let homeEmptyState;
   let confirmModal;
   let modelSelectionPending = false;
+  let modelPreparationKey = null;
+  let modelPreparationStartedAt = 0;
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
   window.addEventListener('unhandledrejection', event => {
@@ -133,6 +135,34 @@
       setTimeout(() => { modelSelectionPending = false; }, 900);
     }
     return false;
+  }
+
+  function setModelPickerDisabled(disabled) {
+    const trigger = findModelTrigger();
+    if (!trigger) return;
+    if (disabled) {
+      trigger.setAttribute('data-toolsbydcx-model-picker-disabled', '1');
+      trigger.setAttribute('aria-disabled', 'true');
+      trigger.setAttribute('tabindex', '-1');
+      trigger.style.setProperty('pointer-events', 'none', 'important');
+      trigger.style.setProperty('opacity', '.55', 'important');
+      if ('disabled' in trigger) trigger.disabled = true;
+      return;
+    }
+    if (trigger.getAttribute('data-toolsbydcx-model-picker-disabled') !== '1') return;
+    trigger.removeAttribute('data-toolsbydcx-model-picker-disabled');
+    trigger.removeAttribute('aria-disabled');
+    trigger.removeAttribute('tabindex');
+    trigger.style.removeProperty('pointer-events');
+    trigger.style.removeProperty('opacity');
+    if ('disabled' in trigger) trigger.disabled = false;
+  }
+
+  function modelPickerListener(event) {
+    const trigger = event.target?.closest?.('[data-toolsbydcx-model-picker-disabled="1"]');
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   function showModelNotice(message) {
@@ -554,10 +584,30 @@
     if (currentStatus.access?.enabled !== true) { removeProjectUi(); showGate('Your Flow Guard access is not enabled. Contact the administrator.', 'locked'); return; }
     if (gateStopped) { location.reload(); return; }
     applyModelAllowlist();
+    const allowedModels = allowedModelNames();
+    const preparationKey = allowedModels.map(normalizeModelName).join('|');
+    if (preparationKey !== modelPreparationKey) {
+      modelPreparationKey = preparationKey;
+      modelPreparationStartedAt = preparationKey ? Date.now() : 0;
+    }
+    if (!allowedModels.length) {
+      setModelPickerDisabled(true);
+      hideGate();
+      lockLogoutControls();
+      maskNativeFlowCredits();
+      ensureProjectUi();
+      renderCreditPill();
+      saveProjectIfChanged();
+      return;
+    }
+    setModelPickerDisabled(false);
     if (!preselectAllowedModel()) {
-      showGate(allowedModelNames().length
-        ? 'Preparing your assigned Google Flow model…'
-        : 'No Google Flow model is assigned to this account.', allowedModelNames().length ? 'checking' : 'locked');
+      const timedOut = preparationKey && modelPreparationStartedAt && Date.now() - modelPreparationStartedAt >= 8000;
+      showGate(!preparationKey
+        ? 'No Google Flow model is assigned to this account. Contact ToolsByDcx support.'
+        : timedOut
+          ? `Assigned model mismatch: ${allowedModels.join(', ')} is not available in this Flow account. Contact ToolsByDcx support.`
+          : 'Preparing your assigned Google Flow model…', (!preparationKey || timedOut) ? 'locked' : 'checking');
       return;
     }
     hideGate();
@@ -574,6 +624,7 @@
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
+  document.addEventListener('click', modelPickerListener, true);
   document.addEventListener('click', () => {
     if (currentStatus?.access?.enabled !== true) return;
     setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
@@ -583,6 +634,14 @@
   setInterval(() => {
     if (currentStatus?.access?.enabled !== true) return;
     applyModelAllowlist();
+    const allowedModels = allowedModelNames();
+    if (!allowedModels.length) {
+      setModelPickerDisabled(true);
+      hideGate();
+      ensureProjectUi();
+      return;
+    }
+    setModelPickerDisabled(false);
     if (preselectAllowedModel()) {
       hideGate();
       lockLogoutControls();
