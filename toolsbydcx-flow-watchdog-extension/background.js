@@ -12,6 +12,13 @@ const COOKIE_URLS = [
   'https://toolsbydcx.com/',
   'https://www.toolsbydcx.com/'
 ];
+const COOKIE_DOMAINS = ['google.com', 'accounts.google.com', 'flow.google.com', 'toolsbydcx.com'];
+const PARTITION_TOP_LEVEL_SITES = [
+  'https://flow.google.com',
+  'https://accounts.google.com',
+  'https://www.google.com',
+  'https://toolsbydcx.com'
+];
 
 const storage = chrome.storage.local;
 let emergencyPromise = null;
@@ -43,13 +50,28 @@ async function clearProfileCookies() {
     const cookies = await chrome.cookies.getAll({ url }).catch(() => []);
     all.push(...cookies);
   }
+  for (const domain of COOKIE_DOMAINS) {
+    const cookies = await chrome.cookies.getAll({ domain }).catch(() => []);
+    all.push(...cookies);
+  }
+  // Chrome returns unpartitioned cookies by default. Query known top-level
+  // sites explicitly so partitioned Google/Flow cookies are covered too.
+  for (const url of COOKIE_URLS) {
+    for (const topLevelSite of PARTITION_TOP_LEVEL_SITES) {
+      const cookies = await chrome.cookies.getAll({ url, partitionKey: { topLevelSite } }).catch(() => []);
+      all.push(...cookies);
+    }
+  }
   const seen = new Set();
-  await Promise.all(all.map(cookie => {
-    if (!isProtectedCookie(cookie)) return null;
+  const unique = all.filter(cookie => {
+    if (!isProtectedCookie(cookie)) return false;
     const partition = cookie.partitionKey ? JSON.stringify(cookie.partitionKey) : '';
     const key = [cookie.storeId || '', cookie.domain || '', cookie.path || '/', cookie.name || '', partition].join('|');
-    if (seen.has(key)) return null;
+    if (seen.has(key)) return false;
     seen.add(key);
+    return true;
+  });
+  const results = await Promise.all(unique.map(cookie => {
     const domain = String(cookie.domain || '').replace(/^\./, '');
     const details = {
       url: `https://${domain}${cookie.path || '/'}`,
@@ -59,6 +81,7 @@ async function clearProfileCookies() {
     if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
     return chrome.cookies.remove(details).catch(() => null);
   }));
+  return { matched: unique.length, removed: results.filter(Boolean).length };
 }
 
 async function setEmergencyMarker() {
@@ -101,14 +124,14 @@ async function emergencyLogout(reason) {
   emergencyPromise = (async () => {
     // This is the emergency path only. It runs when the paired main extension
     // is disabled or removed; normal watchdog checks never touch cookies.
-    await clearProfileCookies();
+    const cookieStats = await clearProfileCookies();
     // The main extension has separate storage. This short-lived marker lets
     // it clear its own local token when it is enabled again.
     await setEmergencyMarker();
     await resetOpenTabs();
     await storage.set({
       [ARMED_KEY]: false,
-      [EMERGENCY_KEY]: { reason, at: Date.now() }
+      [EMERGENCY_KEY]: { reason, at: Date.now(), cookieStats }
     });
   })().finally(() => {
     emergencyPromise = null;
@@ -171,8 +194,14 @@ chrome.management?.onDisabled?.addListener(info => {
 });
 
 chrome.management?.onUninstalled?.addListener(extensionId => {
-  storage.get(MAIN_ID_KEY).then(saved => {
-    if (saved[MAIN_ID_KEY] === extensionId) void emergencyLogout('main-uninstalled');
+  storage.get([MAIN_ID_KEY, ARMED_KEY]).then(async saved => {
+    if (saved[ARMED_KEY] !== true) return;
+    if (saved[MAIN_ID_KEY] === extensionId) {
+      void emergencyLogout('main-uninstalled');
+      return;
+    }
+    const main = await findMain();
+    if (!main) void emergencyLogout('main-uninstalled-unmatched-id');
   }).catch(() => {});
 });
 
@@ -181,7 +210,7 @@ chrome.alarms?.onAlarm?.addListener(alarm => {
 });
 
 try {
-  chrome.alarms?.create?.(CHECK_ALARM, { periodInMinutes: 0.5 });
+  chrome.alarms?.create?.(CHECK_ALARM, { delayInMinutes: 0.05, periodInMinutes: 0.5 });
 } catch (_) {}
 
 setTimeout(() => checkMain('initial').catch(() => {}), 1000);

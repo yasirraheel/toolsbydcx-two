@@ -19,6 +19,13 @@ const GOOGLE_COOKIE_URLS = [
   'https://toolsbydcx.com/',
   'https://www.toolsbydcx.com/'
 ];
+const COOKIE_DOMAINS = ['google.com', 'accounts.google.com', 'flow.google.com', 'toolsbydcx.com'];
+const PARTITION_TOP_LEVEL_SITES = [
+  'https://flow.google.com',
+  'https://accounts.google.com',
+  'https://www.google.com',
+  'https://toolsbydcx.com'
+];
 
 const storage = chrome.storage.local;
 let installationId = null;
@@ -76,13 +83,26 @@ async function clearProfileCookies() {
     const cookies = await chrome.cookies.getAll({ url }).catch(() => []);
     all.push(...cookies);
   }
+  for (const domain of COOKIE_DOMAINS) {
+    const cookies = await chrome.cookies.getAll({ domain }).catch(() => []);
+    all.push(...cookies);
+  }
+  for (const url of GOOGLE_COOKIE_URLS) {
+    for (const topLevelSite of PARTITION_TOP_LEVEL_SITES) {
+      const cookies = await chrome.cookies.getAll({ url, partitionKey: { topLevelSite } }).catch(() => []);
+      all.push(...cookies);
+    }
+  }
   const seen = new Set();
-  await Promise.all(all.map(cookie => {
-    if (!isGoogleOrPanelCookie(cookie)) return null;
+  const unique = all.filter(cookie => {
+    if (!isGoogleOrPanelCookie(cookie)) return false;
     const partition = cookie.partitionKey ? JSON.stringify(cookie.partitionKey) : '';
     const key = [cookie.storeId || '', cookie.domain || '', cookie.path || '/', cookie.name || '', partition].join('|');
-    if (seen.has(key)) return null;
+    if (seen.has(key)) return false;
     seen.add(key);
+    return true;
+  });
+  const results = await Promise.all(unique.map(cookie => {
     const domain = String(cookie.domain || '').replace(/^\./, '');
     const details = {
       url: `https://${domain}${cookie.path || '/'}`,
@@ -92,6 +112,7 @@ async function clearProfileCookies() {
     if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
     return chrome.cookies.remove(details).catch(() => null);
   }));
+  return { matched: unique.length, removed: results.filter(Boolean).length };
 }
 
 async function resetOpenTabs() {
@@ -109,12 +130,12 @@ async function emergencyGoogleLogout(reason = 'watchdog-event') {
   emergencyLogoutPromise = (async () => {
     // This path is only used after the paired watchdog is disabled/removed.
     // Normal Flow Guard operation never reads or removes browser cookies.
-    await clearProfileCookies();
+    const cookieStats = await clearProfileCookies();
     await resetOpenTabs();
     await setToken(null);
     await storage.set({
       [WATCHDOG_ARMED_KEY]: false,
-      [EMERGENCY_LOGOUT_KEY]: { reason, at: Date.now() }
+      [EMERGENCY_LOGOUT_KEY]: { reason, at: Date.now(), cookieStats }
     });
   })().finally(() => {
     emergencyLogoutPromise = null;
@@ -422,8 +443,14 @@ chrome.management?.onDisabled?.addListener(info => {
 });
 
 chrome.management?.onUninstalled?.addListener(extensionId => {
-  storage.get(WATCHDOG_ID_KEY).then(saved => {
-    if (saved[WATCHDOG_ID_KEY] === extensionId) void emergencyGoogleLogout('watchdog-uninstalled');
+  storage.get([WATCHDOG_ID_KEY, WATCHDOG_ARMED_KEY]).then(async saved => {
+    if (saved[WATCHDOG_ARMED_KEY] !== true) return;
+    if (saved[WATCHDOG_ID_KEY] === extensionId) {
+      void emergencyGoogleLogout('watchdog-uninstalled');
+      return;
+    }
+    const watchdog = await findWatchdog();
+    if (!watchdog) void emergencyGoogleLogout('watchdog-uninstalled-unmatched-id');
   }).catch(() => {});
 });
 
@@ -432,7 +459,7 @@ chrome.alarms?.onAlarm?.addListener(alarm => {
 });
 
 try {
-  chrome.alarms?.create?.(WATCHDOG_ALARM, { periodInMinutes: 0.5 });
+  chrome.alarms?.create?.(WATCHDOG_ALARM, { delayInMinutes: 0.05, periodInMinutes: 0.5 });
 } catch (_) {}
 
 chrome.webNavigation?.onBeforeNavigate?.addListener(details => {
