@@ -151,7 +151,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           token = await savedToken();
         }
         if (!token) return sendResponse({ ok: true, status: { authenticated: false } });
-        return sendResponse({ ok: true, status: await refreshStatus() });
+        let status = await refreshStatus();
+        if (!status?.authenticated) {
+          await requestPanelSession();
+          token = await savedToken();
+          if (token) status = await refreshStatus();
+        }
+        return sendResponse({ ok: true, status });
       }
       if (message?.type === 'LOGIN') {
         const currentInstallationId = await getInstallationId();
