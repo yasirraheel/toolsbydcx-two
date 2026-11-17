@@ -186,55 +186,6 @@
     document.documentElement.style.overflow = '';
   }
 
-  function lockLogoutControls() {
-    if (currentStatus?.access?.enabled !== true) return;
-    if (!/sign\s+out\s+of\s+all\s+accounts/i.test(textOf(document.body))) return;
-    document.querySelectorAll('button,a,[role="button"]').forEach(control => {
-      const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
-      if (/\b(sign\s*out|log\s*out)\b/i.test(wording)) {
-        control.setAttribute('data-toolsbydcx-flow-guard-hidden', '1');
-        control.style.setProperty('display', 'none', 'important');
-      }
-    });
-  }
-
-  function lockFlowAccountControls() {
-    const fullControl = currentStatus?.access?.full_control === true;
-    const selector = 'button,a,[role="button"],[aria-label],[title],[data-tooltip]';
-    if (!fullControl) {
-      document.querySelectorAll('[data-toolsbydcx-flow-guard-control="1"]').forEach(control => {
-        control.removeAttribute('data-toolsbydcx-flow-guard-control');
-        control.removeAttribute('aria-disabled');
-        control.style.removeProperty('pointer-events');
-        control.style.removeProperty('opacity');
-        control.style.removeProperty('cursor');
-      });
-      return;
-    }
-
-    document.querySelectorAll(selector).forEach(control => {
-      if (control.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return;
-      const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''} ${control.getAttribute('data-tooltip') || ''}`.trim();
-      const accountControl = /google\s+account|switch\s+account|account\s+(?:menu|chooser)|manage\s+your\s+google\s+account|profile|avatar/i.test(wording);
-      const moreControl = /more\s+(?:options|actions)|overflow|^more$|^⋮$|^\.\.\.$/i.test(wording);
-      if (!accountControl && !moreControl) return;
-      control.setAttribute('data-toolsbydcx-flow-guard-control', '1');
-      control.setAttribute('aria-disabled', 'true');
-      control.setAttribute('tabindex', '-1');
-      control.style.setProperty('pointer-events', 'none', 'important');
-      control.style.setProperty('opacity', '.35', 'important');
-      control.style.setProperty('cursor', 'not-allowed', 'important');
-    });
-  }
-
-  function flowControlListener(event) {
-    if (currentStatus?.access?.full_control !== true) return;
-    const control = event.target?.closest?.('[data-toolsbydcx-flow-guard-control="1"]');
-    if (!control) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }
-
   function maskNativeFlowCredits() {
     if (currentStatus?.access?.enabled !== true || !document.body) return;
     const pageText = textOf(document.body);
@@ -578,8 +529,6 @@
       return;
     }
     hideGate();
-    lockLogoutControls();
-    lockFlowAccountControls();
     maskNativeFlowCredits();
     applyModelAllowlist();
     ensureProjectUi();
@@ -592,18 +541,14 @@
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
-  document.addEventListener('click', flowControlListener, true);
-  document.addEventListener('pointerdown', flowControlListener, true);
-  document.addEventListener('keydown', flowControlListener, true);
   document.addEventListener('click', () => {
     if (currentStatus?.access?.enabled !== true) return;
-    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
-    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
-    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
+    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
+    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
+    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
   }, true);
   setInterval(() => {
     if (currentStatus?.access?.enabled !== true) return;
-    lockFlowAccountControls();
     applyModelAllowlist();
   }, 600);
   setInterval(() => safeAsync(() => refresh(false)), 2000);
