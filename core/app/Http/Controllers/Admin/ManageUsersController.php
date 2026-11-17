@@ -434,6 +434,10 @@ class ManageUsersController extends Controller
             'generation_cost' => 100,
         ]);
         $flowGuardCreditRemaining = $flowGuardAccess->remainingCredits();
+        $flowGuardModels = \App\Models\FlowGuardModel::active()->orderBy('name')->get();
+        $flowGuardSelectedModels = is_array($flowGuardAccess->allowed_models) && $flowGuardAccess->allowed_models
+            ? $flowGuardAccess->allowed_models
+            : (filled($flowGuardAccess->allowed_model) ? [$flowGuardAccess->allowed_model] : []);
 
         return view('admin.users.detail', compact(
             'pageTitle',
@@ -447,7 +451,9 @@ class ManageUsersController extends Controller
             'ttsProviderCredits',
             'ttsCreditRemaining',
             'flowGuardAccess',
-            'flowGuardCreditRemaining'
+            'flowGuardCreditRemaining',
+            'flowGuardModels',
+            'flowGuardSelectedModels'
         ));
     }
 
@@ -524,7 +530,8 @@ class ManageUsersController extends Controller
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_generation_cost' => 'nullable|integer|min:1|max:1000000',
-            'flow_guard_allowed_model' => 'nullable|string|max:191',
+            'flow_guard_model_ids' => 'nullable|array',
+            'flow_guard_model_ids.*' => 'integer|exists:flow_guard_models,id',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -592,15 +599,23 @@ class ManageUsersController extends Controller
         }
 
         if ($request->has('flow_guard_submitted')) {
+            $selectedModelIds = array_values(array_unique(array_map('intval', (array) $request->input('flow_guard_model_ids', []))));
+            $allowedModels = \App\Models\FlowGuardModel::active()
+                ->whereIn('id', $selectedModelIds)
+                ->orderBy('name')
+                ->pluck('name')
+                ->map(fn ($name) => trim((string) $name))
+                ->filter()
+                ->values()
+                ->all();
             $flowGuardAccess = \App\Models\FlowGuardAccess::updateOrCreate(
                 ['user_id' => $user->id],
                 [
                     'enabled' => $request->boolean('flow_guard_enabled'),
                     'credit_limit' => $request->filled('flow_guard_credit_limit') ? (int) $request->flow_guard_credit_limit : null,
                     'generation_cost' => (int) ($request->input('flow_guard_generation_cost') ?: 100),
-                    'allowed_model' => $request->filled('flow_guard_allowed_model')
-                        ? trim((string) $request->input('flow_guard_allowed_model'))
-                        : null,
+                    'allowed_model' => $allowedModels[0] ?? null,
+                    'allowed_models' => $allowedModels ?: null,
                 ]
             );
 

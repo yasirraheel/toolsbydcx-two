@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\GoogleFlowAccount;
 use App\Models\ExtensionPairing;
 use App\Models\FlowLoginAttempt;
+use App\Models\FlowGuardModel;
+use App\Models\FlowGuardAccess;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -179,5 +181,67 @@ class GoogleFlowController extends Controller
         $pageTitle = 'Flow Login Attempts';
         $attempts = FlowLoginAttempt::with(['user', 'googleFlowAccount'])->latest()->paginate(getPaginate());
         return view('admin.google_flow.login_attempts', compact('pageTitle', 'attempts'));
+    }
+
+    public function models()
+    {
+        $pageTitle = 'Flow Guard Models';
+        $models = FlowGuardModel::orderBy('name')->paginate(getPaginate());
+        return view('admin.google_flow.models', compact('pageTitle', 'models'));
+    }
+
+    public function storeModel(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:191|unique:flow_guard_models,name',
+        ]);
+
+        FlowGuardModel::create(['name' => trim($data['name']), 'enabled' => true]);
+        return back()->withNotify([['success', 'Flow Guard model added successfully.']]);
+    }
+
+    public function updateModel(Request $request, int $id)
+    {
+        $model = FlowGuardModel::findOrFail($id);
+        $data = $request->validate([
+            'name' => 'required|string|max:191|unique:flow_guard_models,name,' . $model->id,
+            'enabled' => 'nullable|boolean',
+        ]);
+
+        $oldName = $model->name;
+        $newName = trim($data['name']);
+        $model->update([
+            'name' => $newName,
+            'enabled' => $request->boolean('enabled'),
+        ]);
+        if ($oldName !== $newName) {
+            FlowGuardAccess::query()->get()->each(function (FlowGuardAccess $access) use ($oldName, $newName) {
+                $models = is_array($access->allowed_models) ? $access->allowed_models : [];
+                $models = collect($models)->map(fn ($name) => (string) $name === $oldName ? $newName : $name)->values()->all();
+                $legacy = (string) ($access->allowed_model ?? '');
+                $access->forceFill([
+                    'allowed_models' => $models ?: null,
+                    'allowed_model' => $legacy === $oldName ? ($models[0] ?? $newName) : $legacy,
+                ])->saveQuietly();
+            });
+        }
+        return back()->withNotify([['success', 'Flow Guard model updated successfully.']]);
+    }
+
+    public function deleteModel(int $id)
+    {
+        $model = FlowGuardModel::findOrFail($id);
+        $name = $model->name;
+        FlowGuardAccess::query()->get()->each(function (FlowGuardAccess $access) use ($name) {
+            $models = collect(is_array($access->allowed_models) ? $access->allowed_models : [])
+                ->reject(fn ($value) => (string) $value === $name)->values()->all();
+            $legacy = (string) ($access->allowed_model ?? '');
+            $access->forceFill([
+                'allowed_models' => $models ?: null,
+                'allowed_model' => $legacy === $name ? ($models[0] ?? null) : $legacy,
+            ])->saveQuietly();
+        });
+        $model->delete();
+        return back()->withNotify([['success', 'Flow Guard model deleted successfully.']]);
     }
 }

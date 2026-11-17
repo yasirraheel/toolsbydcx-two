@@ -114,12 +114,13 @@ class FlowGuardAccessService
             $access = FlowGuardAccess::where('user_id', $userId)->lockForUpdate()->first();
             abort_unless($access && $access->enabled && (!$access->expires_at || $access->expires_at->isFuture()), 403, 'Flow Guard access is disabled.');
 
-            $allowedModel = trim((string) ($access->allowed_model ?? ''));
+            $allowedModels = $this->allowedModels($access);
             $requestedModel = trim((string) ($metadata['model'] ?? ''));
-            if ($allowedModel === '') {
+            if (!$allowedModels) {
                 abort(403, 'No Google Flow model is assigned to this account.');
             }
-            if ($requestedModel === '' || strcasecmp($this->normalizeModelName($requestedModel), $this->normalizeModelName($allowedModel)) !== 0) {
+            $requestedNormalized = $this->normalizeModelName($requestedModel);
+            if ($requestedNormalized === '' || !collect($allowedModels)->contains(fn ($model) => $this->normalizeModelName($model) === $requestedNormalized)) {
                 abort(403, 'This model is not enabled for your Flow Guard account.');
             }
 
@@ -185,7 +186,8 @@ class FlowGuardAccessService
                 'credits_used' => (int) ($access?->credits_used ?? 0),
                 'remaining_credits' => $access?->remainingCredits(),
                 'generation_cost' => (int) ($access?->generation_cost ?? 0),
-                'allowed_model' => $access?->allowed_model,
+                'allowed_model' => $this->allowedModels($access)[0] ?? null,
+                'allowed_models' => $this->allowedModels($access),
             ],
             'session_expires_at' => $session->expires_at?->toIso8601String(),
         ];
@@ -194,5 +196,21 @@ class FlowGuardAccessService
     public function normalizeModelName(?string $model): string
     {
         return trim((string) preg_replace('/\s+/', ' ', (string) $model));
+    }
+
+    public function allowedModels(?FlowGuardAccess $access): array
+    {
+        if (!$access) return [];
+        $models = is_array($access->allowed_models) ? $access->allowed_models : [];
+        if (!$models && filled($access->allowed_model)) {
+            $models = [(string) $access->allowed_model];
+        }
+
+        return collect($models)
+            ->map(fn ($model) => $this->normalizeModelName((string) $model))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 }

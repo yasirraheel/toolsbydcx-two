@@ -285,11 +285,19 @@
                                                value="{{ old('flow_guard_generation_cost', $flowGuardCost) }}">
                                     </div>
                                     <div class="mb-2">
-                                        <label class="form-label mb-1">@lang('Allowed Google Flow model')</label>
-                                        <input type="text" class="form-control" name="flow_guard_allowed_model" maxlength="191"
-                                               value="{{ old('flow_guard_allowed_model', $flowGuardAccess->allowed_model) }}"
-                                               placeholder="@lang('e.g. Omni 1.2 Flash')">
-                                        <small class="text-muted">@lang('Only this exact native Flow model is enabled. Leave blank to disable all models.') </small>
+                                        <label class="form-label mb-1">@lang('Allowed Google Flow models')</label>
+                                        <div class="border rounded p-2" style="max-height:180px;overflow:auto;background:rgba(255,255,255,.03)">
+                                            @forelse($flowGuardModels as $flowGuardModel)
+                                                <label class="d-flex align-items-center gap-2 py-1 mb-0">
+                                                    <input type="checkbox" name="flow_guard_model_ids[]" value="{{ $flowGuardModel->id }}"
+                                                           @checked(in_array($flowGuardModel->name, $flowGuardSelectedModels, true))>
+                                                    <span>{{ $flowGuardModel->name }}</span>
+                                                </label>
+                                            @empty
+                                                <span class="text-muted small">@lang('No Flow Guard models configured yet. Add them from Google Flow → Guard Models.') </span>
+                                            @endforelse
+                                        </div>
+                                        <small class="text-muted">@lang('Select one or more predefined models. If none are selected, all Flow models stay disabled.') </small>
                                     </div>
                                     <div class="small text-muted mt-2">
                                         <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($flowGuardUsed) }}</strong></span>

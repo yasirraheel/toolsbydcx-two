@@ -57,6 +57,12 @@
                 "title": "Login Attempts",
                 "route_name": "admin.google-flow.login-attempts",
                 "menu_active": "admin.google-flow.login-attempts"
+            },
+            {
+                "keyword": ["Flow Guard models", "Allowed Flow models", "Model access"],
+                "title": "Guard Models",
+                "route_name": "admin.google-flow.models",
+                "menu_active": "admin.google-flow.models"
             }
         ]
     },

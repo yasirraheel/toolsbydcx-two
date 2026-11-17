@@ -442,6 +442,10 @@ Route::middleware('admin')->group(function () {
         Route::post('/revoke-extension/{id}', 'revokeExtension')->name('revoke-extension');
         Route::get('/pairings', 'pairings')->name('pairings');
         Route::get('/login-attempts', 'loginAttempts')->name('login-attempts');
+        Route::get('/guard-models', 'models')->name('models');
+        Route::post('/guard-models', 'storeModel')->name('models.store');
+        Route::post('/guard-models/{id}', 'updateModel')->name('models.update');
+        Route::post('/guard-models/{id}/delete', 'deleteModel')->name('models.delete');
     });
 
     // OpenRadio Text-to-Speech settings

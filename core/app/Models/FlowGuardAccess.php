@@ -9,7 +9,7 @@ class FlowGuardAccess extends Model
     protected $table = 'flow_guard_access';
 
     protected $fillable = [
-        'user_id', 'enabled', 'credit_limit', 'credits_used', 'generation_cost', 'allowed_model', 'expires_at',
+        'user_id', 'enabled', 'credit_limit', 'credits_used', 'generation_cost', 'allowed_model', 'allowed_models', 'expires_at',
     ];
 
     protected $casts = [
@@ -18,6 +18,7 @@ class FlowGuardAccess extends Model
         'credits_used' => 'integer',
         'generation_cost' => 'integer',
         'allowed_model' => 'string',
+        'allowed_models' => 'array',
         'expires_at' => 'datetime',
     ];
 

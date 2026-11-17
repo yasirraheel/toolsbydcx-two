@@ -78,6 +78,19 @@
     return modelControl ? modelLabel(modelControl) : '';
   }
 
+  function allowedModelNames() {
+    const configured = currentStatus?.access?.allowed_models;
+    const values = Array.isArray(configured) && configured.length
+      ? configured
+      : [currentStatus?.access?.allowed_model];
+    return values.map(value => String(value || '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+      .filter((value, index, list) => list.findIndex(item => normalizeModelName(item) === normalizeModelName(value)) === index);
+  }
+
+  function allowedModelSummary() {
+    return allowedModelNames().join(', ');
+  }
+
   function findModelTrigger() {
     return Array.from(document.querySelectorAll('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]'))
       .filter(isVisible)
@@ -86,17 +99,17 @@
   }
 
   function findAllowedModelOption(allowed) {
-    const normalizedAllowed = normalizeModelName(allowed);
+    const normalizedAllowed = allowed.map(normalizeModelName);
     return Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
       .filter(isVisible)
-      .find(element => normalizeModelName(modelLabel(element)) === normalizedAllowed);
+      .find(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))));
   }
 
   function preselectAllowedModel() {
     if (currentStatus?.access?.enabled !== true) return false;
-    const allowed = String(currentStatus?.access?.allowed_model || '').trim();
-    if (!allowed) return false;
-    if (normalizeModelName(selectedModelName()) === normalizeModelName(allowed)) {
+    const allowed = allowedModelNames();
+    if (!allowed.length) return false;
+    if (allowed.some(model => normalizeModelName(model) === normalizeModelName(selectedModelName()))) {
       modelSelectionPending = false;
       return true;
     }
@@ -239,9 +252,9 @@
   }
 
   function applyModelAllowlist() {
-    const allowed = String(currentStatus?.access?.allowed_model || '').trim();
+    const allowed = allowedModelNames();
     if (currentStatus?.access?.enabled !== true) return;
-    const normalizedAllowed = normalizeModelName(allowed);
+    const normalizedAllowed = allowed.map(normalizeModelName);
     const selector = '[role="option"],[role="menuitem"],[role="menuitemradio"],li,[aria-selected],[role="listbox"] *,[role="menu"] *';
     document.querySelectorAll(selector).forEach(element => {
       if (!isVisible(element)) return;
@@ -250,15 +263,15 @@
       const optionLike = element.matches('[role="option"],[role="menuitem"],[role="menuitemradio"],li')
         || !!element.closest('[role="listbox"],[role="menu"]');
       if (!optionLike) return;
-      const enabled = normalizedAllowed !== '' && normalizeModelName(label) === normalizedAllowed;
+      const enabled = normalizedAllowed.includes(normalizeModelName(label));
       element.setAttribute('data-toolsbydcx-model-option', '1');
       element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       element.style.setProperty('opacity', enabled ? '1' : '.35', 'important');
       element.style.setProperty('pointer-events', enabled ? 'auto' : 'none', 'important');
       if (!enabled) {
         element.setAttribute('tabindex', '-1');
-        element.setAttribute('title', allowed ? `Only ${allowed} is enabled for this account.` : 'No Google Flow model is assigned to this account.');
-      } else if (element.getAttribute('title') === `Only ${allowed} is enabled for this account.` || element.getAttribute('title') === 'No Google Flow model is assigned to this account.') {
+        element.setAttribute('title', allowed.length ? `Only these models are enabled: ${allowed.join(', ')}` : 'No Google Flow model is assigned to this account.');
+      } else if (element.getAttribute('title')?.startsWith('Only these models are enabled:') || element.getAttribute('title') === 'No Google Flow model is assigned to this account.') {
         element.removeAttribute('title');
       }
     });
@@ -289,14 +302,14 @@
   async function reserveAndClick(control) {
     if (replaying || pending) return;
     const project = projectInfo();
-    const allowedModel = String(currentStatus?.access?.allowed_model || '').trim();
+    const allowedModels = allowedModelNames();
     const selectedModel = selectedModelName();
-    if (!allowedModel) {
+    if (!allowedModels.length) {
       showModelNotice('No Google Flow model is assigned to your account.');
       return;
     }
-    if (allowedModel && normalizeModelName(selectedModel) !== normalizeModelName(allowedModel)) {
-      showModelNotice(`Only ${allowedModel} is enabled for your account.`);
+    if (!allowedModels.some(model => normalizeModelName(model) === normalizeModelName(selectedModel))) {
+      showModelNotice(`Only these models are enabled: ${allowedModels.join(', ')}`);
       return;
     }
     const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -542,9 +555,9 @@
     if (gateStopped) { location.reload(); return; }
     applyModelAllowlist();
     if (!preselectAllowedModel()) {
-      showGate(currentStatus.access?.allowed_model
+      showGate(allowedModelNames().length
         ? 'Preparing your assigned Google Flow model…'
-        : 'No Google Flow model is assigned to this account.', currentStatus.access?.allowed_model ? 'checking' : 'locked');
+        : 'No Google Flow model is assigned to this account.', allowedModelNames().length ? 'checking' : 'locked');
       return;
     }
     hideGate();
