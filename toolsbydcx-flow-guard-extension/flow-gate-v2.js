@@ -18,12 +18,30 @@
   let homeEmptyState;
   let confirmModal;
 
+  const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
+  window.addEventListener('unhandledrejection', event => {
+    if (isInvalidatedContext(event.reason)) event.preventDefault();
+  });
+  window.addEventListener('error', event => {
+    if (isInvalidatedContext(event.error || event.message)) event.preventDefault();
+  });
+
   const send = message => {
-    try {
-      return Promise.resolve(chrome.runtime.sendMessage(message)).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
-    } catch (_) {
-      return Promise.resolve({ ok: false, error: 'Flow Guard is unavailable.' });
-    }
+    return new Promise(resolve => {
+      try {
+        if (!chrome?.runtime?.id) return resolve({ ok: false, error: 'Flow Guard is unavailable.' });
+        chrome.runtime.sendMessage(message, response => {
+          try {
+            const runtimeError = chrome.runtime.lastError;
+            resolve(runtimeError ? { ok: false, error: 'Flow Guard is unavailable.' } : (response || { ok: false, error: 'Flow Guard is unavailable.' }));
+          } catch (_) {
+            resolve({ ok: false, error: 'Flow Guard is unavailable.' });
+          }
+        });
+      } catch (_) {
+        resolve({ ok: false, error: 'Flow Guard is unavailable.' });
+      }
+    });
   };
   const textOf = element => (element?.innerText || element?.textContent || '').replace(/\s+/g, ' ').trim();
   const assetUrl = file => {
