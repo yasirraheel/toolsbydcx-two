@@ -17,6 +17,8 @@
   let gateStopped = false;
   let homeEmptyState;
   let confirmModal;
+  let modelStatusRequest = null;
+  let modelSelectionReplay = false;
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
   const safeAsync = task => Promise.resolve().then(task).catch(error => {
@@ -94,6 +96,73 @@
       .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]'));
     const modelControl = controls.find(element => isModelLabel(modelLabel(element)));
     return modelControl ? modelLabel(modelControl) : '';
+  }
+
+  function isModelPickerControl(element) {
+    if (!element || element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]')) return false;
+    if (!element.matches('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]')) return false;
+    return isModelLabel(modelLabel(element));
+  }
+
+  function modelNameLines(element) {
+    const raw = element?.innerText || element?.textContent || '';
+    return raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)
+      .map(value => value.replace(/\s+(?:leaving|sunsetting|deprecated)\b.*$/i, '').trim())
+      .filter(isModelLabel);
+  }
+
+  function modelOptionTargets() {
+    const roots = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"]')).filter(isVisible);
+    const targets = new Set();
+    roots.forEach(root => {
+      Array.from(root.querySelectorAll('*')).forEach(element => {
+        if (!isVisible(element) || !isModelLabel(modelLabel(element))) return;
+        let target = element.closest('[role="option"], [role="menuitem"], [role="menuitemradio"], li, button, [data-value], [data-model]');
+        if (!target || !root.contains(target) || modelNameLines(target).length !== 1) {
+          let candidate = element;
+          while (candidate.parentElement && candidate.parentElement !== root && modelNameLines(candidate).length <= 1) {
+            candidate = candidate.parentElement;
+          }
+          target = candidate === root ? null : candidate;
+        }
+        if (target && target !== root && modelNameLines(target).length === 1) targets.add(target);
+      });
+    });
+    if (!roots.length) {
+      Array.from(document.querySelectorAll('[role="option"], [role="menuitem"], [role="menuitemradio"], li'))
+        .filter(isVisible)
+        .forEach(element => {
+          if (!isModelLabel(modelLabel(element)) || modelNameLines(element).length !== 1) return;
+          targets.add(element);
+        });
+    }
+    return Array.from(targets);
+  }
+
+  async function refreshModelAccess() {
+    if (modelStatusRequest) return modelStatusRequest;
+    modelStatusRequest = (async () => {
+      const response = await send({ type: 'GET_STATUS' });
+      if (response?.status) currentStatus = response.status;
+      applyModelAllowlist();
+      selectAllowedModelIfNeeded();
+      return currentStatus;
+    })();
+    try { return await modelStatusRequest; } finally { modelStatusRequest = null; }
+  }
+
+  function selectAllowedModelIfNeeded() {
+    if (modelSelectionReplay || currentStatus?.access?.enabled !== true) return;
+    const roots = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"]')).filter(isVisible);
+    if (!roots.length) return;
+    const allowed = allowedModelNames();
+    if (!allowed.length || allowed.some(model => normalizeModelName(model) === normalizeModelName(selectedModelName()))) return;
+    const normalizedAllowed = allowed.map(normalizeModelName);
+    const option = modelOptionTargets().find(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))));
+    if (!option || option.getAttribute('aria-disabled') === 'true') return;
+    modelSelectionReplay = true;
+    try { option.click(); } catch (_) {}
+    setTimeout(() => { modelSelectionReplay = false; }, 250);
   }
 
   function allowedModelNames() {
@@ -209,27 +278,28 @@
   }
 
   function applyModelAllowlist() {
-    const allowed = allowedModelNames();
     if (currentStatus?.access?.enabled !== true) return;
+    document.querySelectorAll('[data-toolsbydcx-model-option]').forEach(element => {
+      element.removeAttribute('data-toolsbydcx-model-option');
+      element.removeAttribute('data-toolsbydcx-model-name');
+      element.removeAttribute('aria-disabled');
+      element.style.removeProperty('opacity');
+      element.style.removeProperty('cursor');
+      element.style.removeProperty('pointer-events');
+      if (element.getAttribute('title') === 'No Google Flow model is assigned to this account.' || element.getAttribute('title')?.startsWith('Only these models are enabled:')) element.removeAttribute('title');
+    });
+    const allowed = allowedModelNames();
     const normalizedAllowed = allowed.map(normalizeModelName);
-    const selector = '[role="option"],[role="menuitem"],[role="menuitemradio"],li,[aria-selected],[role="listbox"] *,[role="menu"] *';
-    document.querySelectorAll(selector).forEach(element => {
-      if (!isVisible(element)) return;
+    modelOptionTargets().forEach(element => {
       const label = modelLabel(element);
-      if (!isModelLabel(label) && !matchesAllowedModelLabel(label, normalizedAllowed)) return;
-      const optionLike = element.matches('[role="option"],[role="menuitem"],[role="menuitemradio"],li')
-        || !!element.closest('[role="listbox"],[role="menu"]');
-      if (!optionLike) return;
       const enabled = matchesAllowedModelLabel(label, normalizedAllowed);
       element.setAttribute('data-toolsbydcx-model-option', '1');
+      element.setAttribute('data-toolsbydcx-model-name', label);
       element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
       element.style.setProperty('opacity', enabled ? '1' : '.35', 'important');
-      element.style.setProperty('pointer-events', enabled ? 'auto' : 'none', 'important');
+      element.style.setProperty('cursor', enabled ? 'pointer' : 'not-allowed', 'important');
       if (!enabled) {
-        element.setAttribute('tabindex', '-1');
         element.setAttribute('title', allowed.length ? `Only these models are enabled: ${allowed.join(', ')}` : 'No Google Flow model is assigned to this account.');
-      } else if (element.getAttribute('title')?.startsWith('Only these models are enabled:') || element.getAttribute('title') === 'No Google Flow model is assigned to this account.') {
-        element.removeAttribute('title');
       }
     });
   }
@@ -239,6 +309,13 @@
     if (!option || option.getAttribute('aria-disabled') !== 'true') return;
     event.preventDefault();
     event.stopImmediatePropagation();
+  }
+
+  function modelPickerListener(event) {
+    if (modelSelectionReplay || currentStatus?.access?.enabled !== true) return;
+    const target = event.target?.closest?.('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]');
+    if (!isModelPickerControl(target)) return;
+    setTimeout(() => safeAsync(() => refreshModelAccess()), 0);
   }
 
   function isGenerationControl(control) {
@@ -537,6 +614,8 @@
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
+  document.addEventListener('pointerdown', modelPickerListener, true);
+  document.addEventListener('click', modelPickerListener, true);
   document.addEventListener('click', () => {
     if (currentStatus?.access?.enabled !== true) return;
     setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
