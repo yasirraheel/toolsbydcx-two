@@ -14,6 +14,8 @@
   let projectButton;
   let creditPill;
   let gateStopped = false;
+  let homeEmptyState;
+  let confirmModal;
 
   const send = message => chrome.runtime.sendMessage(message).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
   const textOf = element => (element?.innerText || element?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -29,6 +31,12 @@
     const style = document.createElement('style');
     style.textContent = `#toolsbydcx-flow-guard-overlay{position:fixed;inset:0;z-index:2147483647;background:rgba(5,11,22,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:grid;place-items:center;padding:24px;box-sizing:border-box;font:16px/1.5 system-ui,sans-serif;color:#eef4ff}#toolsbydcx-flow-guard-overlay .fg-card{width:min(440px,100%);background:linear-gradient(145deg,rgba(20,34,56,.98),rgba(14,27,48,.98));border:1px solid #46638e;border-radius:18px;padding:30px;box-shadow:0 24px 80px #000b;text-align:center}#toolsbydcx-flow-guard-overlay h1{font-size:22px;margin:8px 0 10px}#toolsbydcx-flow-guard-overlay p{color:#b8c8df;margin:0 0 18px}#toolsbydcx-flow-guard-overlay button{width:100%;border:0;border-radius:10px;padding:12px 14px;margin-top:9px;background:#4e72ff;color:#fff;font-weight:700;cursor:pointer;transition:filter .15s,transform .15s}#toolsbydcx-flow-guard-overlay button:hover{filter:brightness(1.1);transform:translateY(-1px)}#toolsbydcx-flow-guard-overlay button:disabled{opacity:.65;cursor:wait;transform:none}#toolsbydcx-flow-guard-overlay .fg-secondary{background:#263b5c}.fg-lock{width:52px;height:52px;margin:0 auto 8px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#5676ff,#7359df);font-size:29px;font-weight:800;box-shadow:0 10px 25px #5676ff44}.fg-spinner{width:24px;height:24px;margin:0 auto;border:3px solid #7891c755;border-top-color:#a9bbff;border-radius:50%;animation:toolsbydcx-flow-spin .8s linear infinite}.fg-spinner[hidden]{display:none}@keyframes toolsbydcx-flow-spin{to{transform:rotate(360deg)}}.fg-login-form{text-align:left;margin-top:8px}.fg-login-form label{display:block;color:#c5d4eb;font-size:12px;font-weight:650;margin:12px 0}.fg-login-form input{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border:1px solid #3d587f;border-radius:9px;background:#0d1a2d;color:#fff;font:14px system-ui,sans-serif;outline:none}.fg-login-form input:focus{border-color:#7892ff;box-shadow:0 0 0 3px #5d75ff2e}.fg-login-form button{margin-top:6px}.fg-login-form[hidden],#fg-actions[hidden]{display:none}`;
     (document.head || document.documentElement).append(style);
+    if (!document.getElementById('toolsbydcx-flow-guard-home-style')) {
+      const homeStyle = document.createElement('style');
+      homeStyle.id = 'toolsbydcx-flow-guard-home-style';
+      homeStyle.textContent = `#toolsbydcx-flow-guard-home-empty{position:fixed;left:50%;top:48%;transform:translate(-50%,-50%);z-index:2147483630;width:min(480px,calc(100vw - 40px));padding:30px 28px;border:1px solid rgba(109,142,255,.42);border-radius:18px;background:linear-gradient(145deg,rgba(16,30,51,.97),rgba(11,22,39,.97));box-shadow:0 22px 60px rgba(0,0,0,.42);color:#eef4ff;text-align:center;font:14px/1.5 system-ui,sans-serif}#toolsbydcx-flow-guard-home-empty .fg-home-icon{width:48px;height:48px;margin:0 auto 12px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(135deg,#5676ff,#7359df);font-size:25px}#toolsbydcx-flow-guard-home-empty h2{margin:0 0 7px;font-size:21px}#toolsbydcx-flow-guard-home-empty p{margin:0;color:#9db1d1}#toolsbydcx-flow-guard-home-empty button{margin-top:18px;border:0;border-radius:10px;padding:11px 18px;color:#fff;background:linear-gradient(135deg,#526fff,#6f55d9);font:700 13px system-ui,sans-serif;cursor:pointer}#toolsbydcx-flow-guard-home-empty button:hover{filter:brightness(1.1)}#toolsbydcx-flow-guard-confirm{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(5,10,19,.66);backdrop-filter:blur(8px);font:14px/1.5 system-ui,sans-serif}#toolsbydcx-flow-guard-confirm .fg-confirm-card{width:min(390px,100%);padding:24px;border:1px solid rgba(109,142,255,.45);border-radius:16px;background:linear-gradient(145deg,#14243b,#0e1b2f);box-shadow:0 24px 70px rgba(0,0,0,.6);color:#eef4ff;text-align:center}#toolsbydcx-flow-guard-confirm h3{margin:0 0 8px;font-size:18px}#toolsbydcx-flow-guard-confirm p{margin:0;color:#a9bcdc}#toolsbydcx-flow-guard-confirm .fg-confirm-actions{display:flex;gap:10px;margin-top:20px}#toolsbydcx-flow-guard-confirm button{flex:1;border:0;border-radius:9px;padding:10px 12px;color:#fff;background:#526fff;font:700 13px system-ui,sans-serif;cursor:pointer}#toolsbydcx-flow-guard-confirm .fg-cancel{background:#2a405f}#toolsbydcx-flow-guard-confirm .fg-danger{background:#9b3650}`;
+      (document.head || document.documentElement).append(homeStyle);
+    }
     document.documentElement.append(overlay);
     overlay.querySelector('#fg-open').addEventListener('click', () => send({ type: 'OPEN_PANEL' }));
     overlay.querySelector('#fg-login-form').addEventListener('submit', async event => {
@@ -154,6 +162,62 @@
     return { external_project_id: id, name: title && !/^google flow$/i.test(title) ? title : null, url: location.href };
   }
 
+  function hideNativeHomeProjects() {
+    if (!isFlowHomePage() || !document.body) {
+      homeEmptyState?.remove();
+      homeEmptyState = null;
+      return;
+    }
+
+    document.querySelectorAll('a[href*="/project/"], a[href*="/projects/"]').forEach(anchor => {
+      if (anchor.closest('#toolsbydcx-flow-guard-project-panel, #toolsbydcx-flow-guard-home-empty')) return;
+      let card = anchor.closest('[role="listitem"], [role="gridcell"], article, li, [data-testid*="project" i]') || anchor;
+      let parent = card.parentElement;
+      for (let depth = 0; depth < 4 && parent && parent !== document.body; depth += 1, parent = parent.parentElement) {
+        const rect = parent.getBoundingClientRect();
+        if (rect.width >= 220 && rect.height >= 90) card = parent;
+      }
+      if (card.id === 'toolsbydcx-flow-guard-projects') return;
+      card.setAttribute('data-toolsbydcx-native-project-hidden', '1');
+      card.style.setProperty('display', 'none', 'important');
+    });
+
+    document.querySelectorAll('[data-testid*="project" i], [aria-label*="project" i]').forEach(element => {
+      if (element.closest('#toolsbydcx-flow-guard-project-panel, #toolsbydcx-flow-guard-home-empty')) return;
+      if (/create|new\s+project/i.test(textOf(element))) return;
+      const rect = element.getBoundingClientRect();
+      if (rect.width >= 220 && rect.height >= 90) {
+        element.setAttribute('data-toolsbydcx-native-project-hidden', '1');
+        element.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    if (!homeEmptyState) {
+      homeEmptyState = document.createElement('section');
+      homeEmptyState.id = 'toolsbydcx-flow-guard-home-empty';
+      homeEmptyState.innerHTML = '<div class="fg-home-icon">✦</div><h2>Create your first Flow project</h2><p>Your private project archive is ready. Start a new project and it will appear in ToolsByDcx My Projects.</p><button type="button" class="fg-create-first-project">Create new project</button>';
+      homeEmptyState.querySelector('.fg-create-first-project').addEventListener('click', () => {
+        const trigger = Array.from(document.querySelectorAll('button,[role="button"],a')).find(element => /^(?:\+\s*)?(?:new|create)\s+project$/i.test(textOf(element)));
+        if (trigger) trigger.click();
+      });
+      document.body.append(homeEmptyState);
+    }
+  }
+
+  function askToRemoveProject(message) {
+    return new Promise(resolve => {
+      confirmModal?.remove();
+      confirmModal = document.createElement('div');
+      confirmModal.id = 'toolsbydcx-flow-guard-confirm';
+      confirmModal.innerHTML = `<div class="fg-confirm-card" role="dialog" aria-modal="true"><h3>Remove saved project?</h3><p>${escapeHtml(message)}</p><div class="fg-confirm-actions"><button type="button" class="fg-cancel">Cancel</button><button type="button" class="fg-danger">Remove</button></div></div>`;
+      document.body.append(confirmModal);
+      const finish = value => { confirmModal?.remove(); confirmModal = null; resolve(value); };
+      confirmModal.querySelector('.fg-cancel').addEventListener('click', () => finish(false));
+      confirmModal.querySelector('.fg-danger').addEventListener('click', () => finish(true));
+      confirmModal.addEventListener('click', event => { if (event.target === confirmModal) finish(false); });
+    });
+  }
+
   function saveProjectIfChanged() {
     const project = projectInfo();
     if (!project) { lastProjectSig = null; return; }
@@ -212,7 +276,7 @@
     }));
     projectPanel.querySelectorAll('[data-delete-project]').forEach(button => button.addEventListener('click', async () => {
       const id = button.getAttribute('data-delete-project');
-      if (!id || !window.confirm('Remove this project from your ToolsByDcx archive?')) return;
+      if (!id || !(await askToRemoveProject('This removes the project from your ToolsByDcx server archive only.'))) return;
       button.disabled = true;
       const result = await send({ type: 'DELETE_PROJECT', projectId: id });
       if (result?.ok) {
@@ -243,7 +307,8 @@
     if (!document.body || currentStatus?.access?.enabled !== true) return;
     injectProjectStyles();
     renderCreditPill();
-    if (!isFlowHomePage()) { projectButton?.remove(); projectButton = null; closeProjectPanel(); return; }
+    if (!isFlowHomePage()) { projectButton?.remove(); projectButton = null; closeProjectPanel(); hideNativeHomeProjects(); return; }
+    hideNativeHomeProjects();
     if (!projectButton) {
       projectButton = document.createElement('button');
       projectButton.id = 'toolsbydcx-flow-guard-projects';
