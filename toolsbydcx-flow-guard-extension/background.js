@@ -28,11 +28,11 @@ async function setToken(token, status = null) {
   await storage.set({ [TOKEN_KEY]: token, ...(status ? { [STATUS_KEY]: status } : {}) });
 }
 
-async function api(path, body) {
+async function api(path, body, method = null) {
   const token = await savedToken();
   const headers = { Accept: 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const options = { method: body === undefined ? 'GET' : 'POST', headers, cache: 'no-store' };
+  const options = { method: method || (body === undefined ? 'GET' : 'POST'), headers, cache: 'no-store' };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
     options.body = new URLSearchParams(Object.entries(body).filter(([, value]) => value !== undefined && value !== null));
@@ -148,6 +148,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message?.type === 'SAVE_PROJECT') {
         const result = await api('/projects', message.project);
         return sendResponse({ ok: true, data: result.project });
+      }
+      if (message?.type === 'GET_PROJECTS') {
+        const result = await api('/projects');
+        return sendResponse({ ok: true, projects: Array.isArray(result.projects) ? result.projects : [] });
+      }
+      if (message?.type === 'DELETE_PROJECT') {
+        const projectId = String(message.projectId || '').trim();
+        if (!projectId) throw new Error('Project id is required.');
+        const result = await api(`/projects/${encodeURIComponent(projectId)}`, undefined, 'DELETE');
+        return sendResponse({ ok: true, data: result });
       }
       if (message?.type === 'OPEN_PANEL') {
         await chrome.tabs.create({ url: PANEL_URL });

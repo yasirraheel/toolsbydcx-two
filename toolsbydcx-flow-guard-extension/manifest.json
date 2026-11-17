@@ -16,7 +16,7 @@
     },
     {
       "matches": ["https://flow.google.com/*"],
-      "js": ["flow-gate.js"],
+      "js": ["flow-gate-v2.js"],
       "run_at": "document_start",
       "all_frames": false
     }

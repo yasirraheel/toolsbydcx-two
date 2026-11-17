@@ -16,6 +16,7 @@ Route::middleware(FlowGuardCors::class)->group(function () {
             Route::post('/credits/{id}/settle', [FlowGuardController::class, 'settle']);
             Route::get('/projects', [FlowGuardController::class, 'projects']);
             Route::post('/projects', [FlowGuardController::class, 'saveProject']);
+            Route::delete('/projects/{externalProjectId}', [FlowGuardController::class, 'deleteProject']);
         });
     });
 });

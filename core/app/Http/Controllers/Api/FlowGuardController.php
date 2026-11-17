@@ -114,6 +114,17 @@ class FlowGuardController extends Controller
         return response()->json(['project' => $this->projectPayload($project)]);
     }
 
+    public function deleteProject(Request $request, string $externalProjectId)
+    {
+        $session = $this->access->authenticate($request);
+
+        $deleted = FlowGuardProject::where('user_id', $session->user_id)
+            ->where('external_project_id', $externalProjectId)
+            ->delete();
+
+        return response()->json(['ok' => $deleted > 0]);
+    }
+
     private function projectPayload(FlowGuardProject $project): array
     {
         return [
