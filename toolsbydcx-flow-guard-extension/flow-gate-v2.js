@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.1';
+  const GATE_VERSION = '1.4.2';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -339,18 +339,26 @@
     if (/project|folder|account|settings|login|logout|sign\s*out/i.test(wording)) return false;
     if (/\bgenerate\b|create\s+(?:video|flow)|make\s+video|render\s+video|submit\s+(?:prompt|generation)|send\s+prompt/i.test(wording)) return true;
     if (!/\/project\//i.test(location.pathname)) return false;
+    let promptRoot = null;
     const hasVisiblePromptContext = (() => {
       let node = control;
       for (let depth = 0; node && depth < 7; depth += 1, node = node.parentElement) {
         const context = textOf(node);
-        if (/what\s+do\s+you\s+want\s+to\s+create|generating\s+will\s+use|video\s*[·•-]\s*\d+p|video\s*[-·•]\s*\d+s/i.test(context)) return true;
+        if (/what\s+do\s+you\s+want\s+to\s+create|generating\s+will\s+use|video\s*[·•-]\s*\d+p|video\s*[-·•]\s*\d+s/i.test(context)) {
+          promptRoot = node;
+          return true;
+        }
       }
       return false;
     })();
     if (!hasVisiblePromptContext) return false;
     const controlText = textOf(control);
     const actionLabel = `${controlText} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
-    return !controlText || /generate|create|submit|send|render|produce|arrow|go/i.test(actionLabel);
+    if (/generate|create|submit|send|render|produce|arrow|go/i.test(actionLabel)) return true;
+    if (controlText || !promptRoot) return false;
+    const promptControls = Array.from(promptRoot.querySelectorAll('button,a,[role="button"]'))
+      .filter(isVisible);
+    return promptControls.at(-1) === control;
   }
 
   function generationQuantity(control) {
@@ -461,6 +469,9 @@
 
   function generationListener(event) {
     if (!currentStatus?.authenticated || currentStatus.access?.enabled !== true) return;
+    // Flow emits synthetic clicks while hydrating/re-rendering its composer;
+    // only a real user gesture may reserve credits.
+    if (event.isTrusted === false && !replaying) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
     if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
