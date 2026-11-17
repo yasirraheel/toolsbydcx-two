@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.6';
+  const GATE_VERSION = '1.4.7';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -378,6 +378,14 @@
     return owner === control;
   }
 
+  function replayFlowGenerateArrow(control) {
+    const icon = Array.from(control?.querySelectorAll?.('mat-icon') || [])
+      .find(element => String(element.textContent || '').trim() === 'arrow_forward');
+    try { (icon || control).click(); } catch (_) {
+      try { control?.click(); } catch (_) {}
+    }
+  }
+
   function generationQuantity(control) {
     let context = '';
     let node = control;
@@ -470,7 +478,7 @@
       }
       const baselineText = textOf(document.body);
       replaying = true;
-      try { control.click(); } catch (_) {}
+      try { replayFlowGenerateArrow(control); }
       finally { replaying = false; }
       const started = await waitForGenerationStart(control, baselineText);
       if (!started) {
