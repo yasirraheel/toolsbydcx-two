@@ -6,6 +6,7 @@
 
   let currentStatus = null;
   let pending = null;
+  let generationIntercepting = false;
   let replaying = false;
   let overlay;
   let lastProjectSig = null;
@@ -326,7 +327,31 @@
     if (!control || control.disabled || control.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return false;
     const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('data-testid') || ''}`;
     if (/project|folder|account|settings|login|logout|sign\s*out/i.test(wording)) return false;
-    return /\bgenerate\b|create\s+(?:video|flow)|make\s+video|render\s+video/i.test(wording);
+    if (/\bgenerate\b|create\s+(?:video|flow)|make\s+video|render\s+video|submit\s+(?:prompt|generation)|send\s+prompt/i.test(wording)) return true;
+    if (!/\/project\//i.test(location.pathname)) return false;
+    const hasVisiblePromptContext = (() => {
+      let node = control;
+      for (let depth = 0; node && depth < 7; depth += 1, node = node.parentElement) {
+        const context = textOf(node);
+        if (/what\s+do\s+you\s+want\s+to\s+create|generating\s+will\s+use|video\s*[·•-]\s*\d+p|video\s*[-·•]\s*\d+s/i.test(context)) return true;
+      }
+      return false;
+    })();
+    if (!hasVisiblePromptContext) return false;
+    const controlText = textOf(control);
+    const actionLabel = `${controlText} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
+    return !controlText || /generate|create|submit|send|render|produce|arrow|go/i.test(actionLabel);
+  }
+
+  function generationQuantity(control) {
+    let context = '';
+    let node = control;
+    for (let depth = 0; node && depth < 7; depth += 1, node = node.parentElement) {
+      context = `${context} ${textOf(node)}`;
+    }
+    const matches = Array.from(context.matchAll(/(?:×|x)\s*(\d{1,2})\b/gi));
+    const quantity = Number(matches.at(-1)?.[1] || 1);
+    return Number.isFinite(quantity) ? Math.max(1, Math.min(quantity, 20)) : 1;
   }
 
   async function settle(status) {
@@ -338,38 +363,47 @@
   }
 
   async function reserveAndClick(control) {
-    if (replaying || pending) return;
-    const project = projectInfo();
-    const allowedModels = allowedModelNames();
-    const selectedModel = selectedModelName();
-    if (!allowedModels.length) {
-      showModelNotice('No Google Flow model is assigned to your account.');
-      return;
+    if (replaying || pending || generationIntercepting) return;
+    generationIntercepting = true;
+    try {
+      const project = projectInfo();
+      const allowedModels = allowedModelNames();
+      const selectedModel = selectedModelName();
+      if (!allowedModels.length) {
+        showModelNotice('No Google Flow model is assigned to your account.');
+        return;
+      }
+      if (!allowedModels.some(model => normalizeModelName(model) === normalizeModelName(selectedModel))) {
+        showModelNotice(`Only these models are enabled: ${allowedModels.join(', ')}`);
+        return;
+      }
+      const quantity = generationQuantity(control);
+      const perVideoCost = Math.max(0, Number(currentStatus?.access?.generation_cost || 0));
+      const requestedAmount = perVideoCost > 0 ? perVideoCost * quantity : undefined;
+      const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const result = await send({ type: 'RESERVE_GENERATION', amount: requestedAmount, idempotencyKey, projectId: project?.external_project_id, model: (selectedModel || textOf(control)).slice(0, 100) });
+      if (!result?.ok) {
+        showGate(result?.error || 'Your Flow Guard credits are not available.');
+        return;
+      }
+      pending = { id: result.data.reservation_id };
+      if (result.data.status) {
+        currentStatus = { ...currentStatus, access: result.data.status.access };
+        renderCreditPill();
+        maskNativeFlowCredits();
+      }
+      replaying = true;
+      try { control.click(); } finally { replaying = false; }
+      setTimeout(() => safeAsync(() => settle('committed')), 10000);
+    } finally {
+      generationIntercepting = false;
     }
-    if (!allowedModels.some(model => normalizeModelName(model) === normalizeModelName(selectedModel))) {
-      showModelNotice(`Only these models are enabled: ${allowedModels.join(', ')}`);
-      return;
-    }
-    const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const result = await send({ type: 'RESERVE_GENERATION', idempotencyKey, projectId: project?.external_project_id, model: (selectedModel || textOf(control)).slice(0, 100) });
-    if (!result?.ok) {
-      showGate(result?.error || 'Your Flow Guard credits are not available.');
-      return;
-    }
-    pending = { id: result.data.reservation_id };
-    if (result.data.status) {
-      currentStatus = { ...currentStatus, access: result.data.status.access };
-      renderCreditPill();
-    }
-    replaying = true;
-    try { control.click(); } finally { replaying = false; }
-    setTimeout(() => safeAsync(() => settle('committed')), 10000);
   }
 
   function generationListener(event) {
     if (!currentStatus?.authenticated || currentStatus.access?.enabled !== true) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
-    if (!isGenerationControl(control) || replaying) return;
+    if (!isGenerationControl(control) || replaying || generationIntercepting) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     safeAsync(() => reserveAndClick(control));
@@ -621,6 +655,7 @@
   installHomeShield();
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
+  document.addEventListener('pointerdown', generationListener, true);
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
   document.addEventListener('pointerdown', modelPickerListener, true);
