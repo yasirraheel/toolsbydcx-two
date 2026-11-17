@@ -94,44 +94,14 @@ async function clearProfileCookies() {
   }));
 }
 
-async function closeProtectedTabs() {
+async function resetOpenTabs() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  const windows = new Map();
-  for (const tab of tabs) {
-    if (!Number.isInteger(tab.windowId)) continue;
-    const group = windows.get(tab.windowId) || { all: [], protected: [] };
-    group.all.push(tab);
-    const origin = originOf(tab.url || tab.pendingUrl || '');
-    if (origin === 'https://flow.google.com'
-      || origin === 'https://accounts.google.com'
-      || origin === 'https://www.google.com'
-      || origin === 'https://toolsbydcx.com'
-      || origin === 'https://www.toolsbydcx.com') {
-      group.protected.push(tab);
-    }
-    windows.set(tab.windowId, group);
-  }
-  const tabIds = [];
-  const retainedIds = [];
-  for (const group of windows.values()) {
-    if (group.all.length <= 1) {
-      for (const tab of group.protected) {
-        if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
-      }
-      continue;
-    }
-    // If every tab in a window is protected, retain one tab so Chrome never
-    // closes the window/browser as a side effect of emergency cleanup.
-    const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
-    for (const tab of group.protected.slice(0, keep)) {
-      if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
-    }
-    for (const tab of group.protected.slice(keep)) {
-      if (Number.isInteger(tab.id)) tabIds.push(tab.id);
-    }
-  }
-  if (tabIds.length) await chrome.tabs.remove(tabIds).catch(() => {});
-  await Promise.all(retainedIds.map(tabId => chrome.tabs.update(tabId, { url: PANEL_URL }).catch(() => {})));
+  // Never close tabs during emergency cleanup. Reset every open tab instead,
+  // so the browser and all windows remain alive while Flow sessions vanish.
+  await Promise.all(tabs
+    .map(tab => Number.isInteger(tab.id)
+      ? chrome.tabs.update(tab.id, { url: 'about:blank' }).catch(() => {})
+      : null));
 }
 
 async function emergencyGoogleLogout(reason = 'watchdog-event') {
@@ -140,7 +110,7 @@ async function emergencyGoogleLogout(reason = 'watchdog-event') {
     // This path is only used after the paired watchdog is disabled/removed.
     // Normal Flow Guard operation never reads or removes browser cookies.
     await clearProfileCookies();
-    await closeProtectedTabs();
+    await resetOpenTabs();
     await setToken(null);
     await storage.set({
       [WATCHDOG_ARMED_KEY]: false,

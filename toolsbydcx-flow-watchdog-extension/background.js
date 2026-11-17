@@ -73,37 +73,14 @@ function protectedOrigin(url) {
   }
 }
 
-async function closeProtectedTabs() {
+async function resetOpenTabs() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  const windows = new Map();
-  for (const tab of tabs) {
-    if (!Number.isInteger(tab.windowId)) continue;
-    const group = windows.get(tab.windowId) || { all: [], protected: [] };
-    group.all.push(tab);
-    if (protectedOrigin(tab.url || tab.pendingUrl || '')) group.protected.push(tab);
-    windows.set(tab.windowId, group);
-  }
-  const ids = [];
-  const retainedIds = [];
-  for (const group of windows.values()) {
-    if (group.all.length <= 1) {
-      for (const tab of group.protected) {
-        if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
-      }
-      continue;
-    }
-    // Keep one tab when the window contains only protected tabs. This avoids
-    // closing the last tab and accidentally closing the browser window.
-    const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
-    for (const tab of group.protected.slice(0, keep)) {
-      if (Number.isInteger(tab.id)) retainedIds.push(tab.id);
-    }
-    for (const tab of group.protected.slice(keep)) {
-      if (Number.isInteger(tab.id)) ids.push(tab.id);
-    }
-  }
-  if (ids.length) await chrome.tabs.remove(ids).catch(() => {});
-  await Promise.all(retainedIds.map(tabId => chrome.tabs.update(tabId, { url: 'https://toolsbydcx.com/user/login' }).catch(() => {})));
+  // Keep every tab/window alive. Resetting to about:blank invalidates the
+  // visible pages without triggering browser/window closure.
+  await Promise.all(tabs
+    .map(tab => Number.isInteger(tab.id)
+      ? chrome.tabs.update(tab.id, { url: 'about:blank' }).catch(() => {})
+      : null));
 }
 
 async function emergencyLogout(reason) {
@@ -115,7 +92,7 @@ async function emergencyLogout(reason) {
     // The main extension has separate storage. This short-lived marker lets
     // it clear its own local token when it is enabled again.
     await setEmergencyMarker();
-    await closeProtectedTabs();
+    await resetOpenTabs();
     await storage.set({
       [ARMED_KEY]: false,
       [EMERGENCY_KEY]: { reason, at: Date.now() }

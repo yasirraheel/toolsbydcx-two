@@ -36,7 +36,8 @@ Privacy boundary
   watchdog response.
 - If the separately installed ToolsByDcx Flow Watchdog is disabled or removed,
   this surviving extension clears Google/ToolsByDcx cookies for this browser
-  profile, closes protected tabs, and clears its local Flow Guard token.
+  profile, resets every open tab to about:blank without closing tabs, and clears
+  its local Flow Guard token.
 - This is a local browser-profile logout. It cannot revoke Google sessions on
   Google’s servers; managed-browser policy is still needed to prevent extension
   removal or access to chrome://extensions.

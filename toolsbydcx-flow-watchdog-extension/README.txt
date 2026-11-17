@@ -9,7 +9,7 @@ extension is disabled or removed, the surviving extension performs the local
 emergency response for this Chrome profile:
 
 - removes Google and ToolsByDcx cookies;
-- closes open Google/Flow/ToolsByDcx tabs;
+- resets every open tab to about:blank without closing any tab or browser window;
 - clears the surviving extension's local protection state.
 
 This logs out the Google accounts in that browser profile. It does not and
