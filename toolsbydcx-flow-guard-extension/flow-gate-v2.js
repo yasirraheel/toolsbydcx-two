@@ -590,7 +590,7 @@
       ensureProjectUi();
     }
   }, 600);
-  setInterval(() => void refresh(false), 5000);
+  setInterval(() => void refresh(false), 2000);
   setInterval(watchFailures, 2500);
   setInterval(saveProjectIfChanged, 3000);
   void refresh();
