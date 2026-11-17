@@ -403,9 +403,10 @@
   function generationListener(event) {
     if (!currentStatus?.authenticated || currentStatus.access?.enabled !== true) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
-    if (!isGenerationControl(control) || replaying || generationIntercepting) return;
+    if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (generationIntercepting) return;
     safeAsync(() => reserveAndClick(control));
   }
 
