@@ -152,7 +152,8 @@
     if (currentStatus?.access?.enabled !== true || !document.body) return;
     const pageText = textOf(document.body);
     if (!/(?:google\s+flow\s+credits?|manage\s+subscription|create\s+avatar)/i.test(pageText)) return;
-    const serverText = creditText();
+    const remaining = currentStatus?.access?.remaining_credits;
+    const serverFigure = remaining == null ? 'Unlimited' : Number(remaining).toLocaleString();
     document.querySelectorAll('div,span,p,a,button,[role="button"]').forEach(element => {
       if (element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return;
       if (element.getAttribute('data-toolsbydcx-server-credit')) return;
@@ -162,10 +163,15 @@
       if (element.children.length > 2) return;
       const rect = element.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
+      const figurePattern = /-?\d[\d,]*(?:\.\d+)?(?=\s*(?:google\s+flow\s+)?credits?\b)/i;
+      if (!figurePattern.test(label)) return;
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+      const target = textNodes.find(node => /-?\d[\d,]*(?:\.\d+)?/.test(node.nodeValue || ''));
+      if (!target) return;
+      target.nodeValue = (target.nodeValue || '').replace(/-?\d[\d,]*(?:\.\d+)?/, serverFigure);
       element.setAttribute('data-toolsbydcx-server-credit', '1');
-      element.textContent = `ToolsByDcx ${serverText}`;
-      element.style.setProperty('color', '#b9f5df', 'important');
-      element.style.setProperty('font-weight', '700', 'important');
     });
   }
 
