@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.4';
+  const GATE_VERSION = '1.4.5';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -366,6 +366,14 @@
     return promptControls.at(-1) === control;
   }
 
+  function isFlowGenerateArrow(target, control) {
+    if (!control) return false;
+    const icon = target?.closest?.('mat-icon') || control.querySelector?.('mat-icon');
+    if (!icon || String(icon.textContent || '').trim() !== 'arrow_forward') return false;
+    const owner = icon.closest('button,a,[role="button"]');
+    return owner === control;
+  }
+
   function generationQuantity(control) {
     let context = '';
     let node = control;
@@ -481,6 +489,7 @@
     if (event.target?.closest?.('[role="listbox"], [role="menu"], [role="option"], [role="menuitem"], [role="combobox"], [aria-haspopup="listbox"], [data-toolsbydcx-model-option]')) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
     if (!control || isModelPickerControl(control) || isModelLabel(modelLabel(control))) return;
+    if (!isFlowGenerateArrow(event.target, control)) return;
     if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
     event.stopImmediatePropagation();
