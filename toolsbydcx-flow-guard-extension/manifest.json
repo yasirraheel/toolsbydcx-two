@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow Guard",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Server-authenticated Flow access with per-user generation credits.",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "tabs", "webNavigation"],
