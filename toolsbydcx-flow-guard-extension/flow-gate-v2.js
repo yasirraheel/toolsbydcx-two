@@ -186,6 +186,18 @@
     document.documentElement.style.overflow = '';
   }
 
+  function lockLogoutControls() {
+    if (currentStatus?.access?.enabled !== true) return;
+    if (!/sign\s+out\s+of\s+all\s+accounts/i.test(textOf(document.body))) return;
+    document.querySelectorAll('button,a,[role="button"]').forEach(control => {
+      const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
+      if (/\b(sign\s*out|log\s*out)\b/i.test(wording)) {
+        control.setAttribute('data-toolsbydcx-flow-guard-hidden', '1');
+        control.style.setProperty('display', 'none', 'important');
+      }
+    });
+  }
+
   function maskNativeFlowCredits() {
     if (currentStatus?.access?.enabled !== true || !document.body) return;
     const pageText = textOf(document.body);
@@ -529,6 +541,7 @@
       return;
     }
     hideGate();
+    lockLogoutControls();
     maskNativeFlowCredits();
     applyModelAllowlist();
     ensureProjectUi();
@@ -543,9 +556,9 @@
   document.addEventListener('click', modelOptionListener, true);
   document.addEventListener('click', () => {
     if (currentStatus?.access?.enabled !== true) return;
-    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
-    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
-    setTimeout(() => { maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
   }, true);
   setInterval(() => {
     if (currentStatus?.access?.enabled !== true) return;
