@@ -119,8 +119,8 @@ class FlowGuardAccessService
             if (!$allowedModels) {
                 abort(403, 'No Google Flow model is assigned to this account.');
             }
-            $requestedNormalized = $this->normalizeModelName($requestedModel);
-            if ($requestedNormalized === '' || !collect($allowedModels)->contains(fn ($model) => $this->normalizeModelName($model) === $requestedNormalized)) {
+            $requestedNormalized = $this->modelKey($requestedModel);
+            if ($requestedNormalized === '' || !collect($allowedModels)->contains(fn ($model) => $this->modelKey($model) === $requestedNormalized)) {
                 abort(403, 'This model is not enabled for your Flow Guard account.');
             }
 
@@ -197,6 +197,14 @@ class FlowGuardAccessService
     public function normalizeModelName(?string $model): string
     {
         return trim((string) preg_replace('/\s+/', ' ', (string) $model));
+    }
+
+    public function modelKey(?string $model): string
+    {
+        $normalized = $this->normalizeModelName($model);
+        $normalized = (string) preg_replace('/[\x{2010}-\x{2015}\x{2212}]/u', '-', $normalized);
+        $normalized = (string) preg_replace('/\s*-\s*/u', ' - ', $normalized);
+        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $normalized)));
     }
 
     public function allowedModels(?FlowGuardAccess $access): array

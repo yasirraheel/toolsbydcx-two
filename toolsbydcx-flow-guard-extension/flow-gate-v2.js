@@ -58,7 +58,12 @@
   const assetUrl = file => {
     try { return chrome.runtime.getURL(file); } catch (_) { return ''; }
   };
-  const normalizeModelName = value => String(value ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+  const normalizeModelName = value => String(value ?? '')
+    .replace(/[\u2010-\u2015\u2212]/g, '-')
+    .replace(/\s*-\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase();
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   })[character]);
@@ -110,9 +115,21 @@
 
   function findAllowedModelOption(allowed) {
     const normalizedAllowed = allowed.map(normalizeModelName);
-    return Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
+    const trigger = findModelTrigger();
+    const option = Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
       .filter(isVisible)
       .find(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))));
+    if (option) return option;
+
+    // Flow has shipped model menus with plain div/span options as well as
+    // semantic listbox options. Fall back to the smallest visible model label
+    // so the assignment still matches the native menu text exactly.
+    return Array.from(document.querySelectorAll('body *'))
+      .filter(isVisible)
+      .filter(element => element !== trigger && isModelLabel(modelLabel(element)))
+      .filter(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))))
+      .filter(element => !Array.from(element.children).some(child => isVisible(child) && normalizedAllowed.includes(normalizeModelName(modelLabel(child)))))
+      .sort((left, right) => modelLabel(left).length - modelLabel(right).length)[0] || null;
   }
 
   function preselectAllowedModel() {
