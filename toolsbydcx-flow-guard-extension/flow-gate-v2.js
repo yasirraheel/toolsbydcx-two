@@ -17,6 +17,7 @@
   let gateStopped = false;
   let homeEmptyState;
   let confirmModal;
+  let modelSelectionPending = false;
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
   window.addEventListener('unhandledrejection', event => {
@@ -75,6 +76,50 @@
       .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]'));
     const modelControl = controls.find(element => isModelLabel(modelLabel(element)));
     return modelControl ? modelLabel(modelControl) : '';
+  }
+
+  function findModelTrigger() {
+    return Array.from(document.querySelectorAll('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]'))
+      .filter(isVisible)
+      .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]'))
+      .find(element => isModelLabel(modelLabel(element)));
+  }
+
+  function findAllowedModelOption(allowed) {
+    const normalizedAllowed = normalizeModelName(allowed);
+    return Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
+      .filter(isVisible)
+      .find(element => normalizeModelName(modelLabel(element)) === normalizedAllowed);
+  }
+
+  function preselectAllowedModel() {
+    if (currentStatus?.access?.enabled !== true) return false;
+    const allowed = String(currentStatus?.access?.allowed_model || '').trim();
+    if (!allowed) return false;
+    if (normalizeModelName(selectedModelName()) === normalizeModelName(allowed)) {
+      modelSelectionPending = false;
+      return true;
+    }
+
+    const trigger = findModelTrigger();
+    if (!trigger) return false;
+    if (!modelSelectionPending) {
+      modelSelectionPending = true;
+      try {
+        if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+      } catch (_) {
+        modelSelectionPending = false;
+        return false;
+      }
+      [0, 80, 220, 500].forEach(delay => setTimeout(() => {
+        const option = findAllowedModelOption(allowed);
+        if (!option || option.getAttribute('aria-disabled') === 'true') return;
+        try { option.click(); } catch (_) {}
+        modelSelectionPending = false;
+      }, delay));
+      setTimeout(() => { modelSelectionPending = false; }, 900);
+    }
+    return false;
   }
 
   function showModelNotice(message) {
@@ -499,6 +544,13 @@
     if (!currentStatus.authenticated) { removeProjectUi(); showGate('Enter your ToolsByDcx panel credentials below to continue.', 'login'); return; }
     if (currentStatus.access?.enabled !== true) { removeProjectUi(); showGate('Your Flow Guard access is not enabled. Contact the administrator.', 'locked'); return; }
     if (gateStopped) { location.reload(); return; }
+    applyModelAllowlist();
+    if (!preselectAllowedModel()) {
+      showGate(currentStatus.access?.allowed_model
+        ? 'Preparing your assigned Google Flow model…'
+        : 'No Google Flow model is assigned to this account.', currentStatus.access?.allowed_model ? 'checking' : 'locked');
+      return;
+    }
     hideGate();
     lockLogoutControls();
     maskNativeFlowCredits();
@@ -519,7 +571,16 @@
     setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
     setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
   }, true);
-  setInterval(() => { if (currentStatus?.access?.enabled === true) { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); ensureProjectUi(); } }, 1200);
+  setInterval(() => {
+    if (currentStatus?.access?.enabled !== true) return;
+    applyModelAllowlist();
+    if (preselectAllowedModel()) {
+      hideGate();
+      lockLogoutControls();
+      maskNativeFlowCredits();
+      ensureProjectUi();
+    }
+  }, 600);
   setInterval(() => void refresh(false), 5000);
   setInterval(watchFailures, 2500);
   setInterval(saveProjectIfChanged, 3000);
