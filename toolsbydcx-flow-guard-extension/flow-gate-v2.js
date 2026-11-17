@@ -9,6 +9,7 @@
   let overlay;
   let lastProjectSig = null;
   let projects = [];
+  let projectsLoaded = false;
   let projectsLoadedAt = 0;
   let projectPanel;
   let projectButton;
@@ -155,6 +156,15 @@
     return path === '/' || path === '/flow';
   }
 
+  function installHomeShield() {
+    if (!isFlowHomePage() || document.getElementById('toolsbydcx-flow-guard-home-shield')) return;
+    document.documentElement.setAttribute('data-toolsbydcx-flow-home', '1');
+    const style = document.createElement('style');
+    style.id = 'toolsbydcx-flow-guard-home-shield';
+    style.textContent = `html[data-toolsbydcx-flow-home="1"] a[href*="/project/"],html[data-toolsbydcx-flow-home="1"] a[href*="/projects/"],html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/project/"],html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/projects/"],html[data-toolsbydcx-flow-home="1"] [data-testid*="project-card" i],html[data-toolsbydcx-flow-home="1"] [data-testid*="project-tile" i],html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/project/"]),html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/projects/"]),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/project/"]),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/projects/"]){display:none!important;visibility:hidden!important;pointer-events:none!important}`;
+    (document.head || document.documentElement).append(style);
+  }
+
   function projectInfo() {
     const match = location.pathname.match(/\/(?:project|projects)\/([^/?#]+)/i);
     if (!match) return null;
@@ -167,7 +177,14 @@
     if (!isFlowHomePage() || !document.body) {
       homeEmptyState?.remove();
       homeEmptyState = null;
+      document.documentElement?.removeAttribute('data-toolsbydcx-flow-home');
+      document.getElementById('toolsbydcx-flow-guard-home-shield')?.remove();
       return;
+    }
+
+    if (!projectsLoaded || projects.length > 0) {
+      homeEmptyState?.remove();
+      homeEmptyState = null;
     }
 
     document.querySelectorAll('a[href*="/project/"], a[href*="/projects/"]').forEach(anchor => {
@@ -193,7 +210,7 @@
       }
     });
 
-    if (!homeEmptyState) {
+    if (projectsLoaded && projects.length === 0 && !homeEmptyState) {
       homeEmptyState = document.createElement('section');
       homeEmptyState.id = 'toolsbydcx-flow-guard-home-empty';
       homeEmptyState.innerHTML = `<div class="fg-home-icon"><img src="${assetUrl('toolsbydcx-favicon.png')}" alt="ToolsByDcx"></div><h2>ToolsByDcx · Create your first Flow project</h2><p>Your private project archive is ready. Start a new project and it will appear in ToolsByDcx My Projects.</p><button type="button" class="fg-create-first-project">Create new project</button>`;
@@ -303,8 +320,10 @@
     const result = await send({ type: 'GET_PROJECTS' });
     if (result?.ok && Array.isArray(result.projects)) {
       projects = result.projects;
+      projectsLoaded = true;
       updateProjectButton();
       renderProjectPanel();
+      hideNativeHomeProjects();
     }
   }
 
@@ -313,6 +332,7 @@
   function ensureProjectUi() {
     if (!document.body || currentStatus?.access?.enabled !== true) return;
     injectProjectStyles();
+    installHomeShield();
     renderCreditPill();
     if (!isFlowHomePage()) { projectButton?.remove(); projectButton = null; closeProjectPanel(); hideNativeHomeProjects(); return; }
     hideNativeHomeProjects();
@@ -352,6 +372,7 @@
     saveProjectIfChanged();
   }
 
+  installHomeShield();
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
