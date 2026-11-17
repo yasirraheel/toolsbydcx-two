@@ -18,6 +18,7 @@
                                     <th>Access</th>
                                     <th>Credits</th>
                                     <th>Cost / video</th>
+                                    <th>Allowed model</th>
                                     <th>Expiry</th>
                                     <th>Action</th>
                                 </tr>
@@ -41,6 +42,7 @@
                                             / {{ $user->credit_limit === null ? 'Unlimited' : number_format((int) $user->credit_limit) }}
                                         </td>
                                         <td>{{ number_format((int) ($user->generation_cost ?? 100)) }}</td>
+                                        <td>{{ $user->allowed_model ?: 'All models' }}</td>
                                         <td>{{ $user->expires_at ? showDateTime($user->expires_at) : 'No expiry' }}</td>
                                         <td>
                                             <form method="POST" action="{{ route('admin.flow-guard.users.update', $user->id) }}" class="d-flex flex-wrap gap-2 align-items-center">
@@ -51,6 +53,7 @@
                                                 </label>
                                                 <input type="number" name="credit_limit" min="0" max="1000000000" class="form-control form-control-sm" style="width:120px" placeholder="Unlimited" value="{{ $user->credit_limit }}">
                                                 <input type="number" name="generation_cost" min="1" max="1000000" required class="form-control form-control-sm" style="width:100px" value="{{ (int) ($user->generation_cost ?? 100) }}">
+                                                <input type="text" name="allowed_model" maxlength="191" class="form-control form-control-sm" style="width:180px" placeholder="Allowed model" value="{{ $user->allowed_model }}">
                                                 <input type="datetime-local" name="expires_at" class="form-control form-control-sm" style="width:190px" value="{{ $user->expires_at ? \Carbon\Carbon::parse($user->expires_at)->format('Y-m-d\\TH:i') : '' }}">
                                                 <button class="btn btn--primary btn-sm" type="submit"><i class="las la-save"></i> Save</button>
                                             </form>

@@ -21,9 +21,46 @@
   const send = message => chrome.runtime.sendMessage(message).catch(() => ({ ok: false, error: 'Flow Guard is unavailable.' }));
   const textOf = element => (element?.innerText || element?.textContent || '').replace(/\s+/g, ' ').trim();
   const assetUrl = file => chrome.runtime.getURL(file);
+  const normalizeModelName = value => String(value ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   })[character]);
+
+  function modelLabel(element) {
+    const raw = element?.innerText || element?.textContent || '';
+    return raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || raw.replace(/\s+/g, ' ').trim();
+  }
+
+  function isModelLabel(label) {
+    return /^(?:omni|veo)\b/i.test(String(label || '').trim());
+  }
+
+  function isVisible(element) {
+    if (!element || element.hidden || element.getAttribute('aria-hidden') === 'true') return false;
+    const style = getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.pointerEvents === 'none') return false;
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function selectedModelName() {
+    const controls = Array.from(document.querySelectorAll('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]'))
+      .filter(isVisible)
+      .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]'));
+    const modelControl = controls.find(element => isModelLabel(modelLabel(element)));
+    return modelControl ? modelLabel(modelControl) : '';
+  }
+
+  function showModelNotice(message) {
+    if (!document.body) return;
+    document.getElementById('toolsbydcx-flow-guard-model-notice')?.remove();
+    const notice = document.createElement('div');
+    notice.id = 'toolsbydcx-flow-guard-model-notice';
+    notice.textContent = message;
+    notice.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483646;max-width:360px;padding:12px 15px;border:1px solid rgba(255,190,92,.45);border-radius:12px;color:#fff4d8;background:linear-gradient(135deg,#4c331d,#2a2018);box-shadow:0 14px 35px rgba(0,0,0,.45);font:700 13px/1.4 system-ui,sans-serif;';
+    document.body.append(notice);
+    setTimeout(() => notice.remove(), 4500);
+  }
 
   function makeOverlay() {
     if (overlay || !document.documentElement) return;
@@ -93,6 +130,7 @@
 
   function lockLogoutControls() {
     if (currentStatus?.access?.enabled !== true) return;
+    if (!/sign\s+out\s+of\s+all\s+accounts/i.test(textOf(document.body))) return;
     document.querySelectorAll('button,a,[role="button"]').forEach(control => {
       const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''}`;
       if (/\b(sign\s*out|log\s*out)\b/i.test(wording)) {
@@ -100,6 +138,58 @@
         control.style.setProperty('display', 'none', 'important');
       }
     });
+  }
+
+  function maskNativeFlowCredits() {
+    if (currentStatus?.access?.enabled !== true || !document.body) return;
+    if (!/sign\s+out\s+of\s+all\s+accounts/i.test(textOf(document.body))) return;
+    const serverText = creditText();
+    document.querySelectorAll('div,span,p,button,[role="button"]').forEach(element => {
+      if (element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return;
+      if (element.getAttribute('data-toolsbydcx-server-credit')) return;
+      const label = textOf(element);
+      if (!label || label.length > 100 || !/\b(?:google\s+flow\s+)?credits?\b/i.test(label)) return;
+      if (element.children.length > 2) return;
+      const rect = element.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      element.setAttribute('data-toolsbydcx-server-credit', '1');
+      element.textContent = `ToolsByDcx ${serverText}`;
+      element.style.setProperty('color', '#b9f5df', 'important');
+      element.style.setProperty('font-weight', '700', 'important');
+    });
+  }
+
+  function applyModelAllowlist() {
+    const allowed = String(currentStatus?.access?.allowed_model || '').trim();
+    if (currentStatus?.access?.enabled !== true || !allowed) return;
+    const normalizedAllowed = normalizeModelName(allowed);
+    const selector = '[role="option"],[role="menuitem"],[role="menuitemradio"],li,[aria-selected],[role="listbox"] *,[role="menu"] *';
+    document.querySelectorAll(selector).forEach(element => {
+      if (!isVisible(element)) return;
+      const label = modelLabel(element);
+      if (!isModelLabel(label) && normalizeModelName(label) !== normalizedAllowed) return;
+      const optionLike = element.matches('[role="option"],[role="menuitem"],[role="menuitemradio"],li')
+        || !!element.closest('[role="listbox"],[role="menu"]');
+      if (!optionLike) return;
+      const enabled = normalizeModelName(label) === normalizedAllowed;
+      element.setAttribute('data-toolsbydcx-model-option', '1');
+      element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+      element.style.setProperty('opacity', enabled ? '1' : '.35', 'important');
+      element.style.setProperty('pointer-events', enabled ? 'auto' : 'none', 'important');
+      if (!enabled) {
+        element.setAttribute('tabindex', '-1');
+        element.setAttribute('title', `Only ${allowed} is enabled for this account.`);
+      } else if (element.getAttribute('title') === `Only ${allowed} is enabled for this account.`) {
+        element.removeAttribute('title');
+      }
+    });
+  }
+
+  function modelOptionListener(event) {
+    const option = event.target?.closest?.('[data-toolsbydcx-model-option]');
+    if (!option || option.getAttribute('aria-disabled') !== 'true') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   function isGenerationControl(control) {
@@ -120,8 +210,14 @@
   async function reserveAndClick(control) {
     if (replaying || pending) return;
     const project = projectInfo();
+    const allowedModel = String(currentStatus?.access?.allowed_model || '').trim();
+    const selectedModel = selectedModelName();
+    if (allowedModel && normalizeModelName(selectedModel) !== normalizeModelName(allowedModel)) {
+      showModelNotice(`Only ${allowedModel} is enabled for your account.`);
+      return;
+    }
     const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const result = await send({ type: 'RESERVE_GENERATION', idempotencyKey, projectId: project?.external_project_id, model: textOf(control).slice(0, 100) });
+    const result = await send({ type: 'RESERVE_GENERATION', idempotencyKey, projectId: project?.external_project_id, model: (selectedModel || textOf(control)).slice(0, 100) });
     if (!result?.ok) {
       showGate(result?.error || 'Your Flow Guard credits are not available.');
       return;
@@ -367,6 +463,8 @@
     if (gateStopped) { location.reload(); return; }
     hideGate();
     lockLogoutControls();
+    maskNativeFlowCredits();
+    applyModelAllowlist();
     ensureProjectUi();
     renderCreditPill();
     saveProjectIfChanged();
@@ -376,7 +474,14 @@
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
-  setInterval(() => { if (currentStatus?.access?.enabled === true) { lockLogoutControls(); ensureProjectUi(); } }, 5000);
+  document.addEventListener('click', modelOptionListener, true);
+  document.addEventListener('click', () => {
+    if (currentStatus?.access?.enabled !== true) return;
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
+    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
+  }, true);
+  setInterval(() => { if (currentStatus?.access?.enabled === true) { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); ensureProjectUi(); } }, 1200);
   setInterval(() => void refresh(false), 5000);
   setInterval(watchFailures, 2500);
   setInterval(saveProjectIfChanged, 3000);

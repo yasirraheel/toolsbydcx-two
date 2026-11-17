@@ -524,6 +524,7 @@ class ManageUsersController extends Controller
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_generation_cost' => 'nullable|integer|min:1|max:1000000',
+            'flow_guard_allowed_model' => 'nullable|string|max:191',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -597,6 +598,9 @@ class ManageUsersController extends Controller
                     'enabled' => $request->boolean('flow_guard_enabled'),
                     'credit_limit' => $request->filled('flow_guard_credit_limit') ? (int) $request->flow_guard_credit_limit : null,
                     'generation_cost' => (int) ($request->input('flow_guard_generation_cost') ?: 100),
+                    'allowed_model' => $request->filled('flow_guard_allowed_model')
+                        ? trim((string) $request->input('flow_guard_allowed_model'))
+                        : null,
                 ]
             );
 

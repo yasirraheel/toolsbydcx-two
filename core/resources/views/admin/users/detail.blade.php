@@ -284,6 +284,13 @@
                                         <input type="number" class="form-control" name="flow_guard_generation_cost" min="1" max="1000000" step="1"
                                                value="{{ old('flow_guard_generation_cost', $flowGuardCost) }}">
                                     </div>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1">@lang('Allowed Google Flow model')</label>
+                                        <input type="text" class="form-control" name="flow_guard_allowed_model" maxlength="191"
+                                               value="{{ old('flow_guard_allowed_model', $flowGuardAccess->allowed_model) }}"
+                                               placeholder="@lang('e.g. Omni 1.2 Flash')">
+                                        <small class="text-muted">@lang('Only this exact native Flow model is enabled. Leave blank to allow all models.') </small>
+                                    </div>
                                     <div class="small text-muted mt-2">
                                         <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($flowGuardUsed) }}</strong></span>
                                         <span class="ms-2"><i class="las la-hourglass-half"></i> @lang('Remaining'):
