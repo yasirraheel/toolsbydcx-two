@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.3';
+  const GATE_VERSION = '1.4.4';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -463,7 +463,6 @@
       const started = await waitForGenerationStart(control, baselineText);
       if (!started) {
         await settle('refunded');
-        showModelNotice('Generation did not start. Your Flow Guard credits were returned.');
         return;
       }
       setTimeout(() => safeAsync(() => settle('committed')), 10000);
@@ -481,6 +480,7 @@
     // they are icon-only and live inside the same composer container.
     if (event.target?.closest?.('[role="listbox"], [role="menu"], [role="option"], [role="menuitem"], [role="combobox"], [aria-haspopup="listbox"], [data-toolsbydcx-model-option]')) return;
     const control = event.target?.closest?.('button,a,[role="button"]');
+    if (!control || isModelPickerControl(control) || isModelLabel(modelLabel(control))) return;
     if (!isGenerationControl(control) || replaying) return;
     event.preventDefault();
     event.stopImmediatePropagation();
