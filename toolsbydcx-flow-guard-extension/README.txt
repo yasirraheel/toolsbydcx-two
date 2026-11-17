@@ -2,6 +2,7 @@ ToolsByDcx Flow Guard (separate extension)
 
 This extension is independent from the legacy ToolsByDcx Flow extension.
 It uses /api/flow-guard and /user/flow-guard/session only.
+All extension surfaces use the official ToolsByDcx logo and branding.
 
 Authentication
 - If a ToolsByDcx panel session is open, the site bridge obtains a short-lived
