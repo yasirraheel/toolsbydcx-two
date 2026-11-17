@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.7';
+  const GATE_VERSION = '1.4.8';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -444,15 +444,28 @@
     });
   }
 
-  async function reserveAndClick(control) {
+  function generationDetails(control) {
+    const allowedModels = allowedModelNames();
+    const visibleModel = selectedModelName();
+    if (isModelLabel(visibleModel)) selectedModelHint = visibleModel;
+    const selectedModel = visibleModel || selectedModelHint || allowedModels[0] || '';
+    const quantity = generationQuantity(control);
+    const perVideoCost = Math.max(0, Number(currentStatus?.access?.generation_cost || 0));
+    return {
+      allowedModels,
+      selectedModel,
+      quantity,
+      requestedAmount: perVideoCost > 0 ? perVideoCost * quantity : undefined,
+    };
+  }
+
+  async function reserveAndClick(control, nativeStarted = false, baselineText = '') {
     if (replaying || pending || generationIntercepting) return;
     generationIntercepting = true;
     try {
       const project = projectInfo();
-      const allowedModels = allowedModelNames();
-      const visibleModel = selectedModelName();
-      if (isModelLabel(visibleModel)) selectedModelHint = visibleModel;
-      const selectedModel = visibleModel || selectedModelHint || allowedModels[0];
+      const details = generationDetails(control);
+      const { allowedModels, selectedModel } = details;
       if (!allowedModels.length) {
         showModelNotice('No Google Flow model is assigned to your account.');
         return;
@@ -461,11 +474,8 @@
         showModelNotice(`Only these models are enabled: ${allowedModels.join(', ')}`);
         return;
       }
-      const quantity = generationQuantity(control);
-      const perVideoCost = Math.max(0, Number(currentStatus?.access?.generation_cost || 0));
-      const requestedAmount = perVideoCost > 0 ? perVideoCost * quantity : undefined;
       const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const result = await send({ type: 'RESERVE_GENERATION', amount: requestedAmount, idempotencyKey, projectId: project?.external_project_id, model: (selectedModel || textOf(control)).slice(0, 100) });
+      const result = await send({ type: 'RESERVE_GENERATION', amount: details.requestedAmount, idempotencyKey, projectId: project?.external_project_id, model: (selectedModel || textOf(control)).slice(0, 100) });
       if (!result?.ok) {
         showGate(result?.error || 'Your Flow Guard credits are not available.');
         return;
@@ -476,11 +486,13 @@
         renderCreditPill();
         maskNativeFlowCredits();
       }
-      const baselineText = textOf(document.body);
-      replaying = true;
-      try { replayFlowGenerateArrow(control); }
-      finally { replaying = false; }
-      const started = await waitForGenerationStart(control, baselineText);
+      const generationBaseline = baselineText || textOf(document.body);
+      if (!nativeStarted) {
+        replaying = true;
+        try { replayFlowGenerateArrow(control); }
+        finally { replaying = false; }
+      }
+      const started = await waitForGenerationStart(control, generationBaseline);
       if (!started) {
         await settle('refunded');
         return;
@@ -502,11 +514,41 @@
     const control = event.target?.closest?.('button,a,[role="button"]');
     if (!control || isModelPickerControl(control) || isModelLabel(modelLabel(control))) return;
     if (!isFlowGenerateArrow(event.target, control)) return;
-    if (!isGenerationControl(control) || replaying) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (generationIntercepting) return;
-    safeAsync(() => reserveAndClick(control));
+    if (!isGenerationControl(control) || replaying || generationIntercepting || pending) return;
+    const details = generationDetails(control);
+    const modelAllowed = details.allowedModels.length
+      && details.allowedModels.some(model => normalizeModelName(model) === normalizeModelName(details.selectedModel));
+    const remaining = currentStatus?.access?.remaining_credits;
+    const enoughCredits = remaining == null || details.requestedAmount == null || Number(remaining) >= details.requestedAmount;
+    if (!modelAllowed || !enoughCredits) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showModelNotice(!modelAllowed
+        ? `Only these models are enabled: ${details.allowedModels.join(', ')}`
+        : 'Not enough Flow Guard credits for this generation.');
+      return;
+    }
+    // Let Flow receive the trusted arrow click. The reservation runs in
+    // parallel and is committed only after Flow shows that generation started.
+    safeAsync(() => reserveAndClick(control, true, textOf(document.body)));
+  }
+
+  function generationKeydownListener(event) {
+    if (event.key !== 'Enter' || event.isTrusted === false) return;
+    if (!currentStatus?.authenticated || currentStatus.access?.enabled !== true || generationIntercepting || pending) return;
+    const target = event.target;
+    if (!target?.matches?.('textarea,input,[contenteditable="true"]')) return;
+    const arrow = Array.from(document.querySelectorAll('mat-icon'))
+      .find(icon => String(icon.textContent || '').trim() === 'arrow_forward' && isVisible(icon));
+    const control = arrow?.closest?.('button,a,[role="button"]');
+    if (!control || !isGenerationControl(control)) return;
+    const details = generationDetails(control);
+    const modelAllowed = details.allowedModels.length
+      && details.allowedModels.some(model => normalizeModelName(model) === normalizeModelName(details.selectedModel));
+    const remaining = currentStatus?.access?.remaining_credits;
+    const enoughCredits = remaining == null || details.requestedAmount == null || Number(remaining) >= details.requestedAmount;
+    if (!modelAllowed || !enoughCredits) return;
+    safeAsync(() => reserveAndClick(control, true, textOf(document.body)));
   }
 
   function watchFailures() {
@@ -756,6 +798,7 @@
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
+  document.addEventListener('keydown', generationKeydownListener, true);
   document.addEventListener('click', modelOptionListener, true);
   document.addEventListener('pointerdown', modelPickerListener, true);
   document.addEventListener('click', modelPickerListener, true);
