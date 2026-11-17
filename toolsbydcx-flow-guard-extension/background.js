@@ -96,17 +96,31 @@ async function clearProfileCookies() {
 
 async function closeProtectedTabs() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  const tabIds = tabs
-    .filter(tab => {
-      const origin = originOf(tab.url || tab.pendingUrl || '');
-      return origin === 'https://flow.google.com'
-        || origin === 'https://accounts.google.com'
-        || origin === 'https://www.google.com'
-        || origin === 'https://toolsbydcx.com'
-        || origin === 'https://www.toolsbydcx.com';
-    })
-    .map(tab => tab.id)
-    .filter(Number.isInteger);
+  const windows = new Map();
+  for (const tab of tabs) {
+    if (!Number.isInteger(tab.windowId)) continue;
+    const group = windows.get(tab.windowId) || { all: [], protected: [] };
+    group.all.push(tab);
+    const origin = originOf(tab.url || tab.pendingUrl || '');
+    if (origin === 'https://flow.google.com'
+      || origin === 'https://accounts.google.com'
+      || origin === 'https://www.google.com'
+      || origin === 'https://toolsbydcx.com'
+      || origin === 'https://www.toolsbydcx.com') {
+      group.protected.push(tab);
+    }
+    windows.set(tab.windowId, group);
+  }
+  const tabIds = [];
+  for (const group of windows.values()) {
+    if (group.all.length <= 1) continue;
+    // If every tab in a window is protected, retain one tab so Chrome never
+    // closes the window/browser as a side effect of emergency cleanup.
+    const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
+    for (const tab of group.protected.slice(keep)) {
+      if (Number.isInteger(tab.id)) tabIds.push(tab.id);
+    }
+  }
   if (tabIds.length) await chrome.tabs.remove(tabIds).catch(() => {});
 }
 

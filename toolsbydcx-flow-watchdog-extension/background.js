@@ -75,10 +75,24 @@ function protectedOrigin(url) {
 
 async function closeProtectedTabs() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  const ids = tabs
-    .filter(tab => protectedOrigin(tab.url || tab.pendingUrl || ''))
-    .map(tab => tab.id)
-    .filter(Number.isInteger);
+  const windows = new Map();
+  for (const tab of tabs) {
+    if (!Number.isInteger(tab.windowId)) continue;
+    const group = windows.get(tab.windowId) || { all: [], protected: [] };
+    group.all.push(tab);
+    if (protectedOrigin(tab.url || tab.pendingUrl || '')) group.protected.push(tab);
+    windows.set(tab.windowId, group);
+  }
+  const ids = [];
+  for (const group of windows.values()) {
+    if (group.all.length <= 1) continue;
+    // Keep one tab when the window contains only protected tabs. This avoids
+    // closing the last tab and accidentally closing the browser window.
+    const keep = group.all.some(tab => !group.protected.includes(tab)) ? 0 : 1;
+    for (const tab of group.protected.slice(keep)) {
+      if (Number.isInteger(tab.id)) ids.push(tab.id);
+    }
+  }
   if (ids.length) await chrome.tabs.remove(ids).catch(() => {});
 }
 
