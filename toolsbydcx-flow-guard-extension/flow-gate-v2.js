@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.4.0';
+  const GATE_VERSION = '1.4.1';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -21,6 +21,7 @@
   let confirmModal;
   let modelStatusRequest = null;
   let modelSelectionReplay = false;
+  let selectedModelHint = '';
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
   const safeAsync = task => Promise.resolve().then(task).catch(error => {
@@ -311,7 +312,10 @@
 
   function modelOptionListener(event) {
     const option = event.target?.closest?.('[data-toolsbydcx-model-option]');
-    if (!option || option.getAttribute('aria-disabled') !== 'true') return;
+    if (!option) return;
+    const optionLabel = option.getAttribute('data-toolsbydcx-model-name') || modelLabel(option);
+    if (isModelLabel(optionLabel)) selectedModelHint = optionLabel;
+    if (option.getAttribute('aria-disabled') !== 'true') return;
     event.preventDefault();
     event.stopImmediatePropagation();
   }
@@ -320,7 +324,13 @@
     if (modelSelectionReplay || currentStatus?.access?.enabled !== true) return;
     const target = event.target?.closest?.('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]');
     if (!isModelPickerControl(target)) return;
-    setTimeout(() => safeAsync(() => refreshModelAccess()), 0);
+    const currentModel = modelLabel(target);
+    if (isModelLabel(currentModel)) selectedModelHint = currentModel;
+    setTimeout(() => safeAsync(async () => {
+      await refreshModelAccess();
+      const refreshedModel = selectedModelName();
+      if (isModelLabel(refreshedModel)) selectedModelHint = refreshedModel;
+    }), 0);
   }
 
   function isGenerationControl(control) {
@@ -362,13 +372,54 @@
     await refresh(false);
   }
 
+  function waitForGenerationStart(control, baselineText, timeout = 5000) {
+    return new Promise(resolve => {
+      const initialProgress = (baselineText.match(/\b\d{1,3}%\b/g) || []).length;
+      let finished = false;
+      let timer;
+      let interval;
+      let observer;
+      const finish = started => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        clearInterval(interval);
+        observer?.disconnect();
+        resolve(started);
+      };
+      const check = () => {
+        if (!document.body) return;
+        if (!control?.isConnected || control.disabled || control.getAttribute('aria-disabled') === 'true' || control.getAttribute('aria-busy') === 'true') {
+          finish(true);
+          return;
+        }
+        const currentText = textOf(document.body);
+        if (currentText === baselineText) return;
+        const progressCount = (currentText.match(/\b\d{1,3}%\b/g) || []).length;
+        if (progressCount > initialProgress) {
+          finish(true);
+          return;
+        }
+        const activityText = currentText.replace(/generating\s+will\s+use/gi, '');
+        if (/\b(?:queued|rendering|processing|creating|generating)\b/i.test(activityText)) finish(true);
+      };
+      observer = new MutationObserver(check);
+      observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['disabled', 'aria-disabled', 'aria-busy'] });
+      interval = setInterval(check, 150);
+      timer = setTimeout(() => finish(false), timeout);
+      check();
+    });
+  }
+
   async function reserveAndClick(control) {
     if (replaying || pending || generationIntercepting) return;
     generationIntercepting = true;
     try {
       const project = projectInfo();
       const allowedModels = allowedModelNames();
-      const selectedModel = selectedModelName();
+      const visibleModel = selectedModelName();
+      if (isModelLabel(visibleModel)) selectedModelHint = visibleModel;
+      const selectedModel = visibleModel || selectedModelHint || allowedModels[0];
       if (!allowedModels.length) {
         showModelNotice('No Google Flow model is assigned to your account.');
         return;
@@ -392,8 +443,16 @@
         renderCreditPill();
         maskNativeFlowCredits();
       }
+      const baselineText = textOf(document.body);
       replaying = true;
-      try { control.click(); } finally { replaying = false; }
+      try { control.click(); } catch (_) {}
+      finally { replaying = false; }
+      const started = await waitForGenerationStart(control, baselineText);
+      if (!started) {
+        await settle('refunded');
+        showModelNotice('Generation did not start. Your Flow Guard credits were returned.');
+        return;
+      }
       setTimeout(() => safeAsync(() => settle('committed')), 10000);
     } finally {
       generationIntercepting = false;
@@ -656,7 +715,6 @@
   installHomeShield();
   makeOverlay();
   showGate('Checking your ToolsByDcx authentication…', 'checking');
-  document.addEventListener('pointerdown', generationListener, true);
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
   document.addEventListener('pointerdown', modelPickerListener, true);

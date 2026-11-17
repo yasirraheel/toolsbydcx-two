@@ -116,6 +116,14 @@ function isGoogleLoginUrl(url) {
   return originOf(url) === 'https://accounts.google.com';
 }
 
+async function reinjectFlowGuard(tabId, url) {
+  if (!Number.isInteger(tabId) || !isFlowUrl(url)) return;
+  // A Developer Mode reload invalidates the old content-script realm in an
+  // already-open Flow tab. Re-inject the current gate so its authentication
+  // button and background message channel are live without a page refresh.
+  await chrome.scripting.executeScript({ target: { tabId }, files: ['flow-gate-v2.js'] }).catch(() => {});
+}
+
 async function hasFullControlSession() {
   const token = await savedToken();
   if (!token) return false;
@@ -149,7 +157,11 @@ async function enforceNavigation(tabId, url) {
 
 async function sweepOpenTabs() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  await Promise.all(tabs.map(tab => enforceNavigation(tab.id, tab.url || tab.pendingUrl || '')));
+  await Promise.all(tabs.map(async tab => {
+    const url = tab.url || tab.pendingUrl || '';
+    await enforceNavigation(tab.id, url);
+    await reinjectFlowGuard(tab.id, url);
+  }));
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -262,6 +274,12 @@ chrome.webNavigation?.onBeforeNavigate?.addListener(details => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url) void enforceNavigation(tabId, changeInfo.url);
+  if (changeInfo.status === 'complete') void reinjectFlowGuard(tabId, tab.url || '');
+});
+
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  const tab = await chrome.tabs.get(tabId).catch(() => null);
+  if (tab) await reinjectFlowGuard(tabId, tab.url || tab.pendingUrl || '');
 });
 
 // Also cover tabs that were already open before the unpacked extension was
