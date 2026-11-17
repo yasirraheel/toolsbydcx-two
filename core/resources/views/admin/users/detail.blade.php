@@ -255,6 +255,47 @@
                                 </div>
                             </div>
 
+                            {{-- Separate Flow Guard access and credit quota --}}
+                            <div class="col-lg-4 col-md-6 col-12">
+                                <input type="hidden" name="flow_guard_submitted" value="1">
+                                @php
+                                    $flowGuardLimit = $flowGuardAccess->credit_limit;
+                                    $flowGuardUsed = (int) ($flowGuardAccess->credits_used ?? 0);
+                                    $flowGuardCost = (int) ($flowGuardAccess->generation_cost ?: 100);
+                                @endphp
+                                <div class="dcx-tts-credit-card p-3 rounded h-100">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <label class="fw-bold mb-0">
+                                            <i class="las la-shield-alt text--primary"></i> @lang('Flow Guard Access')
+                                        </label>
+                                        <span class="badge badge--info">@lang('Separate extension')</span>
+                                    </div>
+                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
+                                        <input type="checkbox" name="flow_guard_enabled" value="1" @checked(old('flow_guard_enabled', $flowGuardAccess->enabled))>
+                                        <span>@lang('Enable Flow Guard')</span>
+                                    </label>
+                                    <div class="input-group mb-2">
+                                        <input type="number" class="form-control" name="flow_guard_credit_limit" min="0" max="1000000000" step="1"
+                                               value="{{ old('flow_guard_credit_limit', $flowGuardLimit) }}" placeholder="@lang('Unlimited')">
+                                        <span class="input-group-text bg--dark text-white border-secondary">@lang('credits')</span>
+                                    </div>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text bg--dark text-white border-secondary">@lang('Cost/video')</span>
+                                        <input type="number" class="form-control" name="flow_guard_generation_cost" min="1" max="1000000" step="1"
+                                               value="{{ old('flow_guard_generation_cost', $flowGuardCost) }}">
+                                    </div>
+                                    <div class="small text-muted mt-2">
+                                        <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($flowGuardUsed) }}</strong></span>
+                                        <span class="ms-2"><i class="las la-hourglass-half"></i> @lang('Remaining'):
+                                            <strong class="{{ $flowGuardCreditRemaining === null ? 'text--success' : ($flowGuardCreditRemaining > 0 ? 'text--success' : 'text--danger') }}">
+                                                {{ $flowGuardCreditRemaining === null ? __('Unlimited') : number_format($flowGuardCreditRemaining) }}
+                                            </strong>
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">@lang('These credits are used only by the separate Flow Guard extension. Existing Flow extension and TTS credits are not changed.') </small>
+                                </div>
+                            </div>
+
                             {{-- Account Validity & Expiration Date --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <div class="dcx-expiry-panel p-3 rounded">

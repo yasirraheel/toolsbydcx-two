@@ -425,6 +425,15 @@ class ManageUsersController extends Controller
         $ttsCreditRemaining = $user->tts_credit_limit === null
             ? null
             : max(0, (int) $user->tts_credit_limit - (int) $user->tts_credits_used);
+        $flowGuardAccess = \App\Models\FlowGuardAccess::firstOrNew([
+            'user_id' => $user->id,
+        ], [
+            'enabled' => false,
+            'credit_limit' => null,
+            'credits_used' => 0,
+            'generation_cost' => 100,
+        ]);
+        $flowGuardCreditRemaining = $flowGuardAccess->remainingCredits();
 
         return view('admin.users.detail', compact(
             'pageTitle',
@@ -436,7 +445,9 @@ class ManageUsersController extends Controller
             'userPairings',
             'plans',
             'ttsProviderCredits',
-            'ttsCreditRemaining'
+            'ttsCreditRemaining',
+            'flowGuardAccess',
+            'flowGuardCreditRemaining'
         ));
     }
 
@@ -511,6 +522,8 @@ class ManageUsersController extends Controller
             ],
             'tts_access' => 'nullable|boolean',
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
+            'flow_guard_credit_limit' => 'nullable|integer|min:0|max:1000000000',
+            'flow_guard_generation_cost' => 'nullable|integer|min:1|max:1000000',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -574,6 +587,23 @@ class ManageUsersController extends Controller
             $user->tts_access = $request->boolean('tts_access');
             if ($request->has('tts_credit_limit_submitted')) {
                 $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
+            }
+        }
+
+        if ($request->has('flow_guard_submitted')) {
+            $flowGuardAccess = \App\Models\FlowGuardAccess::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'enabled' => $request->boolean('flow_guard_enabled'),
+                    'credit_limit' => $request->filled('flow_guard_credit_limit') ? (int) $request->flow_guard_credit_limit : null,
+                    'generation_cost' => (int) ($request->input('flow_guard_generation_cost') ?: 100),
+                ]
+            );
+
+            if (!$flowGuardAccess->enabled) {
+                \App\Models\FlowGuardSession::where('user_id', $user->id)
+                    ->whereNull('revoked_at')
+                    ->update(['revoked_at' => now(), 'updated_at' => now()]);
             }
         }
 
