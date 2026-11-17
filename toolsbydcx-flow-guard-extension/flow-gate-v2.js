@@ -17,9 +17,6 @@
   let gateStopped = false;
   let homeEmptyState;
   let confirmModal;
-  let modelSelectionPending = false;
-  let modelPreparationKey = null;
-  let modelPreparationStartedAt = 0;
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
   const safeAsync = task => Promise.resolve().then(task).catch(error => {
@@ -112,90 +109,6 @@
     return allowedModelNames().join(', ');
   }
 
-  function findModelTrigger() {
-    return Array.from(document.querySelectorAll('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]'))
-      .filter(isVisible)
-      .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel, [role="listbox"], [role="menu"]'))
-      .find(element => isModelLabel(modelLabel(element)));
-  }
-
-  function findAllowedModelOption(allowed) {
-    const normalizedAllowed = allowed.map(normalizeModelName);
-    const trigger = findModelTrigger();
-    const option = Array.from(document.querySelectorAll('[role="option"],[role="menuitem"],[role="menuitemradio"],li,[role="listbox"] *,[role="menu"] *'))
-      .filter(isVisible)
-      .find(element => matchesAllowedModelLabel(modelLabel(element), normalizedAllowed));
-    if (option) return option;
-
-    // Flow has shipped model menus with plain div/span options as well as
-    // semantic listbox options. Fall back to the smallest visible model label
-    // so the assignment still matches the native menu text exactly.
-    return Array.from(document.querySelectorAll('body *'))
-      .filter(isVisible)
-      .filter(element => element !== trigger && isModelLabel(modelLabel(element)))
-      .filter(element => matchesAllowedModelLabel(modelLabel(element), normalizedAllowed))
-      .filter(element => !Array.from(element.children).some(child => isVisible(child) && matchesAllowedModelLabel(modelLabel(child), normalizedAllowed)))
-      .sort((left, right) => modelLabel(left).length - modelLabel(right).length)[0] || null;
-  }
-
-  function preselectAllowedModel() {
-    if (currentStatus?.access?.enabled !== true) return false;
-    const allowed = allowedModelNames();
-    if (!allowed.length) return false;
-    if (allowed.some(model => normalizeModelName(model) === normalizeModelName(selectedModelName()))) {
-      modelSelectionPending = false;
-      return true;
-    }
-
-    const trigger = findModelTrigger();
-    if (!trigger) return false;
-    if (!modelSelectionPending) {
-      modelSelectionPending = true;
-      try {
-        if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
-      } catch (_) {
-        modelSelectionPending = false;
-        return false;
-      }
-      [0, 80, 220, 500].forEach(delay => setTimeout(() => {
-        const option = findAllowedModelOption(allowed);
-        if (!option || option.getAttribute('aria-disabled') === 'true') return;
-        try { option.click(); } catch (_) {}
-        modelSelectionPending = false;
-      }, delay));
-      setTimeout(() => { modelSelectionPending = false; }, 900);
-    }
-    return false;
-  }
-
-  function setModelPickerDisabled(disabled) {
-    const trigger = findModelTrigger();
-    if (!trigger) return;
-    if (disabled) {
-      trigger.setAttribute('data-toolsbydcx-model-picker-disabled', '1');
-      trigger.setAttribute('aria-disabled', 'true');
-      trigger.setAttribute('tabindex', '-1');
-      trigger.style.setProperty('pointer-events', 'none', 'important');
-      trigger.style.setProperty('opacity', '.55', 'important');
-      if ('disabled' in trigger) trigger.disabled = true;
-      return;
-    }
-    if (trigger.getAttribute('data-toolsbydcx-model-picker-disabled') !== '1') return;
-    trigger.removeAttribute('data-toolsbydcx-model-picker-disabled');
-    trigger.removeAttribute('aria-disabled');
-    trigger.removeAttribute('tabindex');
-    trigger.style.removeProperty('pointer-events');
-    trigger.style.removeProperty('opacity');
-    if ('disabled' in trigger) trigger.disabled = false;
-  }
-
-  function modelPickerListener(event) {
-    const trigger = event.target?.closest?.('[data-toolsbydcx-model-picker-disabled="1"]');
-    if (!trigger) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }
-
   function showModelNotice(message) {
     if (!document.body) return;
     document.getElementById('toolsbydcx-flow-guard-model-notice')?.remove();
@@ -283,6 +196,43 @@
         control.style.setProperty('display', 'none', 'important');
       }
     });
+  }
+
+  function lockFlowAccountControls() {
+    const fullControl = currentStatus?.access?.full_control === true;
+    const selector = 'button,a,[role="button"],[aria-label],[title],[data-tooltip]';
+    if (!fullControl) {
+      document.querySelectorAll('[data-toolsbydcx-flow-guard-control="1"]').forEach(control => {
+        control.removeAttribute('data-toolsbydcx-flow-guard-control');
+        control.removeAttribute('aria-disabled');
+        control.style.removeProperty('pointer-events');
+        control.style.removeProperty('opacity');
+        control.style.removeProperty('cursor');
+      });
+      return;
+    }
+
+    document.querySelectorAll(selector).forEach(control => {
+      if (control.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-project-panel')) return;
+      const wording = `${textOf(control)} ${control.getAttribute('aria-label') || ''} ${control.getAttribute('title') || ''} ${control.getAttribute('data-tooltip') || ''}`.trim();
+      const accountControl = /google\s+account|switch\s+account|account\s+(?:menu|chooser)|manage\s+your\s+google\s+account|profile|avatar/i.test(wording);
+      const moreControl = /more\s+(?:options|actions)|overflow|^more$|^⋮$|^\.\.\.$/i.test(wording);
+      if (!accountControl && !moreControl) return;
+      control.setAttribute('data-toolsbydcx-flow-guard-control', '1');
+      control.setAttribute('aria-disabled', 'true');
+      control.setAttribute('tabindex', '-1');
+      control.style.setProperty('pointer-events', 'none', 'important');
+      control.style.setProperty('opacity', '.35', 'important');
+      control.style.setProperty('cursor', 'not-allowed', 'important');
+    });
+  }
+
+  function flowControlListener(event) {
+    if (currentStatus?.access?.full_control !== true) return;
+    const control = event.target?.closest?.('[data-toolsbydcx-flow-guard-control="1"]');
+    if (!control) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   function maskNativeFlowCredits() {
@@ -616,33 +566,20 @@
     if (gateStopped) { location.reload(); return; }
     applyModelAllowlist();
     const allowedModels = allowedModelNames();
-    const preparationKey = allowedModels.map(normalizeModelName).join('|');
-    if (preparationKey !== modelPreparationKey) {
-      modelPreparationKey = preparationKey;
-      modelPreparationStartedAt = preparationKey ? Date.now() : 0;
-    }
     if (!allowedModels.length) {
-      setModelPickerDisabled(true);
-      hideGate();
-      lockLogoutControls();
-      maskNativeFlowCredits();
-      ensureProjectUi();
-      renderCreditPill();
-      saveProjectIfChanged();
+      removeProjectUi();
+      showGate('No Google Flow model is assigned to this account. Contact ToolsByDcx support.', 'locked');
       return;
     }
-    setModelPickerDisabled(false);
-    if (!preselectAllowedModel()) {
-      const timedOut = preparationKey && modelPreparationStartedAt && Date.now() - modelPreparationStartedAt >= 8000;
-      showGate(!preparationKey
-        ? 'No Google Flow model is assigned to this account. Contact ToolsByDcx support.'
-        : timedOut
-          ? `Assigned model mismatch: ${allowedModels.join(', ')} is not available in this Flow account. Contact ToolsByDcx support.`
-          : 'Preparing your assigned Google Flow model…', (!preparationKey || timedOut) ? 'locked' : 'checking');
+    const remainingCredits = currentStatus?.access?.remaining_credits;
+    if (remainingCredits !== null && remainingCredits !== undefined && Number(remainingCredits) <= 0) {
+      removeProjectUi();
+      showGate('Your Flow Guard credits are finished. Contact ToolsByDcx support.', 'locked');
       return;
     }
     hideGate();
     lockLogoutControls();
+    lockFlowAccountControls();
     maskNativeFlowCredits();
     applyModelAllowlist();
     ensureProjectUi();
@@ -655,30 +592,19 @@
   showGate('Checking your ToolsByDcx authentication…', 'checking');
   document.addEventListener('click', generationListener, true);
   document.addEventListener('click', modelOptionListener, true);
-  document.addEventListener('click', modelPickerListener, true);
+  document.addEventListener('click', flowControlListener, true);
+  document.addEventListener('pointerdown', flowControlListener, true);
+  document.addEventListener('keydown', flowControlListener, true);
   document.addEventListener('click', () => {
     if (currentStatus?.access?.enabled !== true) return;
-    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
-    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
-    setTimeout(() => { lockLogoutControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
+    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 0);
+    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 180);
+    setTimeout(() => { lockLogoutControls(); lockFlowAccountControls(); maskNativeFlowCredits(); applyModelAllowlist(); }, 550);
   }, true);
   setInterval(() => {
     if (currentStatus?.access?.enabled !== true) return;
+    lockFlowAccountControls();
     applyModelAllowlist();
-    const allowedModels = allowedModelNames();
-    if (!allowedModels.length) {
-      setModelPickerDisabled(true);
-      hideGate();
-      ensureProjectUi();
-      return;
-    }
-    setModelPickerDisabled(false);
-    if (preselectAllowedModel()) {
-      hideGate();
-      lockLogoutControls();
-      maskNativeFlowCredits();
-      ensureProjectUi();
-    }
   }, 600);
   setInterval(() => safeAsync(() => refresh(false)), 2000);
   setInterval(watchFailures, 2500);
