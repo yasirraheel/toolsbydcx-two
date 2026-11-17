@@ -124,11 +124,13 @@ async function emergencyLogout(reason) {
   emergencyPromise = (async () => {
     // This is the emergency path only. It runs when the paired main extension
     // is disabled or removed; normal watchdog checks never touch cookies.
-    const cookieStats = await clearProfileCookies();
     // The main extension has separate storage. This short-lived marker lets
     // it clear its own local token when it is enabled again.
-    await setEmergencyMarker();
     await resetOpenTabs();
+    // Reset pages first so an active Flow/Google document cannot immediately
+    // recreate an auth cookie while the removal pass is running.
+    const cookieStats = await clearProfileCookies();
+    await setEmergencyMarker();
     await storage.set({
       [ARMED_KEY]: false,
       [EMERGENCY_KEY]: { reason, at: Date.now(), cookieStats }

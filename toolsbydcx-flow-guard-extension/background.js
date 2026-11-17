@@ -130,8 +130,9 @@ async function emergencyGoogleLogout(reason = 'watchdog-event') {
   emergencyLogoutPromise = (async () => {
     // This path is only used after the paired watchdog is disabled/removed.
     // Normal Flow Guard operation never reads or removes browser cookies.
-    const cookieStats = await clearProfileCookies();
     await resetOpenTabs();
+    // Clear after pages are reset so a live document cannot recreate cookies.
+    const cookieStats = await clearProfileCookies();
     await setToken(null);
     await storage.set({
       [WATCHDOG_ARMED_KEY]: false,
