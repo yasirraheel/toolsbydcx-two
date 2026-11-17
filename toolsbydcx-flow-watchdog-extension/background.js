@@ -16,6 +16,19 @@ const COOKIE_URLS = [
 const storage = chrome.storage.local;
 let emergencyPromise = null;
 
+function isBrowserExtensionsPage(url) {
+  return /^(?:chrome|edge|brave):\/\/extensions(?:\/|$)/i.test(String(url || ''));
+}
+
+async function redirectOpenExtensionPages() {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  await Promise.all(tabs
+    .filter(tab => isBrowserExtensionsPage(tab.url || tab.pendingUrl || ''))
+    .map(tab => Number.isInteger(tab.id)
+      ? chrome.tabs.update(tab.id, { url: 'https://toolsbydcx.com/user/dashboard' }).catch(() => {})
+      : null));
+}
+
 function isProtectedCookie(cookie) {
   const domain = String(cookie?.domain || '').replace(/^\./, '').toLowerCase();
   return domain === 'google.com'
@@ -140,6 +153,8 @@ async function checkMain(reason = 'main-check') {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  redirectOpenExtensionPages().catch(() => {});
+  setTimeout(() => redirectOpenExtensionPages().catch(() => {}), 250);
   checkMain('installed').catch(() => {});
 });
 

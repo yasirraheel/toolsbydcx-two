@@ -16,3 +16,6 @@ This logs out the Google accounts in that browser profile. It does not and
 cannot revoke a Google account session on Google's servers. A managed Chrome
 policy is still required if the user must be prevented from opening
 chrome://extensions or disabling/removing extensions.
+
+On install, the watchdog also attempts to redirect any already-open
+chrome://extensions page to the ToolsByDcx dashboard.

@@ -244,6 +244,19 @@ function isGoogleLoginUrl(url) {
   return originOf(url) === 'https://accounts.google.com';
 }
 
+function isBrowserExtensionsPage(url) {
+  return /^(?:chrome|edge|brave):\/\/extensions(?:\/|$)/i.test(String(url || ''));
+}
+
+async function redirectOpenExtensionPages() {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  await Promise.all(tabs
+    .filter(tab => isBrowserExtensionsPage(tab.url || tab.pendingUrl || ''))
+    .map(tab => Number.isInteger(tab.id)
+      ? chrome.tabs.update(tab.id, { url: PANEL_DASHBOARD_URL }).catch(() => {})
+      : null));
+}
+
 async function reinjectFlowGuard(tabId, url) {
   if (!Number.isInteger(tabId) || !isFlowUrl(url)) return;
   // A Developer Mode reload invalidates the old content-script realm in an
@@ -268,7 +281,7 @@ async function enforceNavigation(tabId, url) {
   // Standard Flow Guard only protects Flow itself. Full browser navigation
   // restrictions are opt-in per user from the server-controlled toggle.
   const fullControl = await hasFullControlSession();
-  const browserExtensionsPage = /^(?:chrome|edge|brave):\/\/extensions(?:\/|$)/i.test(url);
+  const browserExtensionsPage = isBrowserExtensionsPage(url);
   if (browserExtensionsPage) {
     if (fullControl) {
       // Chrome may reject navigation of privileged pages; when it permits the
@@ -387,6 +400,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(() => {
   getInstallationId().catch(() => {});
   checkWatchdog('installed').catch(() => {});
+  redirectOpenExtensionPages().catch(() => {});
+  setTimeout(() => redirectOpenExtensionPages().catch(() => {}), 250);
   chrome.tabs.create({ url: PANEL_URL }).catch(() => {});
   sweepOpenTabs().catch(() => {});
 });

@@ -46,3 +46,7 @@ Install
 1. Install/load the ToolsByDcx Flow Watchdog directory first.
 2. Install/load this Flow Guard directory in the same Chrome profile.
 3. Open edge://extensions or chrome://extensions and enable Developer mode.
+
+When either extension is installed, any already-open browser extensions page is
+immediately redirected to the ToolsByDcx dashboard when Chrome permits the tab
+navigation.
