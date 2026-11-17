@@ -7,6 +7,7 @@ const GUARD_REDIRECT = PANEL_URL;
 
 const storage = chrome.storage.local;
 let installationId = null;
+let panelSessionSyncPromise = null;
 
 async function getInstallationId() {
   if (installationId) return installationId;
@@ -55,6 +56,42 @@ async function refreshStatus() {
     if (error.status === 401) await setToken(null);
     return { authenticated: false, message: error.message };
   }
+}
+
+async function requestPanelSession() {
+  if (panelSessionSyncPromise) return panelSessionSyncPromise;
+  panelSessionSyncPromise = requestPanelSessionOnce();
+  try {
+    return await panelSessionSyncPromise;
+  } finally {
+    panelSessionSyncPromise = null;
+  }
+}
+
+async function requestPanelSessionOnce() {
+  const tabs = await chrome.tabs.query({ url: ['https://toolsbydcx.com/*', 'https://www.toolsbydcx.com/*'] }).catch(() => []);
+  if (!tabs.length) return false;
+  let synced = false;
+  await Promise.all(tabs.map(async tab => {
+    if (!Number.isInteger(tab.id)) return;
+    const ask = () => new Promise(resolve => {
+      try {
+        chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PANEL_SESSION' }, response => {
+          try { resolve(chrome.runtime.lastError ? null : response); } catch (_) { resolve(null); }
+        });
+      } catch (_) { resolve(null); }
+    });
+    let result = await ask();
+    if (!result?.ok) {
+      try {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['site-bridge.js'] });
+        await new Promise(resolve => setTimeout(resolve, 50));
+        result = await ask();
+      } catch (_) {}
+    }
+    if (result?.ok) synced = true;
+  }));
+  return synced;
 }
 
 function isExtensionPage(url) {
@@ -108,7 +145,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     try {
       if (message?.type === 'GET_STATUS') {
-        const token = await savedToken();
+        let token = await savedToken();
+        if (!token) {
+          await requestPanelSession();
+          token = await savedToken();
+        }
         if (!token) return sendResponse({ ok: true, status: { authenticated: false } });
         return sendResponse({ ok: true, status: await refreshStatus() });
       }
