@@ -21,6 +21,7 @@
   let confirmModal;
   let modelStatusRequest = null;
   let modelSelectionReplay = false;
+  let modelPreselectionAt = 0;
   let selectedModelHint = '';
 
   const isInvalidatedContext = reason => /extension context invalidated|extension context was invalidated/i.test(String(reason?.message || reason || ''));
@@ -173,10 +174,26 @@
 
   function selectAllowedModelIfNeeded() {
     if (modelSelectionReplay || currentStatus?.access?.enabled !== true) return;
-    const roots = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"]')).filter(isVisible);
-    if (!roots.length) return;
     const allowed = allowedModelNames();
     if (!allowed.length || allowed.some(model => normalizeModelName(model) === normalizeModelName(selectedModelName()))) return;
+    const roots = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"]')).filter(isVisible);
+    if (!roots.length) {
+      // Flow renders the native options only after its picker opens. Open it
+      // once when the server-selected model is not the current selection,
+      // then select the exact assigned option from the rendered list.
+      if (Date.now() - modelPreselectionAt < 1200) return;
+      const picker = Array.from(document.querySelectorAll('[role="combobox"], [aria-haspopup="listbox"], button, [role="button"]'))
+        .filter(isVisible).find(isModelPickerControl);
+      if (!picker) return;
+      modelPreselectionAt = Date.now();
+      modelSelectionReplay = true;
+      try { picker.click(); } catch (_) {}
+      setTimeout(() => {
+        modelSelectionReplay = false;
+        selectAllowedModelIfNeeded();
+      }, 90);
+      return;
+    }
     const normalizedAllowed = allowed.map(normalizeModelName);
     const option = modelOptionTargets().find(element => normalizedAllowed.includes(normalizeModelName(modelLabel(element))));
     if (!option || option.getAttribute('aria-disabled') === 'true') return;
@@ -837,6 +854,7 @@
   setInterval(() => {
     if (currentStatus?.access?.enabled !== true) return;
     applyModelAllowlist();
+    selectAllowedModelIfNeeded();
   }, 600);
   setInterval(() => safeAsync(() => refresh(false)), 2000);
   setInterval(watchFailures, 2500);
