@@ -281,7 +281,8 @@ async function requestPanelSession() {
 }
 
 async function requestPanelSessionOnce() {
-  const tabs = await chrome.tabs.query({ url: ['https://toolsbydcx.com/*', 'https://www.toolsbydcx.com/*'] }).catch(() => []);
+  const allTabs = await chrome.tabs.query({ url: ['https://toolsbydcx.com/*', 'https://www.toolsbydcx.com/*'] }).catch(() => []);
+  const tabs = allTabs.filter(tab => !/^https?:\/\/(?:www\.)?toolsbydcx\.com\/user\/login(?:\/|$)/i.test(tab.url || tab.pendingUrl || ''));
   if (!tabs.length) return false;
   let synced = false;
   await Promise.all(tabs.map(async tab => {

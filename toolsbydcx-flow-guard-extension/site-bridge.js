@@ -1,7 +1,7 @@
 (() => {
   'use strict';
-  if (globalThis.__toolsByDcxFlowGuardBridgeVersion === '1.3') return;
-  globalThis.__toolsByDcxFlowGuardBridgeVersion = '1.3';
+  if (globalThis.__toolsByDcxFlowGuardBridgeVersion === '1.4') return;
+  globalThis.__toolsByDcxFlowGuardBridgeVersion = '1.4';
 
   const send = message => new Promise(resolve => {
     try {
@@ -16,7 +16,10 @@
     const response = await send({ type: 'SITE_SESSION_REQUEST' });
     const isPanelLoginPage = /^\/user\/login(?:\/|$)/i.test(location.pathname);
     if (isPanelLoginPage && !response?.needed) {
-      await send({ type: 'SITE_SESSION_MISSING' });
+      // When the background worker asks every panel tab to re-sync, do not
+      // recursively send SITE_SESSION_MISSING back from this login tab.
+      // The worker will receive the false result and perform the logout path.
+      if (!force) await send({ type: 'SITE_SESSION_MISSING' });
       return false;
     }
     if (!force && !response?.needed) return false;
