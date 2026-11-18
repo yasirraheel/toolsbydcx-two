@@ -228,7 +228,6 @@ class FlowGuardAccessService
     public function normalizeModelName(?string $model): string
     {
         $normalized = (string) $model;
-        $normalized = (string) preg_replace('/\s+\[(?:lower|higher)\s+priority\]\s*$/iu', '', $normalized);
         return trim((string) preg_replace('/\s+/', ' ', $normalized));
     }
 

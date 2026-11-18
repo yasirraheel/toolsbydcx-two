@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.5.3';
+  const GATE_VERSION = '1.5.4';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -61,7 +61,6 @@
     try { return chrome.runtime.getURL(file); } catch (_) { return ''; }
   };
   const normalizeModelName = value => String(value ?? '')
-    .replace(/\s+\[(?:lower|higher)\s+priority\]\s*$/i, '')
     .replace(/[\u2010-\u2015\u2212]/g, '-')
     .replace(/\s*-\s*/g, ' - ')
     .replace(/\s+/g, ' ')
@@ -72,12 +71,26 @@
   })[character]);
 
   function modelLabel(element) {
-    const raw = element?.innerText || element?.textContent || '';
-    const firstLine = raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || raw.replace(/\s+/g, ' ').trim();
-    return firstLine
+    const rawText = element?.innerText || element?.textContent || '';
+    const metadata = [
+      element?.getAttribute?.('aria-label'),
+      element?.getAttribute?.('data-model'),
+      element?.getAttribute?.('data-model-name'),
+      element?.getAttribute?.('data-value')
+    ].filter(Boolean).join(' ');
+    const firstLine = rawText.split(/\r?\n/).map(value => value.trim()).filter(Boolean)[0] || rawText.replace(/\s+/g, ' ').trim();
+    const label = firstLine
       .replace(/\s+(?:leaving|sunsetting|deprecated)\b.*$/i, '')
-      .replace(/\s+\[(?:lower|higher)\s+priority\]\s*$/i, '')
       .trim();
+    const prioritySource = `${rawText} ${metadata}`;
+    const priority = prioritySource.match(/\[(?:lower|higher)\s+priority\]/i)?.[0]
+      || (() => {
+        const match = prioritySource.match(/\b(?:lower|higher)\s+priority\b/i);
+        return match ? `[${match[0]}]` : '';
+      })();
+    return priority && !/\[(?:lower|higher)\s+priority\]/i.test(label)
+      ? `${label} ${priority}`.trim()
+      : label;
   }
 
   function isModelLabel(label) {
@@ -86,7 +99,7 @@
 
   function matchesAllowedModelLabel(label, normalizedAllowed) {
     const normalized = normalizeModelName(label);
-    return normalizedAllowed.some(allowed => normalized === allowed || normalized.startsWith(`${allowed} `));
+    return normalizedAllowed.some(allowed => normalized === allowed);
   }
 
   function isVisible(element) {
@@ -315,11 +328,18 @@
   }
 
   function modelOptionListener(event) {
-    const option = event.target?.closest?.('[data-toolsbydcx-model-option]');
+    const option = event.target?.closest?.('[data-toolsbydcx-model-option], [role="option"], [role="menuitem"], [role="menuitemradio"], li, [data-value], [data-model]');
     if (!option) return;
-    const optionLabel = option.getAttribute('data-toolsbydcx-model-name') || modelLabel(option);
+    const optionLabel = modelLabel(option);
+    if (!isModelLabel(optionLabel)) return;
+    const allowed = allowedModelNames();
+    const enabled = matchesAllowedModelLabel(optionLabel, allowed.map(normalizeModelName));
+    option.setAttribute('data-toolsbydcx-model-option', '1');
+    option.setAttribute('data-toolsbydcx-model-name', optionLabel);
+    option.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    option.style.setProperty('cursor', enabled ? 'pointer' : 'not-allowed', 'important');
     if (isModelLabel(optionLabel)) selectedModelHint = optionLabel;
-    if (option.getAttribute('aria-disabled') !== 'true') return;
+    if (enabled) return;
     event.preventDefault();
     event.stopImmediatePropagation();
   }
@@ -805,6 +825,7 @@
   document.addEventListener('click', generationListener, true);
   document.addEventListener('keydown', generationKeydownListener, true);
   document.addEventListener('click', modelOptionListener, true);
+  document.addEventListener('keydown', modelOptionListener, true);
   document.addEventListener('pointerdown', modelPickerListener, true);
   document.addEventListener('click', modelPickerListener, true);
   document.addEventListener('click', () => {
