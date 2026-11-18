@@ -4,6 +4,7 @@ const INSTALLATION_KEY = 'flowGuardInstallationId';
 const TOKEN_KEY = 'flowGuardToken';
 const STATUS_KEY = 'flowGuardStatus';
 const FULL_CONTROL_KEY = 'flowGuardFullControl';
+const ACTIVE_SESSION_KEY = 'flowGuardActiveSession';
 const GUARD_REDIRECT = PANEL_URL;
 const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
 const WATCHDOG_NAME = 'ToolsByDcx Flow Watchdog';
@@ -56,9 +57,25 @@ async function savedToken() {
   return (await storage.get(TOKEN_KEY))[TOKEN_KEY] || null;
 }
 
+function hasPlanStatus(status) {
+  return status?.user?.has_plan !== undefined || status?.user?.plan_active !== undefined;
+}
+
+function isPlanEntitled(status) {
+  return status?.authenticated === true
+    && status?.user?.has_plan === true
+    && status?.user?.plan_active === true;
+}
+
+function requiresPlanLogout(status) {
+  return status?.authenticated === true
+    && hasPlanStatus(status)
+    && (status.user?.has_plan === false || status.user?.plan_active === false);
+}
+
 async function setToken(token, status = null) {
   if (!token) {
-    await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY]);
+    await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY, ACTIVE_SESSION_KEY]);
     return;
   }
   const fullControl = status?.authenticated === true
@@ -66,8 +83,13 @@ async function setToken(token, status = null) {
     && status.access?.full_control === true;
   await storage.set({
     [TOKEN_KEY]: token,
-    ...(status ? { [STATUS_KEY]: status, [FULL_CONTROL_KEY]: fullControl } : {})
+    ...(status ? {
+      [STATUS_KEY]: status,
+      [FULL_CONTROL_KEY]: fullControl,
+      ...(hasPlanStatus(status) ? { [ACTIVE_SESSION_KEY]: isPlanEntitled(status) } : {})
+    } : {})
   });
+  if (requiresPlanLogout(status)) void emergencyGoogleLogout('plan-missing-or-expired');
 }
 
 async function consumeEmergencyMarker() {
@@ -81,7 +103,7 @@ async function consumeEmergencyMarker() {
     name: EMERGENCY_COOKIE_NAME,
     storeId: marker.storeId
   }).catch(() => {});
-  await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY]);
+  await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY, ACTIVE_SESSION_KEY]);
   await storage.set({ [EMERGENCY_LOGOUT_KEY]: { reason: 'watchdog-marker', at: Date.now() } });
   return true;
 }
@@ -219,7 +241,11 @@ async function api(path, body, method = null) {
   const response = await fetch(`${API_BASE}${path}`, options);
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401) await setToken(null);
+    if (response.status === 401) {
+      const active = (await storage.get(ACTIVE_SESSION_KEY))[ACTIVE_SESSION_KEY] === true;
+      await setToken(null);
+      if (active) void emergencyGoogleLogout('flow-guard-session-invalid');
+    }
     throw Object.assign(new Error(payload.message || payload.error || `Request failed (${response.status})`), { status: response.status, payload });
   }
   return payload;
@@ -231,7 +257,12 @@ async function refreshStatus() {
     const fullControl = result.status?.authenticated === true
       && result.status.access?.enabled === true
       && result.status.access?.full_control === true;
-    await storage.set({ [STATUS_KEY]: result.status, [FULL_CONTROL_KEY]: fullControl });
+    await storage.set({
+      [STATUS_KEY]: result.status,
+      [FULL_CONTROL_KEY]: fullControl,
+      ...(hasPlanStatus(result.status) ? { [ACTIVE_SESSION_KEY]: isPlanEntitled(result.status) } : {})
+    });
+    if (requiresPlanLogout(result.status)) void emergencyGoogleLogout('plan-missing-or-expired');
     return result.status;
   } catch (error) {
     if (error.status === 401) await setToken(null);
@@ -417,7 +448,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // 401. Re-check every open panel tab first so one logged-in tab does
         // not sign the extension out just because another tab is stale.
         const synced = await requestPanelSession();
-        if (!synced) await setToken(null);
+        if (!synced) {
+          const active = (await storage.get(ACTIVE_SESSION_KEY))[ACTIVE_SESSION_KEY] === true;
+          if (active) await emergencyGoogleLogout('panel-logout');
+          else await setToken(null);
+        }
         return sendResponse({ ok: true, authenticated: synced });
       }
       if (message?.type === 'RESERVE_GENERATION') {
@@ -453,7 +488,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       if (message?.type === 'LOGOUT') {
         try { await api('/auth/logout'); } catch {}
-        await setToken(null);
+        const active = (await storage.get(ACTIVE_SESSION_KEY))[ACTIVE_SESSION_KEY] === true;
+        if (active) await emergencyGoogleLogout('flow-guard-logout');
+        else await setToken(null);
         return sendResponse({ ok: true });
       }
       return sendResponse({ ok: false, error: 'Unknown message.' });
@@ -501,7 +538,12 @@ chrome.management?.onUninstalled?.addListener(extensionId => {
 });
 
 chrome.alarms?.onAlarm?.addListener(alarm => {
-  if (alarm?.name === WATCHDOG_ALARM) void checkWatchdog('watchdog-alarm');
+  if (alarm?.name === WATCHDOG_ALARM) {
+    void checkWatchdog('watchdog-alarm');
+    // Revalidate the panel plan/session while the extension is alive. This
+    // catches plan expiry and remote panel logout without a Flow refresh.
+    void refreshStatus();
+  }
 });
 
 try {

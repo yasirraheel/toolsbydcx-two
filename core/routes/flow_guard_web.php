@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->prefix('flow-guard')->name('flow-guard.')->group(function () {
     Route::get('/session', [FlowGuardController::class, 'session'])->name('session');
+    Route::get('/session-check', [FlowGuardController::class, 'sessionCheck'])->name('session.check');
     Route::post('/revoke', [FlowGuardController::class, 'revoke'])->name('revoke');
     Route::get('/download', function () {
         $file = base_path('../download/toolsbydcx-flow-guard.zip');

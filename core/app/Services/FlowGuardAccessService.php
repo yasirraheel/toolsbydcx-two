@@ -26,9 +26,24 @@ class FlowGuardAccessService
     public function eligible(User $user): bool
     {
         $access = $this->access($user);
-        return (int) $user->status === Status::USER_ACTIVE
+        return $this->hasActivePlan($user)
             && $access?->enabled === true
             && (!$access->expires_at || $access->expires_at->isFuture());
+    }
+
+    /**
+     * Flow Guard is tied to the user's paid panel plan. A direct Flow
+     * account assignment must not keep a Google session alive after the plan
+     * is missing, disabled, or expired.
+     */
+    public function hasActivePlan(User $user): bool
+    {
+        $user->loadMissing('plan');
+        return (int) $user->plan_id > 0
+            && $user->plan !== null
+            && (int) $user->status === Status::USER_ACTIVE
+            && $user->expires_at?->isFuture()
+            && (int) ($user->plan->status ?? Status::DISABLE) === Status::ENABLE;
     }
 
     public function canAuthenticate(User $user): bool
@@ -61,7 +76,7 @@ class FlowGuardAccessService
         $header = (string) $request->bearerToken();
         abort_if(!str_starts_with($header, 'fg_'), 401, 'Flow Guard authentication is required.');
 
-        $session = FlowGuardSession::with('user')
+        $session = FlowGuardSession::with('user.plan')
             ->where('token_hash', hash('sha256', $header))
             ->first();
 
@@ -110,6 +125,9 @@ class FlowGuardAccessService
                     ->where('idempotency_key', $idempotencyKey)->first();
                 if ($existing) return $existing;
             }
+
+            $session->loadMissing('user.plan');
+            abort_unless($this->hasActivePlan($session->user), 403, 'Your ToolsByDcx plan is missing or expired.');
 
             $access = FlowGuardAccess::where('user_id', $userId)->lockForUpdate()->first();
             abort_unless($access && $access->enabled && (!$access->expires_at || $access->expires_at->isFuture()), 403, 'Flow Guard access is disabled.');
@@ -171,13 +189,26 @@ class FlowGuardAccessService
 
     public function payload(FlowGuardSession $session): array
     {
+        $session->loadMissing('user.plan');
+        $user = $session->user;
         $access = $this->access($session->user);
+        $plan = $user->plan;
+        $hasPlan = (int) $user->plan_id > 0 && $plan !== null;
+        $planActive = $this->hasActivePlan($user);
         return [
             'authenticated' => true,
             'user' => [
-                'id' => $session->user->id,
-                'name' => $session->user->fullname ?: $session->user->username,
-                'email' => $session->user->email,
+                'id' => $user->id,
+                'name' => $user->fullname ?: $user->username,
+                'email' => $user->email,
+                // Flow Guard must only keep a Google session alive for a
+                // user with a currently active panel plan. These fields are
+                // deliberately separate from the legacy Flow access toggle.
+                'has_plan' => $hasPlan,
+                'plan_active' => $planActive,
+                'plan_id' => $hasPlan ? (int) $user->plan_id : null,
+                'plan_name' => $plan?->name,
+                'plan_expires_at' => $user->expires_at?->toIso8601String(),
             ],
             'access' => [
                 'enabled' => (bool) $access?->enabled,

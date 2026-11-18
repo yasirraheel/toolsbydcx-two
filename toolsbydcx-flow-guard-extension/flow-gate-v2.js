@@ -765,6 +765,11 @@
     const response = await send({ type: 'GET_STATUS' });
     currentStatus = response?.status || { authenticated: false };
     if (!currentStatus.authenticated) { removeProjectUi(); showGate('No panel authentication detected. Sign in to ToolsByDcx in another tab, then press Check authentication.', 'login'); return; }
+    if (currentStatus.user?.has_plan === false || currentStatus.user?.plan_active === false) {
+      removeProjectUi();
+      showGate('Your ToolsByDcx plan is missing or expired. Contact ToolsByDcx support.', 'locked');
+      return;
+    }
     if (currentStatus.access?.enabled !== true) { removeProjectUi(); showGate('Your Flow Guard access is not enabled. Contact the administrator.', 'locked'); return; }
     gateStopped = false;
     applyModelAllowlist();

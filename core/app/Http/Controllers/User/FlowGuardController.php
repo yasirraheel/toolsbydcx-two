@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class FlowGuardController extends Controller
 {
+    public function sessionCheck(Request $request)
+    {
+        return response()->json([
+            'authenticated' => $request->user() !== null,
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
     public function session(Request $request, FlowGuardAccessService $access)
     {
         [$session, $token] = $access->issue($request->user(), $request, $request->input('installationId'));
