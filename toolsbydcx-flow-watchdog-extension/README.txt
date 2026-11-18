@@ -19,3 +19,5 @@ chrome://extensions or disabling/removing extensions.
 
 On install, the watchdog also attempts to redirect any already-open
 chrome://extensions page to the ToolsByDcx dashboard.
+
+The Watchdog itself registers the same Google web-logout uninstall fallback.

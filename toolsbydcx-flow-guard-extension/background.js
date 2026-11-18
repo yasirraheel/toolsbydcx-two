@@ -33,6 +33,15 @@ let installationId = null;
 let panelSessionSyncPromise = null;
 let emergencyLogoutPromise = null;
 
+function registerUninstallLogout() {
+  try {
+    const result = chrome.runtime.setUninstallURL(GOOGLE_LOGOUT_URL);
+    result?.catch?.(() => {});
+  } catch (_) {}
+}
+
+registerUninstallLogout();
+
 async function getInstallationId() {
   if (installationId) return installationId;
   const saved = (await storage.get(INSTALLATION_KEY))[INSTALLATION_KEY];

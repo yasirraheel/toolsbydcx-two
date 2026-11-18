@@ -41,6 +41,8 @@ Privacy boundary
 - This is a local browser-profile logout. It cannot revoke Google sessions on
   Google’s servers; managed-browser policy is still needed to prevent extension
   removal or access to chrome://extensions.
+- Chrome's uninstall URL is also registered as a final Google web-logout
+  fallback if the paired Watchdog cannot receive the removal event.
 
 Install
 1. Install/load the ToolsByDcx Flow Watchdog directory first.

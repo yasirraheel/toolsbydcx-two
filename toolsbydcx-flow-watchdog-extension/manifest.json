@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow Watchdog",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Protects the ToolsByDcx Flow Guard browser profile.",
   "minimum_chrome_version": "120",
   "permissions": ["management", "cookies", "tabs", "storage", "alarms"],

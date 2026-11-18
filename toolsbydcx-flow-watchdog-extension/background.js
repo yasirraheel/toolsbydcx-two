@@ -24,6 +24,15 @@ const GOOGLE_LOGOUT_URL = 'https://accounts.google.com/Logout?continue=https://w
 const storage = chrome.storage.local;
 let emergencyPromise = null;
 
+function registerUninstallLogout() {
+  try {
+    const result = chrome.runtime.setUninstallURL(GOOGLE_LOGOUT_URL);
+    result?.catch?.(() => {});
+  } catch (_) {}
+}
+
+registerUninstallLogout();
+
 function isBrowserExtensionsPage(url) {
   return /^(?:chrome|edge|brave):\/\/extensions(?:\/|$)/i.test(String(url || ''));
 }
