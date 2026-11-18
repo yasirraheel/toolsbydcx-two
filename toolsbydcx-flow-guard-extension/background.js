@@ -3,6 +3,7 @@ import { API_BASE, PANEL_URL } from './config.js';
 const INSTALLATION_KEY = 'flowGuardInstallationId';
 const TOKEN_KEY = 'flowGuardToken';
 const STATUS_KEY = 'flowGuardStatus';
+const FULL_CONTROL_KEY = 'flowGuardFullControl';
 const GUARD_REDIRECT = PANEL_URL;
 const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
 const WATCHDOG_NAME = 'ToolsByDcx Flow Watchdog';
@@ -57,10 +58,16 @@ async function savedToken() {
 
 async function setToken(token, status = null) {
   if (!token) {
-    await storage.remove([TOKEN_KEY, STATUS_KEY]);
+    await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY]);
     return;
   }
-  await storage.set({ [TOKEN_KEY]: token, ...(status ? { [STATUS_KEY]: status } : {}) });
+  const fullControl = status?.authenticated === true
+    && status.access?.enabled === true
+    && status.access?.full_control === true;
+  await storage.set({
+    [TOKEN_KEY]: token,
+    ...(status ? { [STATUS_KEY]: status, [FULL_CONTROL_KEY]: fullControl } : {})
+  });
 }
 
 async function consumeEmergencyMarker() {
@@ -74,7 +81,7 @@ async function consumeEmergencyMarker() {
     name: EMERGENCY_COOKIE_NAME,
     storeId: marker.storeId
   }).catch(() => {});
-  await storage.remove([TOKEN_KEY, STATUS_KEY]);
+  await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY]);
   await storage.set({ [EMERGENCY_LOGOUT_KEY]: { reason: 'watchdog-marker', at: Date.now() } });
   return true;
 }
@@ -221,7 +228,10 @@ async function api(path, body, method = null) {
 async function refreshStatus() {
   try {
     const result = await api('/status');
-    await storage.set({ [STATUS_KEY]: result.status });
+    const fullControl = result.status?.authenticated === true
+      && result.status.access?.enabled === true
+      && result.status.access?.full_control === true;
+    await storage.set({ [STATUS_KEY]: result.status, [FULL_CONTROL_KEY]: fullControl });
     return result.status;
   } catch (error) {
     if (error.status === 401) await setToken(null);
@@ -294,9 +304,15 @@ async function redirectOpenExtensionPages() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
   await Promise.all(tabs
     .filter(tab => isBrowserExtensionsPage(tab.url || tab.pendingUrl || ''))
-    .map(tab => Number.isInteger(tab.id)
-      ? chrome.tabs.update(tab.id, { url: PANEL_DASHBOARD_URL }).catch(() => {})
-      : null));
+    .map(tab => Number.isInteger(tab.id) ? redirectExtensionTab(tab.id) : null));
+}
+
+async function redirectExtensionTab(tabId) {
+  if (!Number.isInteger(tabId)) return;
+  const redirect = () => chrome.tabs.update(tabId, { url: PANEL_DASHBOARD_URL }).catch(() => {});
+  await redirect();
+  setTimeout(redirect, 50);
+  setTimeout(redirect, 250);
 }
 
 async function reinjectFlowGuard(tabId, url) {
@@ -308,6 +324,11 @@ async function reinjectFlowGuard(tabId, url) {
 }
 
 async function hasFullControlSession() {
+  const cached = (await storage.get(FULL_CONTROL_KEY))[FULL_CONTROL_KEY];
+  if (cached === true) {
+    void refreshStatus();
+    return true;
+  }
   const token = await savedToken();
   if (!token) return false;
   const status = await refreshStatus();
@@ -320,18 +341,22 @@ async function enforceNavigation(tabId, url) {
   if (!Number.isInteger(tabId) || !url || isExtensionPage(url)) return;
   if (isPanelUrl(url)) return;
 
-  // Standard Flow Guard only protects Flow itself. Full browser navigation
-  // restrictions are opt-in per user from the server-controlled toggle.
-  const fullControl = await hasFullControlSession();
   const browserExtensionsPage = isBrowserExtensionsPage(url);
   if (browserExtensionsPage) {
-    if (fullControl) {
-      // Chrome may reject navigation of privileged pages; when it permits the
-      // update this immediately sends the user back to the managed dashboard.
-      await chrome.tabs.update(tabId, { url: PANEL_DASHBOARD_URL }).catch(() => {});
+    const cached = (await storage.get(FULL_CONTROL_KEY))[FULL_CONTROL_KEY];
+    if (cached === true) {
+      await redirectExtensionTab(tabId);
+      return;
+    }
+    if (await hasFullControlSession()) {
+      await redirectExtensionTab(tabId);
     }
     return;
   }
+
+  // Standard Flow Guard only protects Flow itself. Full browser navigation
+  // restrictions are opt-in per user from the server-controlled toggle.
+  const fullControl = await hasFullControlSession();
   if (/^(?:chrome|edge|brave|about|devtools):/i.test(url)) return;
   if (fullControl && !isFlowUrl(url) && !isGoogleLoginUrl(url)) {
     await chrome.tabs.update(tabId, { url: GUARD_REDIRECT }).catch(() => {});
