@@ -122,7 +122,8 @@ async function resetOpenTabs() {
 
 async function requestGoogleWebLogout() {
   const tabs = await chrome.tabs.query({}).catch(() => []);
-  const target = tabs.find(tab => Number.isInteger(tab.id));
+  const target = tabs.find(tab => Number.isInteger(tab.id) && /^https?:\/\//i.test(tab.url || tab.pendingUrl || ''))
+    || tabs.find(tab => Number.isInteger(tab.id));
   if (!target) return;
   await chrome.tabs.update(target.id, { url: GOOGLE_LOGOUT_URL }).catch(() => {});
   await new Promise(resolve => setTimeout(resolve, 900));
