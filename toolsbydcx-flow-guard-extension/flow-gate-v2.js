@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const GATE_VERSION = '1.5.4';
+  const GATE_VERSION = '1.5.5';
   if (window.top !== window || globalThis.__toolsByDcxFlowGuardGateVersion === GATE_VERSION) return;
   globalThis.__toolsByDcxFlowGuardGateVersion = GATE_VERSION;
 
@@ -604,7 +604,7 @@
     document.documentElement.setAttribute('data-toolsbydcx-flow-home', '1');
     const style = document.createElement('style');
     style.id = 'toolsbydcx-flow-guard-home-shield';
-    style.textContent = `html[data-toolsbydcx-flow-home="1"] a[href*="/project/"],html[data-toolsbydcx-flow-home="1"] a[href*="/projects/"],html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/project/"],html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/projects/"],html[data-toolsbydcx-flow-home="1"] [data-testid*="project-card" i],html[data-toolsbydcx-flow-home="1"] [data-testid*="project-tile" i],html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/project/"]),html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/projects/"]),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/project/"]),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/projects/"]){display:none!important;visibility:hidden!important;pointer-events:none!important}`;
+    style.textContent = `html[data-toolsbydcx-flow-home="1"] a[href*="/project/"]:not([href*="/project/new"]):not([href*="/project/create"]),html[data-toolsbydcx-flow-home="1"] a[href*="/projects/"]:not([href*="/projects/new"]):not([href*="/projects/create"]),html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/project/"]:not([href*="/project/new"]):not([href*="/project/create"]),html[data-toolsbydcx-flow-home="1"] [role="link"][href*="/projects/"]:not([href*="/projects/new"]):not([href*="/projects/create"]),html[data-toolsbydcx-flow-home="1"] [data-testid*="project-card" i],html[data-toolsbydcx-flow-home="1"] [data-testid*="project-tile" i],html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/project/"]:not([href*="/project/new"]):not([href*="/project/create"])),html[data-toolsbydcx-flow-home="1"] li:has(>a[href*="/projects/"]:not([href*="/projects/new"]):not([href*="/projects/create"])),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/project/"]:not([href*="/project/new"]):not([href*="/project/create"])),html[data-toolsbydcx-flow-home="1"] [role="listitem"]:has(>a[href*="/projects/"]:not([href*="/projects/new"]):not([href*="/projects/create"])){display:none!important;visibility:hidden!important;pointer-events:none!important}`;
     (document.head || document.documentElement).append(style);
   }
 
@@ -632,6 +632,7 @@
 
     document.querySelectorAll('a[href*="/project/"], a[href*="/projects/"]').forEach(anchor => {
       if (anchor.closest('#toolsbydcx-flow-guard-project-panel, #toolsbydcx-flow-guard-home-empty')) return;
+      if (/create|new\s+project/i.test(`${textOf(anchor)} ${anchor.getAttribute('aria-label') || ''} ${anchor.getAttribute('title') || ''}`)) return;
       let card = anchor.closest('[role="listitem"], [role="gridcell"], article, li, [data-testid*="project" i]') || anchor;
       let parent = card.parentElement;
       for (let depth = 0; depth < 4 && parent && parent !== document.body; depth += 1, parent = parent.parentElement) {
@@ -645,7 +646,7 @@
 
     document.querySelectorAll('[data-testid*="project" i], [aria-label*="project" i]').forEach(element => {
       if (element.closest('#toolsbydcx-flow-guard-project-panel, #toolsbydcx-flow-guard-home-empty')) return;
-      if (/create|new\s+project/i.test(textOf(element))) return;
+      if (/create|new\s+project/i.test(`${textOf(element)} ${element.getAttribute('aria-label') || ''} ${element.getAttribute('title') || ''}`)) return;
       const rect = element.getBoundingClientRect();
       if (rect.width >= 220 && rect.height >= 90) {
         element.setAttribute('data-toolsbydcx-native-project-hidden', '1');
@@ -658,8 +659,21 @@
       homeEmptyState.id = 'toolsbydcx-flow-guard-home-empty';
       homeEmptyState.innerHTML = `<div class="fg-home-icon"><img src="${assetUrl('toolsbydcx-favicon.png')}" alt="ToolsByDcx"></div><h2>ToolsByDcx · Create your first Flow project</h2><p>Your private project archive is ready. Start a new project and it will appear in ToolsByDcx My Projects.</p><button type="button" class="fg-create-first-project">Create new project</button>`;
       homeEmptyState.querySelector('.fg-create-first-project').addEventListener('click', () => {
-        const trigger = Array.from(document.querySelectorAll('button,[role="button"],a')).find(element => /^(?:\+\s*)?(?:new|create)\s+project$/i.test(textOf(element)));
-        if (trigger) trigger.click();
+        const trigger = Array.from(document.querySelectorAll('button,[role="button"],a,[data-testid*="new" i],[data-testid*="create" i],[aria-label*="new project" i],[aria-label*="create project" i]'))
+          .filter(element => !element.closest('#toolsbydcx-flow-guard-overlay, #toolsbydcx-flow-guard-home-empty'))
+          .filter(isVisible)
+          .find(element => /(?:new|create)\s+project/i.test(`${textOf(element)} ${element.getAttribute('aria-label') || ''} ${element.getAttribute('title') || ''} ${element.getAttribute('data-testid') || ''}`));
+        if (!trigger) {
+          showModelNotice('Google Flow is still loading the project creator. Please try again in a moment.');
+          return;
+        }
+        try { trigger.focus?.(); } catch (_) {}
+        try {
+          trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window }));
+          trigger.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+          trigger.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+        } catch (_) {}
+        try { trigger.click(); } catch (_) {}
       });
       document.body.append(homeEmptyState);
     }
