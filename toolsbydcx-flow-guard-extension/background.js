@@ -63,14 +63,13 @@ function hasPlanStatus(status) {
 
 function isPlanEntitled(status) {
   return status?.authenticated === true
-    && status?.user?.has_plan === true
     && status?.user?.plan_active === true;
 }
 
 function requiresPlanLogout(status) {
   return status?.authenticated === true
     && hasPlanStatus(status)
-    && (status.user?.has_plan === false || status.user?.plan_active === false);
+    && status.user?.plan_active === false;
 }
 
 async function setToken(token, status = null) {

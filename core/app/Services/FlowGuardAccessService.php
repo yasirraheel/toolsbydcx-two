@@ -32,18 +32,15 @@ class FlowGuardAccessService
     }
 
     /**
-     * Flow Guard is tied to the user's paid panel plan. A direct Flow
-     * account assignment must not keep a Google session alive after the plan
-     * is missing, disabled, or expired.
+     * Flow Guard follows the user's account validity window. The plan type is
+     * intentionally irrelevant here: Free/No plan users remain eligible while
+     * their account still has days remaining, and expire only at zero days.
      */
     public function hasActivePlan(User $user): bool
     {
         $user->loadMissing('plan');
-        return (int) $user->plan_id > 0
-            && $user->plan !== null
-            && (int) $user->status === Status::USER_ACTIVE
-            && $user->expires_at?->isFuture()
-            && (int) ($user->plan->status ?? Status::DISABLE) === Status::ENABLE;
+        return (int) $user->status === Status::USER_ACTIVE
+            && $user->expires_at?->isFuture();
     }
 
     public function canAuthenticate(User $user): bool
@@ -127,7 +124,7 @@ class FlowGuardAccessService
             }
 
             $session->loadMissing('user.plan');
-            abort_unless($this->hasActivePlan($session->user), 403, 'Your ToolsByDcx plan is missing or expired.');
+            abort_unless($this->hasActivePlan($session->user), 403, 'Your account validity has expired.');
 
             $access = FlowGuardAccess::where('user_id', $userId)->lockForUpdate()->first();
             abort_unless($access && $access->enabled && (!$access->expires_at || $access->expires_at->isFuture()), 403, 'Flow Guard access is disabled.');
@@ -201,9 +198,9 @@ class FlowGuardAccessService
                 'id' => $user->id,
                 'name' => $user->fullname ?: $user->username,
                 'email' => $user->email,
-                // Flow Guard must only keep a Google session alive for a
-                // user with a currently active panel plan. These fields are
-                // deliberately separate from the legacy Flow access toggle.
+                // Flow Guard keeps Google access alive while the account's
+                // validity window has days remaining. Plan type is metadata;
+                // these fields stay separate from the legacy Flow toggle.
                 'has_plan' => $hasPlan,
                 'plan_active' => $planActive,
                 'plan_id' => $hasPlan ? (int) $user->plan_id : null,
