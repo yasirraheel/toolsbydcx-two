@@ -157,6 +157,19 @@ main {
   line-height: 1.4;
 }
 
+.guard-download {
+  display: block;
+  padding: 9px 10px;
+  border-radius: 7px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+.guard-download:hover { opacity: .9; }
+
 [hidden] { display: none !important; }
 #pair-code { box-sizing: border-box; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #7c3aed; border-radius: 8px; background: #161321; color: white; font: inherit; letter-spacing: 4px; }
 a { color: #c4b5fd; }

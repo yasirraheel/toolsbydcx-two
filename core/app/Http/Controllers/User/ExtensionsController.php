@@ -26,15 +26,16 @@ class ExtensionsController extends Controller
                      || file_exists(public_path('toolsbydcx-ext.zip'))
                      || count(glob($socialStorage . '/toolsbydcx-ext*.zip') ?: []) > 0;
 
-        // 2. ToolsByDcx Flow Extension (Google Flow Workspace)
+        // 2. ToolsByDcx Flow Main Extension (Google Flow Workspace)
         $flowHistory = ExtensionHistory::where('type', 'flow')->where('is_current', true)->first()
                     ?: ExtensionHistory::where('type', 'flow')->orderByDesc('id')->first();
-        $flowVersion = $flowHistory ? $flowHistory->version : '1.0.3';
-        $flowDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-flow.zip']);
-        $flowExists = file_exists(public_path('toolsbydcx-flow.zip'))
+        $flowVersion = $flowHistory ? $flowHistory->version : '1.1.0';
+        $flowDownloadUrl = route('flow-guard.main-download');
+        $flowGuardDownloadUrl = route('flow-guard.download');
+        $flowExists = file_exists(public_path('toolsbydcx-flow-main.zip'))
                    || ($flowHistory && file_exists($socialStorage . '/' . $flowHistory->filename))
-                   || file_exists($socialStorage . '/toolsbydcx-flow.zip')
-                   || count(glob($socialStorage . '/toolsbydcx-flow*.zip') ?: []) > 0;
+                   || file_exists($socialStorage . '/toolsbydcx-flow-main.zip')
+                   || count(glob($socialStorage . '/toolsbydcx-flow-main*.zip') ?: []) > 0;
 
         // 3. Kiwi Browser APK/XAPK distributed by the administrator
         $kiwiHistory = ExtensionHistory::where('type', 'kiwi')->where('is_current', true)->first()
@@ -75,6 +76,7 @@ class ExtensionsController extends Controller
             'socialExists',
             'flowVersion',
             'flowDownloadUrl',
+            'flowGuardDownloadUrl',
             'flowExists',
             'flowAccount',
             'kiwiVersion',

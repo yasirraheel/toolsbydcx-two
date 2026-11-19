@@ -247,19 +247,19 @@
             </div>
         </div>
 
-        {{-- Flow Guard extension downloads --}}
+        {{-- Paired Google Flow extension downloads --}}
         <div class="row g-4 mb-4">
             <div class="col-md-6">
                 <div class="card p-4 h-100" style="background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.28); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
-                            <i class="las la-shield-alt fs-4"></i>
+                            <i class="las la-bolt fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Flow Guard')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Flow Main')</h5>
                     </div>
-                    <p class="text-muted small mb-3">@lang('Main Google Flow access and credit guard extension.')</p>
-                    <a href="{{ route('flow-guard.download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
-                        <i class="las la-download me-1"></i> @lang('Download Flow Guard')
+                    <p class="text-muted small mb-3">@lang('Automated Google Flow sign-in extension. Install Flow Guard alongside it.')</p>
+                    <a href="{{ route('flow-guard.main-download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
+                        <i class="las la-download me-1"></i> @lang('Download Flow Main')
                     </a>
                 </div>
             </div>
@@ -269,11 +269,11 @@
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
                             <i class="las la-eye fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Flow Watchdog')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Flow Guard')</h5>
                     </div>
-                    <p class="text-muted small mb-3">@lang('Paired safety extension for Google Flow session protection.')</p>
-                    <a href="{{ route('flow-guard.watchdog-download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
-                        <i class="las la-download me-1"></i> @lang('Download Watchdog')
+                    <p class="text-muted small mb-3">@lang('Protects the Google Flow session and enforces server access rules.')</p>
+                    <a href="{{ route('flow-guard.download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
+                        <i class="las la-download me-1"></i> @lang('Download Flow Guard')
                     </a>
                 </div>
             </div>

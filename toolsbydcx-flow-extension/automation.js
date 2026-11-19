@@ -159,7 +159,7 @@
     // password and code into Google's form, an opaque cover hides the form
     // visually. This is not a security boundary against the browser owner. It is
     // removed the moment the customer must act (CAPTCHA, security prompt,
-    // error), or after a watchdog timeout so nobody is left staring at it.
+    // error), or after an automation timeout so nobody is left staring at it.
     const SHIELD_MAX_MS = 90000;
     let shieldHost = null;
     let shieldShownAt = 0;

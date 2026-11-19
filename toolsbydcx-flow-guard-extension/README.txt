@@ -1,6 +1,6 @@
 ToolsByDcx Flow Guard (separate extension)
 
-This extension is independent from the legacy ToolsByDcx Flow extension.
+This extension is paired with ToolsByDcx Flow Main.
 It uses /api/flow-guard and /user/flow-guard/session only.
 All extension surfaces use the official ToolsByDcx logo and branding.
 
@@ -33,8 +33,8 @@ Projects
 Privacy boundary
 - During normal operation this extension never reads or removes Google/browser
   cookies. The cookies permission is present only for the paired emergency
-  watchdog response.
-- If the separately installed ToolsByDcx Flow Watchdog is disabled or removed,
+  Flow Main response.
+- If the separately installed ToolsByDcx Flow Main is disabled or removed,
   this surviving extension clears Google/ToolsByDcx cookies for this browser
   profile, resets every open tab to about:blank without closing tabs, and clears
   its local Flow Guard token.
@@ -42,10 +42,10 @@ Privacy boundary
   Google’s servers; managed-browser policy is still needed to prevent extension
   removal or access to chrome://extensions.
 - Chrome's uninstall URL is also registered as a final Google web-logout
-  fallback if the paired Watchdog cannot receive the removal event.
+  fallback if the paired Flow Main cannot receive the removal event.
 
 Install
-1. Install/load the ToolsByDcx Flow Watchdog directory first.
+1. Install/load the ToolsByDcx Flow Main directory first.
 2. Install/load this Flow Guard directory in the same Chrome profile.
 3. Open edge://extensions or chrome://extensions and enable Developer mode.
 

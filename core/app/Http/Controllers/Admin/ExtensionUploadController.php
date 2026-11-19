@@ -44,7 +44,7 @@ class ExtensionUploadController extends Controller
             }
         }
         $flowDownloadUrl = route('extension.download', ['filename' => 'toolsbydcx-flow.zip']);
-        $flowVersion = $flowHistory ? $flowHistory->version : '1.0.3';
+        $flowVersion = $flowHistory ? $flowHistory->version : '1.1.0';
 
         // Kiwi Browser APK/XAPK status
         $kiwiHistory = ExtensionHistory::where('type', 'kiwi')->where('is_current', true)->first()

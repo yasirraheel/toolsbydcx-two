@@ -1,4 +1,4 @@
-// ToolsByDcx Flow — Popup Script
+// ToolsByDcx Flow Main — Popup Script
 // No connection code entry — pairing happens automatically via website session.
 // This popup only shows plan status and the Open Flow button, same as BunnyFlow.
 const $ = id => document.getElementById(id);
@@ -7,7 +7,11 @@ let working = false;
 
 async function send(type, extra = {}) {
   const response = await chrome.runtime.sendMessage({ type, ...extra });
-  if (!response?.ok) throw new Error(response?.error || "The action could not be completed.");
+  if (!response?.ok) {
+    const error = new Error(response?.error || "The action could not be completed.");
+    Object.assign(error, response);
+    throw error;
+  }
   return response.data;
 }
 
@@ -76,6 +80,7 @@ $("start").addEventListener("click", async () => {
   if (working) return;
   working = true;
   $("error").hidden = true;
+  if ($("guard-download")) $("guard-download").hidden = true;
   $("start").disabled = true;
   $("status").textContent = "Opening Flow…";
   try {
@@ -84,6 +89,11 @@ $("start").addEventListener("click", async () => {
   } catch (error) {
     $("error").textContent = error?.message || "Flow could not be opened.";
     $("error").hidden = false;
+    const guardDownload = $("guard-download");
+    if (guardDownload && error?.code === "FLOW_GUARD_REQUIRED") {
+      guardDownload.href = error.downloadUrl || "https://toolsbydcx.com/user/flow-guard/download";
+      guardDownload.hidden = false;
+    }
     await refresh().catch(() => {});
   } finally {
     working = false;

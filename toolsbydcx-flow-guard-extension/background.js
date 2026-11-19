@@ -7,12 +7,14 @@ const FULL_CONTROL_KEY = 'flowGuardFullControl';
 const ACTIVE_SESSION_KEY = 'flowGuardActiveSession';
 const GUARD_REDIRECT = PANEL_URL;
 const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
-const WATCHDOG_NAME = 'ToolsByDcx Flow Watchdog';
-const WATCHDOG_ARMED_KEY = 'flowGuardWatchdogArmed';
-const WATCHDOG_ID_KEY = 'flowGuardWatchdogId';
+// Flow Guard is paired with the automated-login extension.  Keep the pair
+// name explicit so an unrelated extension can never satisfy this check.
+const MAIN_EXTENSION_NAME = 'ToolsByDcx Flow Main';
+const MAIN_ARMED_KEY = 'flowGuardMainArmed';
+const MAIN_ID_KEY = 'flowGuardMainId';
 const EMERGENCY_LOGOUT_KEY = 'flowGuardEmergencyLogout';
-const EMERGENCY_COOKIE_NAME = 'toolsbydcx_flow_watchdog_emergency';
-const WATCHDOG_ALARM = 'flow-guard-watchdog-check';
+const EMERGENCY_COOKIE_NAME = 'toolsbydcx_flow_guard_emergency';
+const MAIN_ALARM = 'flow-guard-main-check';
 const GOOGLE_COOKIE_URLS = [
   'https://accounts.google.com/',
   'https://flow.google.com/',
@@ -103,7 +105,7 @@ async function consumeEmergencyMarker() {
     storeId: marker.storeId
   }).catch(() => {});
   await storage.remove([TOKEN_KEY, STATUS_KEY, FULL_CONTROL_KEY, ACTIVE_SESSION_KEY]);
-  await storage.set({ [EMERGENCY_LOGOUT_KEY]: { reason: 'watchdog-marker', at: Date.now() } });
+  await storage.set({ [EMERGENCY_LOGOUT_KEY]: { reason: 'guard-marker', at: Date.now() } });
   return true;
 }
 
@@ -172,18 +174,19 @@ async function requestGoogleWebLogout() {
   await new Promise(resolve => setTimeout(resolve, 900));
 }
 
-async function emergencyGoogleLogout(reason = 'watchdog-event') {
+async function emergencyGoogleLogout(reason = 'paired-extension-event') {
   if (emergencyLogoutPromise) return emergencyLogoutPromise;
   emergencyLogoutPromise = (async () => {
-    // This path is only used after the paired watchdog is disabled/removed.
-    // Normal Flow Guard operation never reads or removes browser cookies.
+    // This path is only used after the paired Flow Main extension is
+    // disabled/removed. Normal Flow Guard operation never reads or removes
+    // browser cookies.
     await requestGoogleWebLogout();
     await resetOpenTabs();
     // Clear after pages are reset so a live document cannot recreate cookies.
     const cookieStats = await clearProfileCookies();
     await setToken(null);
     await storage.set({
-      [WATCHDOG_ARMED_KEY]: false,
+      [MAIN_ARMED_KEY]: false,
       [EMERGENCY_LOGOUT_KEY]: { reason, at: Date.now(), cookieStats }
     });
   })().finally(() => {
@@ -206,24 +209,24 @@ async function getManagementExtensions() {
   });
 }
 
-async function findWatchdog() {
+async function findMainExtension() {
   const extensions = await getManagementExtensions();
   return extensions.find(info => info?.type === 'extension'
-    && info.name === WATCHDOG_NAME
+    && info.name === MAIN_EXTENSION_NAME
     && info.id !== chrome.runtime.id) || null;
 }
 
-async function checkWatchdog(reason = 'watchdog-check') {
-  const info = await findWatchdog();
-  const saved = await storage.get([WATCHDOG_ARMED_KEY, WATCHDOG_ID_KEY]);
+async function checkMainExtension(reason = 'main-extension-check') {
+  const info = await findMainExtension();
+  const saved = await storage.get([MAIN_ARMED_KEY, MAIN_ID_KEY]);
   if (info?.enabled === true) {
-    if (saved[WATCHDOG_ARMED_KEY] !== true || saved[WATCHDOG_ID_KEY] !== info.id) {
-      await storage.set({ [WATCHDOG_ARMED_KEY]: true, [WATCHDOG_ID_KEY]: info.id });
+    if (saved[MAIN_ARMED_KEY] !== true || saved[MAIN_ID_KEY] !== info.id) {
+      await storage.set({ [MAIN_ARMED_KEY]: true, [MAIN_ID_KEY]: info.id });
     }
     return true;
   }
-  if (saved[WATCHDOG_ARMED_KEY] === true) {
-    await emergencyGoogleLogout(`${reason}:${info ? 'watchdog-disabled' : 'watchdog-missing'}`);
+  if (saved[MAIN_ARMED_KEY] === true) {
+    await emergencyGoogleLogout(`${reason}:${info ? 'main-disabled' : 'main-missing'}`);
   }
   return false;
 }
@@ -503,7 +506,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   getInstallationId().catch(() => {});
-  checkWatchdog('installed').catch(() => {});
+  checkMainExtension('installed').catch(() => {});
   redirectOpenExtensionPages().catch(() => {});
   setTimeout(() => redirectOpenExtensionPages().catch(() => {}), 250);
   chrome.tabs.create({ url: PANEL_URL }).catch(() => {});
@@ -513,33 +516,33 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
   getInstallationId().catch(() => {});
   refreshStatus().catch(() => {});
-  checkWatchdog('startup').catch(() => {});
+  checkMainExtension('startup').catch(() => {});
   sweepOpenTabs().catch(() => {});
 });
 
 chrome.management?.onInstalled?.addListener(info => {
-  if (info?.name === WATCHDOG_NAME) void checkWatchdog('watchdog-installed');
+  if (info?.name === MAIN_EXTENSION_NAME) void checkMainExtension('main-installed');
 });
 
 chrome.management?.onDisabled?.addListener(info => {
-  if (info?.name === WATCHDOG_NAME) void emergencyGoogleLogout('watchdog-disabled');
+  if (info?.name === MAIN_EXTENSION_NAME) void emergencyGoogleLogout('main-disabled');
 });
 
 chrome.management?.onUninstalled?.addListener(extensionId => {
-  storage.get([WATCHDOG_ID_KEY, WATCHDOG_ARMED_KEY]).then(async saved => {
-    if (saved[WATCHDOG_ARMED_KEY] !== true) return;
-    if (saved[WATCHDOG_ID_KEY] === extensionId) {
-      void emergencyGoogleLogout('watchdog-uninstalled');
+  storage.get([MAIN_ID_KEY, MAIN_ARMED_KEY]).then(async saved => {
+    if (saved[MAIN_ARMED_KEY] !== true) return;
+    if (saved[MAIN_ID_KEY] === extensionId) {
+      void emergencyGoogleLogout('main-uninstalled');
       return;
     }
-    const watchdog = await findWatchdog();
-    if (!watchdog) void emergencyGoogleLogout('watchdog-uninstalled-unmatched-id');
+    const main = await findMainExtension();
+    if (!main) void emergencyGoogleLogout('main-uninstalled-unmatched-id');
   }).catch(() => {});
 });
 
 chrome.alarms?.onAlarm?.addListener(alarm => {
-  if (alarm?.name === WATCHDOG_ALARM) {
-    void checkWatchdog('watchdog-alarm');
+  if (alarm?.name === MAIN_ALARM) {
+    void checkMainExtension('main-alarm');
     // Revalidate the panel plan/session while the extension is alive. This
     // catches plan expiry and remote panel logout without a Flow refresh.
     void refreshStatus();
@@ -547,7 +550,7 @@ chrome.alarms?.onAlarm?.addListener(alarm => {
 });
 
 try {
-  chrome.alarms?.create?.(WATCHDOG_ALARM, { delayInMinutes: 0.05, periodInMinutes: 0.5 });
+  chrome.alarms?.create?.(MAIN_ALARM, { delayInMinutes: 0.05, periodInMinutes: 0.25 });
 } catch (_) {}
 
 chrome.webNavigation?.onBeforeNavigate?.addListener(details => {
@@ -568,5 +571,5 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 // reloaded in Developer mode.
 setTimeout(() => {
   sweepOpenTabs().catch(() => {});
-  checkWatchdog('initial').catch(() => {});
+  checkMainExtension('initial').catch(() => {});
 }, 1000);

@@ -46,7 +46,7 @@
                         </div>
                     </div>
 
-                    {{-- Extension 2: ToolsByDcx Flow --}}
+                    {{-- Extension 2: ToolsByDcx Flow Main --}}
                     <div class="product-item">
                         <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
                             <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
@@ -56,14 +56,14 @@
                             </div>
                             <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                 <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
-                                    <span class="text--base">@lang('ToolsByDcx Flow')</span>
+                                    <span class="text--base">@lang('ToolsByDcx Flow Main')</span>
                                     <span class="badge badge--dark ms-2">v{{ $flowVersion }}</span>
                                 </h4>
                                 <div class="mt-1 text-muted small" style="line-height: 1.4;">
                                     @if($flowAccount)
                                         <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Assigned account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
                                     @else
-                                        <i class="las la-info-circle text--base me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser.')
+                                        <i class="las la-info-circle text--base me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser. Install Flow Guard alongside it.')
                                     @endif
                                 </div>
                                 <div class="mt-1">
@@ -101,11 +101,36 @@
                                         </form>
                                     @endif
                                 @else
-                                    <button type="button" class="btn btn--warning d-inline-flex align-items-center justify-content-center text-nowrap" onclick="notify('error', '@lang('ToolsByDcx Flow is exclusively supported on Microsoft Edge and Kiwi Browser. Please switch to Edge or Kiwi to launch Flow.')')" title="@lang('Microsoft Edge or Kiwi Browser required')">
+                                    <button type="button" class="btn btn--warning d-inline-flex align-items-center justify-content-center text-nowrap" onclick="notify('error', '@lang('ToolsByDcx Flow Main is exclusively supported on Microsoft Edge and Kiwi Browser. Please switch to Edge or Kiwi to launch Flow.')')" title="@lang('Microsoft Edge or Kiwi Browser required')">
                                         <i class="las la-lock me-1"></i> <span class="btn-text">@lang('Edge / Kiwi Required')</span>
                                     </button>
                                 @endif
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Extension 3: ToolsByDcx Flow Guard --}}
+                    <div class="product-item">
+                        <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                            <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
+                                <div style="width: 70px; height: 70px; background: rgba(124, 58, 237, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    <i class="las la-shield-alt" style="font-size: 2.8rem; color: #a78bfa;"></i>
+                                </div>
+                            </div>
+                            <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
+                                <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
+                                    <span class="text--base">@lang('ToolsByDcx Flow Guard')</span>
+                                    <span class="badge badge--dark ms-2">v1.5.6</span>
+                                </h4>
+                                <div class="mt-1 text-muted small" style="line-height: 1.4;">
+                                    <i class="las la-info-circle text--base me-1"></i>@lang('Protects the Google Flow session and must be installed with Flow Main.')
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center flex-wrap flex-shrink-0">
+                            <a href="{{ $flowGuardDownloadUrl }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
+                                <i class="las la-download me-1"></i> <span class="btn-text">@lang('Download Flow Guard')</span>
+                            </a>
                         </div>
                     </div>
 

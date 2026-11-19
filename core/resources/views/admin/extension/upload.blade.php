@@ -73,13 +73,13 @@
             </div>
         </div>
 
-        {{-- Card 2: ToolsByDcx Flow --}}
+        {{-- Card 2: ToolsByDcx Flow Main --}}
         <div class="col-xl-6 col-lg-6 mb-30">
             <div class="card b-radius--10">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="card-title mb-0">
-                            <i class="las la-robot text--primary me-1"></i> @lang('ToolsByDcx Flow')
+                            <i class="las la-robot text--primary me-1"></i> @lang('ToolsByDcx Flow Main')
                         </h5>
                         <span class="badge badge--primary">v{{ $flowVersion }}</span>
                     </div>
@@ -127,7 +127,7 @@
                         </div>
 
                         <button type="submit" class="btn btn--primary w-100 h-45">
-                            <i class="las la-cloud-upload-alt me-1"></i> @lang('Upload ToolsByDcx Flow')
+                            <i class="las la-cloud-upload-alt me-1"></i> @lang('Upload ToolsByDcx Flow Main')
                         </button>
                     </form>
 
@@ -256,7 +256,7 @@
                                             @if(($history->type ?? 'social') === 'kiwi' || str_contains($history->filename ?? '', 'kiwi'))
                                                 <span class="badge badge--success"><i class="las la-mobile-alt me-1"></i> Kiwi Browser</span>
                                             @elseif(($history->type ?? 'social') === 'flow' || str_contains($history->filename ?? '', 'flow'))
-                                                <span class="badge badge--primary"><i class="las la-robot me-1"></i> ToolsByDcx Flow</span>
+                                                <span class="badge badge--primary"><i class="las la-robot me-1"></i> ToolsByDcx Flow Main</span>
                                             @else
                                                 <span class="badge badge--dark"><i class="las la-cookie-bite me-1"></i> ToolsByDcx Social</span>
                                             @endif

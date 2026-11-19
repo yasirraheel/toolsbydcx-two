@@ -5,14 +5,34 @@ import { createSiteOnboarding, createSitePresence } from "./site-onboarding.js";
 import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
 const supportedBrowser = globalThis.flowAutoLoginIsEdge === true;
-const EDGE_REQUIRED = "ToolsByDcx Flow is available only in desktop Microsoft Edge or Android Kiwi Browser.";
-const AUTOMATION_VERSION = "1.0.2";
-const SITE_BRIDGE_VERSION = "1.0.2";
+const EDGE_REQUIRED = "ToolsByDcx Flow Main is available only in desktop Microsoft Edge or Android Kiwi Browser.";
+const AUTOMATION_VERSION = "1.1.0";
+const SITE_BRIDGE_VERSION = "1.1.0";
+const MAIN_EXTENSION_NAME = "ToolsByDcx Flow Main";
+const GUARD_EXTENSION_NAME = "ToolsByDcx Flow Guard";
+const GUARD_DOWNLOAD_URL = "https://toolsbydcx.com/user/flow-guard/download";
+const GUARD_ARMED_KEY = "flowMainGuardArmed";
+const GUARD_ID_KEY = "flowMainGuardId";
+const GUARD_ALARM = "flow-main-guard-check";
+const MAIN_EMERGENCY_LOGOUT_KEY = "flowMainEmergencyLogout";
+const GOOGLE_COOKIE_URLS = [
+  "https://accounts.google.com/",
+  "https://flow.google.com/",
+  "https://www.google.com/",
+  "https://google.com/"
+];
+const GOOGLE_COOKIE_DOMAINS = ["google.com", "accounts.google.com", "flow.google.com"];
+const GOOGLE_PARTITION_TOP_LEVEL_SITES = [
+  "https://flow.google.com",
+  "https://accounts.google.com",
+  "https://www.google.com"
+];
 
 let operationBusy = false;
 let mobileLogoutActive = false;
 let mobileLogoutEpoch = 0;
 const MOBILE_LOGOUT_MESSAGE = "Mobile extension settings were opened. Google sign-out was requested. Reconnect to ToolsByDcx Flow before starting again.";
+let mutualLogoutPromise = null;
 
 function disablePasswordSaving() {
   try {
@@ -264,7 +284,7 @@ async function api(path, body, anonymous = false) {
         "X-Requested-With": "XMLHttpRequest",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         "X-DCX-Browser": globalThis.flowAutoLoginBrowser || "unsupported",
-        "X-DCX-Flow-Version": "1.0.2",
+        "X-DCX-Flow-Version": "1.1.0",
         ...(!anonymous ? { Authorization: `Bearer ${saved.accessToken}` } : {})
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -281,6 +301,106 @@ async function api(path, body, anonymous = false) {
     if (error.name === "AbortError") throw new Error("The server did not respond in time. Check your connection.");
     throw error;
   } finally { clearTimeout(timeout); }
+}
+
+// ─── Paired Flow Guard protection ──────────────────────────────────────────
+async function getManagementExtensions() {
+  try {
+    const result = await chrome.management.getAll();
+    if (Array.isArray(result)) return result;
+  } catch {}
+  return new Promise(resolve => {
+    try {
+      chrome.management.getAll(items => resolve(Array.isArray(items) ? items : []));
+    } catch { resolve([]); }
+  });
+}
+
+async function findFlowGuard() {
+  const extensions = await getManagementExtensions();
+  return extensions.find(info => info?.type === "extension"
+    && info.name === GUARD_EXTENSION_NAME
+    && info.id !== chrome.runtime.id) || null;
+}
+
+async function ensureFlowGuardInstalled() {
+  const guard = await findFlowGuard();
+  if (guard?.enabled === true) {
+    await chrome.storage.local.set({ [GUARD_ARMED_KEY]: true, [GUARD_ID_KEY]: guard.id });
+    return guard;
+  }
+  const error = new Error("Install ToolsByDcx Flow Guard before opening Google Flow.");
+  error.code = "FLOW_GUARD_REQUIRED";
+  error.downloadUrl = GUARD_DOWNLOAD_URL;
+  throw error;
+}
+
+async function clearGoogleCookies() {
+  const all = [];
+  for (const url of GOOGLE_COOKIE_URLS) {
+    all.push(...await chrome.cookies.getAll({ url }).catch(() => []));
+    for (const topLevelSite of GOOGLE_PARTITION_TOP_LEVEL_SITES) {
+      all.push(...await chrome.cookies.getAll({ url, partitionKey: { topLevelSite } }).catch(() => []));
+    }
+  }
+  for (const domain of GOOGLE_COOKIE_DOMAINS)
+    all.push(...await chrome.cookies.getAll({ domain }).catch(() => []));
+  const seen = new Set();
+  const cookies = all.filter(cookie => {
+    const domain = String(cookie?.domain || "").replace(/^\./, "").toLowerCase();
+    if (!(domain === "google.com" || domain.endsWith(".google.com"))) return false;
+    const partition = cookie.partitionKey ? JSON.stringify(cookie.partitionKey) : "";
+    const key = [cookie.storeId || "", cookie.domain || "", cookie.path || "/", cookie.name || "", partition].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  await Promise.all(cookies.map(cookie => {
+    const domain = String(cookie.domain || "").replace(/^\./, "");
+    const details = { url: `https://${domain}${cookie.path || "/"}`, name: cookie.name, storeId: cookie.storeId };
+    if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
+    return chrome.cookies.remove(details).catch(() => null);
+  }));
+  return cookies.length;
+}
+
+async function resetFlowTabs(except = null) {
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  await Promise.all(tabs.map(tab => {
+    if (!Number.isInteger(tab?.id) || tab.id === except || !isFlowUrl(tab.url || tab.pendingUrl || "")) return null;
+    return chrome.tabs.update(tab.id, { url: "about:blank" }).catch(() => {});
+  }));
+}
+
+async function mutualGoogleLogout(reason = "flow-guard-missing") {
+  if (mutualLogoutPromise) return mutualLogoutPromise;
+  mutualLogoutPromise = (async () => {
+    const saved = await localState();
+    if (saved.accessToken) await api("/disconnect", {}).catch(() => {});
+    const logoutTab = await openGoogleLogoutTab().catch(() => null);
+    await new Promise(resolve => setTimeout(resolve, 900));
+    await resetFlowTabs(logoutTab?.id || null);
+    await clearGoogleCookies();
+    await chrome.storage.local.remove(["accessToken", "expiresAt", "uninstallToken", "consent"]);
+    await saveWorkspace(null);
+    await refreshRules();
+    await chrome.alarms.clear("dcx-flow-check").catch(() => {});
+    await chrome.storage.local.set({ [GUARD_ARMED_KEY]: false, [MAIN_EMERGENCY_LOGOUT_KEY]: { reason, at: Date.now() } });
+  })().finally(() => { mutualLogoutPromise = null; });
+  return mutualLogoutPromise;
+}
+
+async function checkFlowGuard(reason = "guard-check") {
+  const guard = await findFlowGuard();
+  const saved = await chrome.storage.local.get([GUARD_ARMED_KEY, GUARD_ID_KEY]);
+  if (guard?.enabled === true) {
+    if (saved[GUARD_ARMED_KEY] !== true || saved[GUARD_ID_KEY] !== guard.id)
+      await chrome.storage.local.set({ [GUARD_ARMED_KEY]: true, [GUARD_ID_KEY]: guard.id });
+    return true;
+  }
+  if (saved[GUARD_ARMED_KEY] === true)
+    await mutualGoogleLogout(`${reason}:${guard ? "guard-disabled" : "guard-missing"}`);
+  return false;
 }
 
 // ─── Navigation rules ────────────────────────────────────────────────────────
@@ -346,6 +466,7 @@ async function updateUninstallURL(token) {
 
 async function startLogin(preferredWindowId, forceFresh = false) {
   disablePasswordSaving();
+  await ensureFlowGuardInstalled();
   const saved = await localState();
   if (!saved.consent) throw new Error("Read and accept the shared-account warning first.");
   await updateUninstallURL(saved?.uninstallToken);
@@ -557,7 +678,10 @@ async function messageHandler(message, sender) {
       return ok(await startLogin(windowId, false));
     } catch (error) {
       if (error.status === 401 || error.status === 403) void handleUnauthorized(error);
-      return err(error.message || "Flow could not be opened.");
+      return err(error.message || "Flow could not be opened.", {
+        code: error.code || null,
+        downloadUrl: error.downloadUrl || null
+      });
     } finally { operationBusy = false; }
   }
 
@@ -568,7 +692,12 @@ async function messageHandler(message, sender) {
     try {
       const windowId = (await chrome.windows.getLastFocused({ windowTypes: ["normal"] }).catch(() => null))?.id ?? null;
       return ok(await startLogin(windowId, false));
-    } catch (error) { return err(error.message || "Could not resume."); }
+    } catch (error) {
+      return err(error.message || "Could not resume.", {
+        code: error.code || null,
+        downloadUrl: error.downloadUrl || null
+      });
+    }
     finally { operationBusy = false; }
   }
 
@@ -772,6 +901,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
+  await checkFlowGuard("installed").catch(() => {});
   await sweepBlockedPages();
 });
 chrome.runtime.onStartup.addListener(async () => {
@@ -779,10 +909,39 @@ chrome.runtime.onStartup.addListener(async () => {
   await refreshRules();
   const saved = await localState();
   await updateUninstallURL(saved?.uninstallToken);
+  await checkFlowGuard("startup").catch(() => {});
   await sweepBlockedPages();
 });
 
+chrome.management?.onInstalled?.addListener(info => {
+  if (info?.name === GUARD_EXTENSION_NAME) void checkFlowGuard("guard-installed");
+});
+
+chrome.management?.onDisabled?.addListener(info => {
+  if (info?.name === GUARD_EXTENSION_NAME) void mutualGoogleLogout("guard-disabled");
+});
+
+chrome.management?.onUninstalled?.addListener(extensionId => {
+  chrome.storage.local.get([GUARD_ID_KEY, GUARD_ARMED_KEY]).then(async saved => {
+    if (saved[GUARD_ARMED_KEY] !== true) return;
+    if (saved[GUARD_ID_KEY] === extensionId) {
+      void mutualGoogleLogout("guard-uninstalled");
+      return;
+    }
+    const guard = await findFlowGuard();
+    if (!guard) void mutualGoogleLogout("guard-uninstalled-unmatched-id");
+  }).catch(() => {});
+});
+
+try {
+  chrome.alarms.create(GUARD_ALARM, { delayInMinutes: 0.05, periodInMinutes: 0.25 });
+} catch {}
+
 chrome.alarms.onAlarm.addListener(async alarm => {
+  if (alarm.name === GUARD_ALARM) {
+    void checkFlowGuard("guard-alarm");
+    return;
+  }
   if (alarm.name !== "dcx-flow-check") return;
   const state = await workspace();
   if (!state) { await chrome.alarms.clear("dcx-flow-check"); return; }
