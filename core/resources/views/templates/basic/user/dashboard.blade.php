@@ -300,6 +300,12 @@
             </div>
         </div>
 
+        <div class="d-flex justify-content-center mb-4">
+            <a href="edge://extensions/" target="_blank" rel="noopener" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap px-4">
+                <i class="las la-puzzle-piece me-2"></i> @lang('Open Edge Extensions')
+            </a>
+        </div>
+
         {{-- Accessible Tools & Platforms Section --}}
         <div class="row">
             <div class="col-12">
