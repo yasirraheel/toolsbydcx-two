@@ -11,6 +11,7 @@
                                     <th>@lang('Label/Email')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Assignment')</th>
+                                    <th>@lang('Backup Codes')</th>
                                     <th>@lang('Active Sessions')</th>
                                     <th>@lang('Action')</th>
                                 </tr>
@@ -40,6 +41,10 @@
                                             @else
                                                 <span class="badge badge--dark"><i class="las la-user-slash"></i> @lang('Available')</span>
                                             @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge badge--success">{{ $account->backup_codes_remaining_count }} @lang('remaining')</span>
+                                            <span class="badge badge--warning">{{ $account->backup_codes_used_count }} @lang('used')</span>
                                         </td>
                                         <td>{{ $account->active_sessions }}</td>
                                         <td>

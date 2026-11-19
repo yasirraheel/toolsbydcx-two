@@ -167,7 +167,15 @@ class DcxFlowController extends Controller
                     $codes = array_values($account->backup_codes ?? []);
                     abort_unless(count($codes), 422, 'No backup codes are available.');
                     $code = array_shift($codes);
-                    $account->update(['backup_codes' => $codes]);
+                    $used = $account->backup_codes_used;
+                    $used[] = [
+                        'code' => $code,
+                        'used_at' => now()->toIso8601String(),
+                        'user_id' => $attempt->user_id,
+                        'attempt_id' => $attempt->id,
+                    ];
+                    $account->setBackupCodeState($codes, $used);
+                    $account->save();
                     $attempt->update(['backup_code_used' => true]);
                     return response()->json(['value' => $code, 'attemptId' => $attempt->id]);
             }

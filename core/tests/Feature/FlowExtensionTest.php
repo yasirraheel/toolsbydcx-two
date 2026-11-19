@@ -77,6 +77,9 @@ class FlowExtensionTest extends TestCase
         $this->withToken($token)->postJson('/api/dcx-flow/step',['attemptId'=>$id,'stage'=>'backup_code'])->assertOk()->assertJsonPath('value','12345678');
         $this->withToken($token)->postJson('/api/dcx-flow/step',['attemptId'=>$id,'stage'=>'backup_code'])->assertStatus(422);
         $this->assertSame(['23456789'],$account->fresh()->backup_codes);
+        $usedCodes = $account->fresh()->backup_codes_used;
+        $this->assertSame('12345678', $usedCodes[0]['code']);
+        $this->assertSame($id, $usedCodes[0]['attempt_id']);
         $this->withToken($token)->postJson('/api/dcx-flow/finish',['attemptId'=>$id,'outcome'=>'success'])->assertOk();
         $this->withToken($token)->postJson('/api/dcx-flow/step',['attemptId'=>$id,'stage'=>'password'])->assertStatus(422);
         $this->withToken($token)->postJson('/api/dcx-flow/disconnect')->assertOk();

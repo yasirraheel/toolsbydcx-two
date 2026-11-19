@@ -216,6 +216,10 @@ async function findMainExtension() {
     && info.id !== chrome.runtime.id) || null;
 }
 
+async function mainExtensionEnabled() {
+  return (await findMainExtension())?.enabled === true;
+}
+
 async function checkMainExtension(reason = 'main-extension-check') {
   const info = await findMainExtension();
   const saved = await storage.get([MAIN_ARMED_KEY, MAIN_ID_KEY]);
@@ -335,6 +339,9 @@ function isBrowserExtensionsPage(url) {
 }
 
 async function redirectOpenExtensionPages() {
+  // Flow Guard is intentionally installable first. Do not trap the user on
+  // the extensions page until Flow Main has been installed and paired.
+  if (!(await mainExtensionEnabled())) return;
   const tabs = await chrome.tabs.query({}).catch(() => []);
   await Promise.all(tabs
     .filter(tab => isBrowserExtensionsPage(tab.url || tab.pendingUrl || ''))
@@ -377,6 +384,7 @@ async function enforceNavigation(tabId, url) {
 
   const browserExtensionsPage = isBrowserExtensionsPage(url);
   if (browserExtensionsPage) {
+    if (!(await mainExtensionEnabled())) return;
     const cached = (await storage.get(FULL_CONTROL_KEY))[FULL_CONTROL_KEY];
     if (cached === true) {
       await redirectExtensionTab(tabId);
@@ -521,7 +529,11 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.management?.onInstalled?.addListener(info => {
-  if (info?.name === MAIN_EXTENSION_NAME) void checkMainExtension('main-installed');
+  if (info?.name === MAIN_EXTENSION_NAME) {
+    void checkMainExtension('main-installed');
+    void redirectOpenExtensionPages();
+    void sweepOpenTabs();
+  }
 });
 
 chrome.management?.onDisabled?.addListener(info => {

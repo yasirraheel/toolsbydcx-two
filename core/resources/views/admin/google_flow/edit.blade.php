@@ -63,8 +63,30 @@
                             </div>
                             <div class="col-md-12 form-group">
                                 <label>@lang('Backup Codes (One per line)')</label>
-                                <textarea name="backup_codes" class="form-control" rows="4" placeholder="Leave blank to keep current codes">{{ is_array($account->backup_codes) ? implode("\n", $account->backup_codes) : '' }}</textarea>
+                                <textarea name="backup_codes" class="form-control" rows="4" placeholder="Leave blank to clear remaining codes; used history is kept">{{ is_array($account->backup_codes) ? implode("\n", $account->backup_codes) : '' }}</textarea>
                                 <small class="text-muted">Remaining backup codes: {{ $account->backup_codes_remaining_count }}</small>
+                                @if($account->backup_codes_used_count > 0)
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <strong><i class="las la-history me-1"></i>@lang('Used backup codes')</strong>
+                                        <div class="table-responsive mt-2">
+                                            <table class="table table-sm mb-0">
+                                                <thead><tr><th>@lang('Code')</th><th>@lang('Used at')</th><th>@lang('Attempt')</th></tr></thead>
+                                                <tbody>
+                                                    @foreach($account->backup_codes_used as $used)
+                                                        <tr>
+                                                            <td><code>{{ $used['code'] }}</code></td>
+                                                            <td>{{ $used['used_at'] ? showDateTime(\Carbon\Carbon::parse($used['used_at'])) : __('Recorded') }}</td>
+                                                            <td><small>{{ $used['attempt_id'] ?: '—' }}</small></td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <small class="d-block mt-2">@lang('Used codes are never returned to the extension again.')</small>
+                                    </div>
+                                @else
+                                    <small class="text-muted d-block mt-1">@lang('No backup codes have been used by automation yet.')</small>
+                                @endif
                             </div>
                             <div class="col-md-12 form-group">
                                 <label>@lang('Notes')</label>

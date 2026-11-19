@@ -46,6 +46,7 @@ class GoogleFlowController extends Controller
         if ($request->backup_codes) {
             $codes = explode("\n", str_replace("\r", "", $request->backup_codes));
             $backupCodes = array_values(array_filter(array_map(fn($code) => preg_replace('/[\s-]+/', '', $code), $codes)));
+            $backupCodes = array_values(array_unique($backupCodes));
             foreach ($backupCodes as $code) { if (!preg_match('/^\d{8}$/', $code)) { throw \Illuminate\Validation\ValidationException::withMessages(['backup_codes' => 'Enter unused 8-digit Google backup codes, one per line.']); } }
         }
 
@@ -105,9 +106,18 @@ class GoogleFlowController extends Controller
             if ($request->backup_codes) {
                 $codes = explode("\n", str_replace("\r", "", $request->backup_codes));
                 $backupCodes = array_values(array_filter(array_map(fn($code) => preg_replace('/[\s-]+/', '', $code), $codes)));
+                $backupCodes = array_values(array_unique($backupCodes));
                 foreach ($backupCodes as $code) { if (!preg_match('/^\d{8}$/', $code)) { throw \Illuminate\Validation\ValidationException::withMessages(['backup_codes' => 'Enter unused 8-digit Google backup codes, one per line.']); } }
             }
-            $data['backup_codes'] = empty($backupCodes) ? null : $backupCodes;
+            $usedCodes = array_map(fn($record) => (string) ($record['code'] ?? ''), $account->backup_codes_used);
+            $reused = array_values(array_intersect($backupCodes, $usedCodes));
+            if ($reused) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'backup_codes' => 'These backup codes are already marked as used: '.implode(', ', $reused),
+                ]);
+            }
+            // An empty field clears only remaining codes; the used ledger stays.
+            $data['backup_codes'] = $backupCodes;
         }
 
         DB::transaction(function () use ($account, $data) {
