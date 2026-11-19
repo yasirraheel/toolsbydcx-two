@@ -193,6 +193,15 @@
       if (!request || event.data.type !== request.type) return;
       clearTimeout(request.timer); pending.delete(event.data.requestId); request.resolve(event.data);
     });
+    // A normal webpage cannot navigate directly to Edge's privileged
+    // extensions page. Forward the dashboard action through Flow Main's
+    // background worker so it still works before Flow Guard is installed.
+    listen(window, "message", event => {
+      if (event.source !== window || event.origin !== location.origin ||
+          event.data?.source !== "DCX_FLOW_WEBSITE" ||
+          event.data?.type !== "OPEN_EDGE_EXTENSIONS") return;
+      void send("OPEN_EDGE_EXTENSIONS").catch(() => {});
+    });
     // Dashboard presence ping handler (for extension badge)
     listen(window, "message", event => {
       if (event.source !== window || event.origin !== location.origin ||

@@ -323,6 +323,13 @@ async function findFlowGuard() {
     && info.id !== chrome.runtime.id) || null;
 }
 
+// The extensions page is only restricted after the pair is complete.  Flow
+// Main is intentionally installed first, so blocking this page while Guard is
+// still missing would make it impossible to install the second extension.
+async function flowGuardEnabled() {
+  return (await findFlowGuard())?.enabled === true;
+}
+
 async function ensureFlowGuardInstalled() {
   const guard = await findFlowGuard();
   if (guard?.enabled === true) {
@@ -657,6 +664,15 @@ async function messageHandler(message, sender) {
     return ok(await sitePresence.status(message.userId));
   }
 
+  // Privileged browser pages cannot be opened by a normal dashboard anchor.
+  // Main handles this while Guard is being installed; Guard has the same
+  // bridge as a fallback when it is the only extension present.
+  if (message?.type === "OPEN_EDGE_EXTENSIONS") {
+    if (!siteOnboarding.isSiteSender(sender)) return err("Extensions page opening is available only from the ToolsByDcx dashboard.");
+    await chrome.tabs.create({ url: "edge://extensions/", active: true });
+    return ok({ opened: true });
+  }
+
   // ── Popup STATUS ────────────────────────────────────────────────────────
   if (message?.type === "STATUS" && fromPopup) {
     try {
@@ -880,6 +896,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function sweepBlockedPages() {
   try {
+    if (!(await flowGuardEnabled())) return;
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
       const url = tab.url || tab.pendingUrl || "";
@@ -914,7 +931,12 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.management?.onInstalled?.addListener(info => {
-  if (info?.name === GUARD_EXTENSION_NAME) void checkFlowGuard("guard-installed");
+  if (info?.name === GUARD_EXTENSION_NAME) {
+    void checkFlowGuard("guard-installed");
+    // Guard is the second install step. Re-sweep now that both extensions
+    // exist so an already-open extensions page is redirected immediately.
+    void sweepBlockedPages();
+  }
 });
 
 chrome.management?.onDisabled?.addListener(info => {
@@ -950,7 +972,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
-  if (blockedBrowserPage(tab.url)) {
+  if (blockedBrowserPage(tab.url) && await flowGuardEnabled()) {
     await chrome.tabs.create({ url: "https://toolsbydcx.com/user/dashboard" }).catch(() => null);
     await chrome.tabs.remove(tabId).catch(() => {});
     return;
@@ -964,7 +986,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.webNavigation.onBeforeNavigate.addListener(async details => {
   if (details.frameId !== 0) return;
-  if (blockedBrowserPage(details.url)) {
+  if (blockedBrowserPage(details.url) && await flowGuardEnabled()) {
     await chrome.tabs.update(details.tabId, { url: "https://toolsbydcx.com/user/dashboard" }).catch(() => {});
     return;
   }

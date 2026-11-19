@@ -436,6 +436,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!isPanelUrl(sender?.url) || sender?.id !== chrome.runtime.id || sender?.frameId !== 0) {
           return sendResponse({ ok: false, error: 'Extensions page opening is available only from the ToolsByDcx dashboard.' });
         }
+        // When Flow Main is installed it owns this dashboard bridge. Guard
+        // still supports the action as a fallback, but must not open a second
+        // duplicate tab when both content scripts receive the same postMessage.
+        if (await mainExtensionEnabled()) return sendResponse({ ok: false, skip: true });
         await chrome.tabs.create({ url: 'edge://extensions/', active: true });
         return sendResponse({ ok: true });
       }
