@@ -1,7 +1,7 @@
 (() => {
   'use strict';
-  if (globalThis.__toolsByDcxFlowGuardBridgeVersion === '1.4') return;
-  globalThis.__toolsByDcxFlowGuardBridgeVersion = '1.4';
+  if (globalThis.__toolsByDcxFlowGuardBridgeVersion === '1.5') return;
+  globalThis.__toolsByDcxFlowGuardBridgeVersion = '1.5';
 
   const send = message => new Promise(resolve => {
     try {
@@ -72,6 +72,15 @@
     if (message?.type !== 'REQUEST_PANEL_SESSION') return;
     syncPanelSession(true).then(ok => sendResponse({ ok })).catch(() => sendResponse({ ok: false }));
     return true;
+  });
+
+  // Privileged browser pages cannot be opened by a normal web-page anchor.
+  // Forward the dashboard button through the extension background worker.
+  window.addEventListener('message', event => {
+    if (event.source !== window || event.origin !== location.origin ||
+        event.data?.source !== 'DCX_FLOW_WEBSITE' ||
+        event.data?.type !== 'OPEN_EDGE_EXTENSIONS') return;
+    void send({ type: 'OPEN_EDGE_EXTENSIONS' });
   });
 
   syncPanelSession(false).catch(() => {});

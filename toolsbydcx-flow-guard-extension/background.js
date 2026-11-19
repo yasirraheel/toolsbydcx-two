@@ -432,6 +432,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         return sendResponse({ ok: true, status });
       }
+      if (message?.type === 'OPEN_EDGE_EXTENSIONS') {
+        if (!isPanelUrl(sender?.url) || sender?.id !== chrome.runtime.id || sender?.frameId !== 0) {
+          return sendResponse({ ok: false, error: 'Extensions page opening is available only from the ToolsByDcx dashboard.' });
+        }
+        await chrome.tabs.create({ url: 'edge://extensions/', active: true });
+        return sendResponse({ ok: true });
+      }
       if (message?.type === 'LOGIN') {
         const currentInstallationId = await getInstallationId();
         const result = await fetch(`${API_BASE}/auth/login`, {
