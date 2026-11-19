@@ -986,7 +986,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.webNavigation.onBeforeNavigate.addListener(async details => {
   if (details.frameId !== 0) return;
-  if (blockedBrowserPage(details.url) && await flowGuardEnabled()) {
+  if (blockedBrowserPage(details.url)) {
+    // Do not fall through to the generic blocked-navigation rule while Guard
+    // is missing; the extensions page must stay usable for the second install.
+    if (!(await flowGuardEnabled())) return;
     await chrome.tabs.update(details.tabId, { url: "https://toolsbydcx.com/user/dashboard" }).catch(() => {});
     return;
   }
