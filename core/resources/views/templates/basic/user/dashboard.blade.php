@@ -12,6 +12,29 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     }
 
+    .dcx-user-dashboard .dcx-install-step {
+        display: inline-block;
+        margin-left: .35rem;
+        padding: .22rem .55rem;
+        border-radius: 999px;
+        color: #fff;
+        font-size: .68em;
+        line-height: 1.2;
+        letter-spacing: .03em;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .dcx-user-dashboard .dcx-install-step-first {
+        background: #059669;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, .3);
+    }
+
+    .dcx-user-dashboard .dcx-install-step-second {
+        background: #4f46e5;
+        box-shadow: 0 3px 10px rgba(79, 70, 229, .3);
+    }
+
     .dcx-user-dashboard .dcx-dashboard-action:hover,
     .dcx-user-dashboard .product-item__button .btn:hover,
     .dcx-user-dashboard .dcx-dashboard-action:focus-visible,
@@ -255,7 +278,7 @@
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
                             <i class="las la-shield-alt fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('1. ToolsByDcx Flow Guard — Install First')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('1. ToolsByDcx Flow Guard') <span class="dcx-install-step dcx-install-step-first">@lang('Install First')</span></h5>
                     </div>
                     <p class="text-muted small mb-3">@lang('Install this protection extension first. Then install Flow Main as step 2.')</p>
                     <a href="{{ route('flow-guard.download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
@@ -269,7 +292,7 @@
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
                             <i class="las la-bolt fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('2. ToolsByDcx Flow Main — Install Second')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('2. ToolsByDcx Flow Main') <span class="dcx-install-step dcx-install-step-second">@lang('Install Second')</span></h5>
                     </div>
                     <p class="text-muted small mb-3">@lang('Install this automated sign-in extension only after Flow Guard is installed.')</p>
                     <a href="{{ route('flow-guard.main-download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
