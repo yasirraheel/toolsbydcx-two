@@ -13,26 +13,24 @@
     }
 
     .dcx-user-dashboard .dcx-install-step {
-        display: inline-block;
-        margin-left: .35rem;
-        padding: .22rem .55rem;
-        border-radius: 999px;
-        color: #fff;
-        font-size: .68em;
-        line-height: 1.2;
-        letter-spacing: .03em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: .45rem;
+        min-width: 9.25rem;
+        padding: .42rem .8rem;
+        border-radius: 8px;
+        color: #111827;
+        background: #fbbf24;
+        border: 1px solid #fcd34d;
+        box-shadow: 0 4px 12px rgba(251, 191, 36, .22);
+        font-size: .76em;
+        font-weight: 800;
+        line-height: 1.25;
+        letter-spacing: .045em;
+        text-transform: uppercase;
         vertical-align: middle;
         white-space: nowrap;
-    }
-
-    .dcx-user-dashboard .dcx-install-step-first {
-        background: #059669;
-        box-shadow: 0 3px 10px rgba(16, 185, 129, .3);
-    }
-
-    .dcx-user-dashboard .dcx-install-step-second {
-        background: #4f46e5;
-        box-shadow: 0 3px 10px rgba(79, 70, 229, .3);
     }
 
     .dcx-user-dashboard .dcx-dashboard-action:hover,
