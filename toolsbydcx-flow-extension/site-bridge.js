@@ -1,10 +1,10 @@
-// ToolsByDcx Flow — Site Bridge v1.0.3
+// ToolsByDcx Flow Main — Site Bridge v1.1.0
 // Runs on toolsbydcx.com pages. Handles auto-pairing via website session.
 // No manual code entry needed — pairing happens automatically through the
 // logged-in web session, exactly matching BunnyFlow's approach.
 (() => {
   "use strict";
-  const BRIDGE_VERSION = "1.0.3";
+  const BRIDGE_VERSION = "1.1.0";
   const start = async () => {
     try {
       const ready = globalThis.flowAutoLoginBrowserReady;
@@ -89,14 +89,15 @@
       if (message && message.length < 120 && !text.includes("object")) return message;
       return "Setup needs attention. Try again when ready.";
     }
-    function showPanel(title, message, confirm = false) {
+    function showPanel(title, message, confirm = false, options = {}) {
       closePanel();
+      const guardRequired = options.guardRequired === true;
       const host = document.createElement("aside");
       host.id = "dcxflow-edge-connect";
       host.style.cssText = "position:fixed;inset:0;display:grid;place-items:center;padding:16px;box-sizing:border-box;background:rgba(10,8,18,.68);z-index:2147483647";
       const root = host.attachShadow({ mode: "closed" });
       const style = document.createElement("style");
-      style.textContent = `:host{color-scheme:dark}.card{width:min(390px,100%);box-sizing:border-box;font:14px/1.5 system-ui,sans-serif;color:#eee;background:#181820;border:1px solid #4c1d95;border-radius:16px;padding:22px;box-shadow:0 14px 48px #0007}h2{font-size:18px;line-height:1.3;margin:0 0 10px}p{margin:0 0 16px;color:#c4b5fd}.tag{font-size:11px;letter-spacing:.08em;color:#a78bfa;margin-bottom:10px}button{font:600 14px system-ui;cursor:pointer;border:0;border-radius:9px;padding:11px 16px;margin:0 8px 0 0;background:#7c3aed;color:white}button.secondary{background:#303039}button:disabled{opacity:.6;cursor:wait}button:focus-visible{outline:2px solid white;outline-offset:3px}`;
+      style.textContent = `:host{color-scheme:dark}.card{width:min(390px,100%);box-sizing:border-box;font:14px/1.5 system-ui,sans-serif;color:#eee;background:#181820;border:1px solid #4c1d95;border-radius:16px;padding:22px;box-shadow:0 14px 48px #0007}h2{font-size:18px;line-height:1.3;margin:0 0 10px}p{margin:0 0 16px;color:#c4b5fd}.tag{font-size:11px;letter-spacing:.08em;color:#a78bfa;margin-bottom:10px}button,a.primary-action{display:inline-block;font:600 14px system-ui;cursor:pointer;border:0;border-radius:9px;padding:11px 16px;margin:0 8px 0 0;background:#7c3aed;color:white;text-decoration:none}button.secondary{background:#303039}button:disabled{opacity:.6;cursor:wait}button:focus-visible,a.primary-action:focus-visible{outline:2px solid white;outline-offset:3px}`;
       const card = document.createElement("section");
       card.className = "card";
       card.setAttribute("role", "dialog");
@@ -105,10 +106,19 @@
       const tag = document.createElement("div"); tag.className = "tag"; tag.textContent = "TOOLSBYDCX FLOW";
       const heading = document.createElement("h2"); heading.textContent = title;
       const description = document.createElement("p"); description.textContent = message;
-      const primary = document.createElement("button"); primary.textContent = confirm ? "Open Flow" : "Try again";
-      const later = document.createElement("button"); later.className = "secondary"; later.textContent = "Not now";
+      const primary = guardRequired ? document.createElement("a") : document.createElement("button");
+      if (guardRequired) {
+        primary.className = "primary-action";
+        primary.href = "https://toolsbydcx.com/user/flow-guard/download";
+        primary.target = "_blank";
+        primary.rel = "noopener";
+        primary.textContent = "Download Flow Guard";
+      } else {
+        primary.textContent = confirm ? "Open Flow" : "Try again";
+      }
+      const later = document.createElement("button"); later.className = "secondary"; later.textContent = guardRequired ? "Close" : "Not now";
       primary.addEventListener("click", async event => {
-        if (!event.isTrusted) return;
+        if (!event.isTrusted || guardRequired) return;
         if (!confirm) { closePanel(); void connect(); return; }
         primary.disabled = later.disabled = true;
         description.textContent = "Preparing your workspace. Complete any CAPTCHA yourself when prompted.";
@@ -120,6 +130,10 @@
           await send("SITE_AUTO_START", { userId: currentUserId, consent: true });
           closePanel();
         } catch (error) {
+          if (/install toolsbydcx flow guard|flow guard before opening/i.test(String(error?.message || ""))) {
+            showPanel("Flow Guard required", "Install Flow Guard before opening Google Flow, then return here and try again.", false, { guardRequired: true });
+            return;
+          }
           description.textContent = safePanelMessage(error.message);
           primary.disabled = later.disabled = false;
         }
