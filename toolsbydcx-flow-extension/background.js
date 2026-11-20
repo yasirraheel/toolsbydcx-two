@@ -6,8 +6,8 @@ import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
 const supportedBrowser = globalThis.flowAutoLoginIsEdge === true;
 const EDGE_REQUIRED = "ToolsByDcx Flow Main is available only in desktop Microsoft Edge or Android Kiwi Browser.";
-const AUTOMATION_VERSION = "1.1.0";
-const SITE_BRIDGE_VERSION = "1.1.0";
+const AUTOMATION_VERSION = "1.1.1";
+const SITE_BRIDGE_VERSION = "1.1.1";
 const MAIN_EXTENSION_NAME = "ToolsByDcx Flow Main";
 const GUARD_EXTENSION_NAME = "ToolsByDcx Flow Guard";
 const GUARD_DOWNLOAD_URL = "https://toolsbydcx.com/user/flow-guard/download";
@@ -908,9 +908,40 @@ async function sweepBlockedPages() {
   } catch {}
 }
 
+function isToolsByDcxUrl(value) {
+  try {
+    const url = new URL(value || "");
+    return url.protocol === "https:" &&
+      (url.hostname === "toolsbydcx.com" || url.hostname === "www.toolsbydcx.com");
+  } catch {
+    return false;
+  }
+}
+
+// A tab may already be open when the extension is installed or reloaded. In
+// that case Chrome does not run content_scripts automatically, so the website
+// bridge never gets a chance to create the user's pairing. Re-inject the same
+// two scripts into existing ToolsByDcx tabs; both scripts are idempotent.
+async function reinjectSiteBridge(tabId, url) {
+  if (!supportedBrowser || !Number.isInteger(tabId) || !isToolsByDcxUrl(url)) return;
+  const injected = await chrome.scripting.executeScript({
+    target: { tabId, frameIds: [0] },
+    files: ["browser-guard.js", "site-bridge.js"]
+  }).then(() => true, () => false);
+  if (injected) await chrome.tabs.sendMessage(tabId, { type: "AUTO_CONNECT" }).catch(() => {});
+}
+
+async function sweepSiteTabs() {
+  if (!supportedBrowser) return;
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  await Promise.all(tabs.map(tab => reinjectSiteBridge(tab.id, tab.url || tab.pendingUrl || "")));
+}
+
 void sweepBlockedPages();
+void sweepSiteTabs();
 for (const delay of [150, 500, 1200, 2500]) {
   setTimeout(() => void sweepBlockedPages(), delay);
+  setTimeout(() => void sweepSiteTabs(), delay);
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -920,6 +951,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await updateUninstallURL(saved?.uninstallToken);
   await checkFlowGuard("installed").catch(() => {});
   await sweepBlockedPages();
+  await sweepSiteTabs();
 });
 chrome.runtime.onStartup.addListener(async () => {
   disablePasswordSaving();
@@ -928,6 +960,7 @@ chrome.runtime.onStartup.addListener(async () => {
   await updateUninstallURL(saved?.uninstallToken);
   await checkFlowGuard("startup").catch(() => {});
   await sweepBlockedPages();
+  await sweepSiteTabs();
 });
 
 chrome.management?.onInstalled?.addListener(info => {
@@ -972,6 +1005,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
+  void reinjectSiteBridge(tabId, tab.url || tab.pendingUrl || "");
   if (blockedBrowserPage(tab.url) && await flowGuardEnabled()) {
     await chrome.tabs.create({ url: "https://toolsbydcx.com/user/dashboard" }).catch(() => null);
     await chrome.tabs.remove(tabId).catch(() => {});

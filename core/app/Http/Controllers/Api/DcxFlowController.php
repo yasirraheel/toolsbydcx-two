@@ -19,15 +19,23 @@ class DcxFlowController extends Controller
     {
         $userAgent = $request->header('User-Agent', '');
         $secChUa = $request->header('sec-ch-ua', '');
+        // Extension API calls run from the MV3 service worker, whose network
+        // User-Agent may omit Edge/Kiwi's browser brand. The Flow Main worker
+        // already performs the browser check and sends this constrained marker
+        // with every API request, so include it in the server-side check too.
+        $extensionBrowser = strtolower(trim((string) $request->header('X-DCX-Browser', '')));
+        $extensionRequest = $request->hasHeader('X-DCX-Flow-Version');
         $isEdge = str_contains($userAgent, 'Edg/')
             || str_contains($userAgent, 'Edge/')
             || str_contains($userAgent, 'EdgA/')
             || str_contains($userAgent, 'EdgiOS/')
-            || stripos($secChUa, 'Microsoft Edge') !== false;
+            || stripos($secChUa, 'Microsoft Edge') !== false
+            || ($extensionRequest && $extensionBrowser === 'edge');
         $isKiwi = stripos($userAgent, 'Kiwi') !== false
             || stripos($secChUa, 'Kiwi') !== false
             || $request->cookie('is_kiwi') === '1'
-            || session()->get('is_kiwi') === true;
+            || session()->get('is_kiwi') === true
+            || ($extensionRequest && $extensionBrowser === 'kiwi');
 
         if (!$isEdge && !$isKiwi) {
             abort(response()->json([
