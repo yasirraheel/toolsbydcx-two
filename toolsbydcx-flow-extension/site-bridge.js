@@ -1,10 +1,10 @@
-// ToolsByDcx Flow Main — Site Bridge v1.2.0
+// ToolsByDcx Flow Main — Site Bridge v1.2.1
 // Runs on toolsbydcx.com pages. Handles auto-pairing via website session.
 // No manual code entry needed — pairing happens automatically through the
 // logged-in web session, exactly matching BunnyFlow's approach.
 (() => {
   "use strict";
-  const BRIDGE_VERSION = "1.2.0";
+  const BRIDGE_VERSION = "1.2.1";
   const start = async () => {
     // The server/API enforce authentication, assignment and credits. Do not
     // block the website pairing bridge on a User-Agent browser allow-list.

@@ -1,4 +1,4 @@
-ToolsByDcx Flow Main 1.2.0
+ToolsByDcx Flow Main 1.2.1
 
 1. Extract this ZIP to a folder.
 2. In Chrome or Microsoft Edge, open the browser's extensions page

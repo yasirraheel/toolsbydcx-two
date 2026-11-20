@@ -9,8 +9,8 @@ import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 // workflow. Chrome/Edge/Kiwi and other MV3 Chromium profiles use the same path.
 const supportedBrowser = true;
 const EDGE_REQUIRED = "ToolsByDcx Flow Main is not available in this browser.";
-const AUTOMATION_VERSION = "1.2.0";
-const SITE_BRIDGE_VERSION = "1.2.0";
+const AUTOMATION_VERSION = "1.2.1";
+const SITE_BRIDGE_VERSION = "1.2.1";
 const MAIN_EXTENSION_NAME = "ToolsByDcx Flow Main";
 const GUARD_EXTENSION_NAME = "ToolsByDcx Flow Guard";
 const GUARD_DOWNLOAD_URL = "https://toolsbydcx.com/user/flow-guard/download";
