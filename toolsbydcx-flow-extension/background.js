@@ -4,7 +4,10 @@ import "./browser-guard.js";
 import { createSiteOnboarding, createSitePresence } from "./site-onboarding.js";
 import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
-const supportedBrowser = globalThis.flowAutoLoginBrowserSupported === true || globalThis.flowAutoLoginIsEdge === true;
+// Browser-family detection remains available for telemetry and choosing the
+// privileged extensions URL, but it must never prevent the authenticated Flow
+// workflow. Chrome/Edge/Kiwi and other MV3 Chromium profiles use the same path.
+const supportedBrowser = true;
 const EDGE_REQUIRED = "ToolsByDcx Flow Main is not available in this browser.";
 const AUTOMATION_VERSION = "1.2.0";
 const SITE_BRIDGE_VERSION = "1.2.0";
