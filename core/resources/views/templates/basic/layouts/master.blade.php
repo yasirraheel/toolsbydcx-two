@@ -830,7 +830,7 @@
 
     {{-- ToolsByDcx Flow Extension Website Bridge --}}
     @auth
-    <script src="{{ asset('assets/js/flow-bridge.js') }}?v={{ config('app.version', '1') }}" defer></script>
+    <script src="{{ asset('assets/js/flow-bridge.js') }}?v={{ config('app.version', '1') }}-flow2" defer></script>
     @endauth
     <script src="{{ asset('assets/js/theme-switcher.js') }}"></script>
 </body>
