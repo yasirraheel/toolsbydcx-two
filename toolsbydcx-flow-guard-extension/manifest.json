@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow Guard",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "Server-authenticated Flow access with per-user generation credits.",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "tabs", "webNavigation", "scripting", "management", "cookies", "alarms"],
@@ -28,7 +28,7 @@
     },
     {
       "matches": ["https://flow.google.com/*"],
-      "js": ["flow-gate-v2.js"],
+      "js": ["flow-agent-blocker.js", "flow-gate-v2.js"],
       "run_at": "document_start",
       "all_frames": false
     },

@@ -108,7 +108,7 @@
                             <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                 <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
                                     <span class="text--base">@lang('ToolsByDcx Flow Guard')</span>
-                                    <span class="badge badge--dark ms-2">v1.5.8</span>
+                                    <span class="badge badge--dark ms-2">v1.5.9</span>
                                 </h4>
                                 <div class="mt-1 text-muted small" style="line-height: 1.4;">
                                     <i class="las la-info-circle text--base me-1"></i>@lang('Protects the Google Flow session and must be installed with Flow Main.')
