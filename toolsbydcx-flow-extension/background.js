@@ -4,10 +4,10 @@ import "./browser-guard.js";
 import { createSiteOnboarding, createSitePresence } from "./site-onboarding.js";
 import { isMobileExtensionsPage } from "./mobile-extension-pages.js";
 
-const supportedBrowser = globalThis.flowAutoLoginIsEdge === true;
-const EDGE_REQUIRED = "ToolsByDcx Flow Main is available only in desktop Microsoft Edge or Android Kiwi Browser.";
-const AUTOMATION_VERSION = "1.1.1";
-const SITE_BRIDGE_VERSION = "1.1.1";
+const supportedBrowser = globalThis.flowAutoLoginBrowserSupported === true || globalThis.flowAutoLoginIsEdge === true;
+const EDGE_REQUIRED = "ToolsByDcx Flow Main is not available in this browser.";
+const AUTOMATION_VERSION = "1.2.0";
+const SITE_BRIDGE_VERSION = "1.2.0";
 const MAIN_EXTENSION_NAME = "ToolsByDcx Flow Main";
 const GUARD_EXTENSION_NAME = "ToolsByDcx Flow Guard";
 const GUARD_DOWNLOAD_URL = "https://toolsbydcx.com/user/flow-guard/download";
@@ -669,7 +669,10 @@ async function messageHandler(message, sender) {
   // bridge as a fallback when it is the only extension present.
   if (message?.type === "OPEN_EDGE_EXTENSIONS") {
     if (!siteOnboarding.isSiteSender(sender)) return err("Extensions page opening is available only from the ToolsByDcx dashboard.");
-    await chrome.tabs.create({ url: "edge://extensions/", active: true });
+    const extensionsUrl = globalThis.flowAutoLoginBrowser === "edge"
+      ? "edge://extensions/"
+      : "chrome://extensions/";
+    await chrome.tabs.create({ url: extensionsUrl, active: true });
     return ok({ opened: true });
   }
 

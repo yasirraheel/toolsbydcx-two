@@ -29,7 +29,7 @@ class ExtensionsController extends Controller
         // 2. ToolsByDcx Flow Main Extension (Google Flow Workspace)
         $flowHistory = ExtensionHistory::where('type', 'flow')->where('is_current', true)->first()
                     ?: ExtensionHistory::where('type', 'flow')->orderByDesc('id')->first();
-        $flowVersion = $flowHistory ? $flowHistory->version : '1.1.0';
+        $flowVersion = $flowHistory ? $flowHistory->version : '1.2.0';
         $flowDownloadUrl = route('flow-guard.main-download');
         $flowGuardDownloadUrl = route('flow-guard.download');
         $flowExists = file_exists(public_path('toolsbydcx-flow-main.zip'))
@@ -55,19 +55,9 @@ class ExtensionsController extends Controller
             ->get();
         $isExtensionPaired = $pairings->isNotEmpty();
 
-        // 3. Browser compatibility check for Google Flow (Edge & Kiwi only)
-        $userAgent = $request->header('User-Agent', '');
-        $secChUa = $request->header('sec-ch-ua', '');
-        $isEdge = str_contains($userAgent, 'Edg/')
-            || str_contains($userAgent, 'Edge/')
-            || str_contains($userAgent, 'EdgA/')
-            || str_contains($userAgent, 'EdgiOS/')
-            || stripos($secChUa, 'Microsoft Edge') !== false;
-        $isKiwi = stripos($userAgent, 'Kiwi') !== false
-            || stripos($secChUa, 'Kiwi') !== false
-            || $request->cookie('is_kiwi') === '1'
-            || session()->get('is_kiwi') === true;
-        $isFlowSupportedBrowser = $isEdge || $isKiwi;
+        // Flow Main supports Chrome, Edge, and Kiwi. Keep this flag true so
+        // the panel renders the normal connect/open workflow on Chrome too.
+        $isFlowSupportedBrowser = true;
 
         return view('templates.basic.user.extensions', compact(
             'pageTitle',
@@ -90,24 +80,6 @@ class ExtensionsController extends Controller
 
     public function pair(Request $request)
     {
-        $userAgent = $request->header('User-Agent', '');
-        $secChUa = $request->header('sec-ch-ua', '');
-        $isEdge = str_contains($userAgent, 'Edg/')
-            || str_contains($userAgent, 'Edge/')
-            || str_contains($userAgent, 'EdgA/')
-            || str_contains($userAgent, 'EdgiOS/')
-            || stripos($secChUa, 'Microsoft Edge') !== false;
-        $isKiwi = stripos($userAgent, 'Kiwi') !== false
-            || stripos($secChUa, 'Kiwi') !== false
-            || $request->cookie('is_kiwi') === '1'
-            || session()->get('is_kiwi') === true;
-
-        if (!$isEdge && !$isKiwi) {
-            return response()->json([
-                'message' => 'ToolsByDcx Flow can only be connected in Microsoft Edge or Kiwi Browser.'
-            ], 403);
-        }
-
         $request->validate(['codeChallenge' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/']]);
         $pairing = FlowAccess::issue($request->user(), $request->input('codeChallenge'));
         return response()->json([

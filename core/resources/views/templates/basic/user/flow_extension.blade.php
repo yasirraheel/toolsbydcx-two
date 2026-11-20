@@ -2,7 +2,7 @@
 @section('content')
 <div class="card p-4">
     <h4>ToolsByDcx Flow Extension</h4>
-    <p>Open your assigned Google Flow workspace from Microsoft Edge.</p>
+    <p>Open your assigned Google Flow workspace from Chrome, Edge, or Kiwi Browser.</p>
     @if($account)
         <div class="p-3 mb-3 rounded" style="background: rgba(124, 58, 237, 0.12); border: 1px solid rgba(124, 58, 237, 0.35);">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -25,7 +25,7 @@
     </div>
     <ol>
         <li>Download the extension ZIP file above.</li>
-        <li>Open <code>edge://extensions</code>, turn on <strong>Developer mode</strong>, and drag & drop the ZIP file into the page (or click <strong>Load unpacked</strong> and select the extracted folder).</li>
+        <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>), turn on <strong>Developer mode</strong>, and drag & drop the ZIP file into the page (or click <strong>Load unpacked</strong> and select the extracted folder).</li>
         <li>The extension connects automatically to your account through your active ToolsByDcx session.</li>
         <li>Click the <strong>ToolsByDcx Flow</strong> extension icon in your browser toolbar or click <strong>Open Flow</strong> to launch your workspace.</li>
     </ol>

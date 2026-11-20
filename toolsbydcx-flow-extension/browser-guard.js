@@ -1,7 +1,8 @@
 // Shared by the service worker and isolated extension/content-script contexts.
 // This is a compatibility restriction, not a tamper-proof security boundary.
 (() => {
-  // One package supports desktop Microsoft Edge and Android Kiwi Browser.
+  // The Flow extension supports Chromium browsers that can run MV3, including
+  // Chrome, Microsoft Edge, and Android Chrome/Kiwi.
   const browser = globalThis.navigator;
   const ua = browser?.userAgent || "";
   const brands = Array.isArray(browser?.userAgentData?.brands)
@@ -20,19 +21,27 @@
     !!browser?.brave;
   const lemur = brands.some(entry => /Lemur/i.test(entry?.brand || "")) ||
     /\bLemur\/\d+/i.test(ua);
+  const explicitKiwi = brands.some(entry => /Kiwi/i.test(entry?.brand || "")) ||
+    /\bKiwi(?:Browser)?\b/i.test(ua) || !!browser?.kiwi;
   // Kiwi commonly reports a Chrome-like Android UA. Exclude identifiable
   // other browsers; this compatibility check is not browser attestation.
   const otherMobile = /EdgA\/|EdgiOS\/|OPR\/|Opera\/|Lemur\/|Firefox\/|FxiOS\/|SamsungBrowser\/|Quetta\/|Vivaldi\/|YaBrowser\//i.test(ua) ||
     brands.some(entry => /Edge|Opera|Brave|Lemur|Samsung|Quetta|Vivaldi/i.test(entry?.brand || "")) ||
     brave || edge || opera || lemur;
-  const browserKind = mobile
-    ? /Android/i.test(ua + " " + (browser?.userAgentData?.platform || "")) &&
-        !otherMobile && /Chrome\/\d+/i.test(ua) ? "kiwi" : "unsupported"
-    : edge && !opera && !brave && !lemur
-      ? "edge"
-      : "unsupported";
+  const chrome = !edge && !opera && !brave && !lemur &&
+    !otherMobile && /Chrome\/\d+/i.test(ua);
+  const browserKind = edge && !opera && !brave && !lemur
+    ? "edge"
+    : explicitKiwi && mobile && !otherMobile
+      ? "kiwi"
+      : chrome
+        ? "chrome"
+        : "unsupported";
   globalThis.flowAutoLoginBrowser = runtimeAvailable ? browserKind : "unsupported";
-  globalThis.flowAutoLoginIsEdge = runtimeAvailable && ["edge", "kiwi"].includes(browserKind);
+  // Keep the historical flag for older scripts, but make the capability name
+  // explicit so Chrome is not accidentally treated as unsupported later.
+  globalThis.flowAutoLoginBrowserSupported = runtimeAvailable && ["edge", "kiwi", "chrome"].includes(browserKind);
+  globalThis.flowAutoLoginIsEdge = globalThis.flowAutoLoginBrowserSupported;
   globalThis.flowAutoLoginIsMobile = runtimeAvailable && mobile;
   // A page's navigator can be masked for compatibility and expose a Chrome-like
   // UA even when it is open in Edge. Content scripts

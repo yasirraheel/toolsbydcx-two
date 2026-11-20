@@ -7,6 +7,9 @@ const FULL_CONTROL_KEY = 'flowGuardFullControl';
 const ACTIVE_SESSION_KEY = 'flowGuardActiveSession';
 const GUARD_REDIRECT = PANEL_URL;
 const PANEL_DASHBOARD_URL = 'https://toolsbydcx.com/user/dashboard';
+const BROWSER_EXTENSIONS_URL = /\bEdg(?:e|A|iOS)?\//i.test(globalThis.navigator?.userAgent || '')
+  ? 'edge://extensions/'
+  : 'chrome://extensions/';
 // Flow Guard is paired with the automated-login extension.  Keep the pair
 // name explicit so an unrelated extension can never satisfy this check.
 const MAIN_EXTENSION_NAME = 'ToolsByDcx Flow Main';
@@ -440,7 +443,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // still supports the action as a fallback, but must not open a second
         // duplicate tab when both content scripts receive the same postMessage.
         if (await mainExtensionEnabled()) return sendResponse({ ok: false, skip: true });
-        await chrome.tabs.create({ url: 'edge://extensions/', active: true });
+        await chrome.tabs.create({ url: BROWSER_EXTENSIONS_URL, active: true });
         return sendResponse({ ok: true });
       }
       if (message?.type === 'LOGIN') {

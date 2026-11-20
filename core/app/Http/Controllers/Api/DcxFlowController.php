@@ -17,32 +17,10 @@ class DcxFlowController extends Controller
 {
     private function assertFlowBrowser(Request $request): void
     {
-        $userAgent = $request->header('User-Agent', '');
-        $secChUa = $request->header('sec-ch-ua', '');
-        // Extension API calls run from the MV3 service worker, whose network
-        // User-Agent may omit Edge/Kiwi's browser brand. The Flow Main worker
-        // already performs the browser check and sends this constrained marker
-        // with every API request, so include it in the server-side check too.
-        $extensionBrowser = strtolower(trim((string) $request->header('X-DCX-Browser', '')));
-        $extensionRequest = $request->hasHeader('X-DCX-Flow-Version');
-        $isEdge = str_contains($userAgent, 'Edg/')
-            || str_contains($userAgent, 'Edge/')
-            || str_contains($userAgent, 'EdgA/')
-            || str_contains($userAgent, 'EdgiOS/')
-            || stripos($secChUa, 'Microsoft Edge') !== false
-            || ($extensionRequest && $extensionBrowser === 'edge');
-        $isKiwi = stripos($userAgent, 'Kiwi') !== false
-            || stripos($secChUa, 'Kiwi') !== false
-            || $request->cookie('is_kiwi') === '1'
-            || session()->get('is_kiwi') === true
-            || ($extensionRequest && $extensionBrowser === 'kiwi');
-
-        if (!$isEdge && !$isKiwi) {
-            abort(response()->json([
-                'message' => 'ToolsByDcx Flow is available only in Microsoft Edge or Kiwi Browser.',
-                'reason' => 'unsupported_browser'
-            ], 403));
-        }
+        // Browser compatibility is enforced by the extension runtime only for
+        // browsers that cannot run this MV3 package.  The API must not reject
+        // Chrome requests based on a brittle User-Agent/Client-Hints check;
+        // Chrome, Edge, and Kiwi all use this same authenticated API.
     }
 
     public function pair(Request $request)

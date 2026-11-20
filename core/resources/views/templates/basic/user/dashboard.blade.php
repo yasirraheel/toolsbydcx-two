@@ -301,8 +301,8 @@
         </div>
 
         <div class="d-flex justify-content-center mb-4">
-            <a href="edge://extensions/" data-dcx-open-edge-extensions target="_blank" rel="noopener" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap px-4" onclick="event.preventDefault(); window.postMessage({source: 'DCX_FLOW_WEBSITE', type: 'OPEN_EDGE_EXTENSIONS'}, window.location.origin);">
-                <i class="las la-puzzle-piece me-2"></i> @lang('Open Edge Extensions')
+            <a href="#" data-dcx-open-edge-extensions class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap px-4" onclick="event.preventDefault(); window.postMessage({source: 'DCX_FLOW_WEBSITE', type: 'OPEN_EDGE_EXTENSIONS'}, window.location.origin);">
+                <i class="las la-puzzle-piece me-2"></i> @lang('Open Extensions')
             </a>
         </div>
 

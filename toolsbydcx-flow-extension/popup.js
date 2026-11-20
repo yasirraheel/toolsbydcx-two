@@ -59,11 +59,11 @@ function render(result) {
   $("start").disabled = !supported || !connected || working;
 
   if (!supported) {
-    $("status").textContent = "Use Microsoft Edge or Kiwi Browser.";
+    $("status").textContent = "Use Chrome, Microsoft Edge, or Kiwi Browser.";
   } else if (connected) {
     $("status").textContent = "Your plan is active.";
   } else {
-    $("status").textContent = "Open ToolsByDcx in Edge or Kiwi to connect automatically.";
+    $("status").textContent = "Open ToolsByDcx in Chrome, Edge, or Kiwi to connect automatically.";
     // Show the connect hint section
     const hint = $("connect-hint");
     if (hint) hint.hidden = false;

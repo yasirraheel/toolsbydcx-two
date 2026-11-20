@@ -10,7 +10,7 @@ class EdgeBrowserOnly
 {
     /**
      * Handle an incoming request.
-     * Restricts portal access exclusively to Microsoft Edge browser (excluding Admin panel).
+     * Legacy browser gate. Chrome, Edge, and Kiwi are all valid Flow browsers.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
@@ -54,7 +54,9 @@ class EdgeBrowserOnly
             return $next($request);
         }
 
-        // 4. Detect Microsoft Edge or Kiwi Browser
+        // 4. Detect supported Chromium browsers. Keep this legacy middleware
+        // compatible for any route that still aliases it, but do not redirect
+        // Chrome users to the old Edge-only page.
         $userAgent = $request->header('User-Agent', '');
         $secChUa = $request->header('sec-ch-ua', '');
 
@@ -71,13 +73,17 @@ class EdgeBrowserOnly
             || $request->cookie('is_kiwi') === '1'
             || session()->get('is_kiwi') === true;
 
+        $isChrome = preg_match('/\b(?:Chrome|Chromium)\/\d+/i', $userAgent)
+            && !preg_match('/\b(?:Edg|Edge|OPR|Opera|Brave|Firefox|FxiOS|SamsungBrowser|Vivaldi|YaBrowser)\//i', $userAgent)
+            && stripos($secChUa, 'Microsoft Edge') === false;
+
         if ($request->query('browser') === 'kiwi' || $request->query('kiwi') === '1') {
             cookie()->queue('is_kiwi', '1', 60 * 24 * 365);
             session()->put('is_kiwi', true);
             $isKiwi = true;
         }
 
-        $isAllowed = $isEdge || $isKiwi;
+        $isAllowed = $isEdge || $isKiwi || $isChrome;
 
         $isEdgeOnlyPage = $request->is('edge-only') || $request->routeIs('edge.only');
 

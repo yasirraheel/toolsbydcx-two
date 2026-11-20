@@ -63,7 +63,7 @@
                     <div class="col-6 col-md-3">
                         <div class="d-flex align-items-center justify-content-center gap-2 text-white-50">
                             <i class="las la-globe text-info fs-4"></i>
-                            <span class="small fw-semibold text-white">@lang('Edge & Kiwi Browser')</span>
+                            <span class="small fw-semibold text-white">@lang('Chrome, Edge & Kiwi Browser')</span>
                         </div>
                     </div>
                 </div>
@@ -370,7 +370,7 @@
                         </h2>
                         <div id="faqCollapseThree" class="accordion-collapse collapse" data-bs-parent="#landingFaqAccordion">
                             <div class="accordion-body">
-                                @lang('The ToolsByDcx extension is fully compatible with Microsoft Edge on Desktop (Windows and Mac) and Kiwi Browser on Android Mobile.')
+                                @lang('The ToolsByDcx extension is fully compatible with Chrome, Microsoft Edge, and Kiwi Browser.')
                             </div>
                         </div>
                     </div>

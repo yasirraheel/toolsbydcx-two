@@ -63,19 +63,13 @@
                                     @if($flowAccount)
                                         <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-user-check text--base me-1"></i>@lang('Assigned account'):&nbsp;<strong class="text-white">{{ $flowAccount->label ?: $flowAccount->email }}</strong></span>
                                     @else
-                                        <i class="las la-info-circle text--base me-1"></i>@lang('Automated Google Flow workspace launcher for Microsoft Edge & Kiwi Browser. Install Flow Guard alongside it.')
+                                        <i class="las la-info-circle text--base me-1"></i>@lang('Automated Google Flow workspace launcher for Chrome, Edge, and Kiwi Browser. Install Flow Guard alongside it.')
                                     @endif
                                 </div>
                                 <div class="mt-1">
-                                    @if(empty($isFlowSupportedBrowser))
-                                        <span id="flow-status-badge" class="badge bg-warning text-dark">
-                                            <i class="las la-exclamation-triangle me-1"></i> @lang('Edge & Kiwi Browser Required')
-                                        </span>
-                                    @else
-                                        <span id="flow-status-badge" class="badge badge--secondary">
-                                            <i class="las la-circle"></i> @lang('Checking browser...')
-                                        </span>
-                                    @endif
+                                    <span id="flow-status-badge" class="badge badge--secondary">
+                                        <i class="las la-circle"></i> @lang('Checking extension...')
+                                    </span>
                                 </div>
                                 <div id="flow-status-text" class="mt-1 small" style="color: #94a3b8;"></div>
                             </div>
@@ -85,25 +79,19 @@
                                 <a href="{{ $flowDownloadUrl }}" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap">
                                     <i class="las la-download me-1"></i> <span class="btn-text">@lang('Download')</span>
                                 </a>
-                                @if(!empty($isFlowSupportedBrowser))
-                                    <button id="flow-auto-connect" type="button" class="btn btn-outline--base d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
-                                        <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect')</span>
-                                    </button>
-                                    <button id="flow-start" type="button" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
-                                        <i class="las la-rocket me-1"></i> <span class="btn-text">@lang('Open Flow')</span>
-                                    </button>
-                                    @if(!empty($pairings) && $pairings->count() > 0)
-                                        <form method="POST" action="{{ route('user.extensions.revoke') }}" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline-danger d-inline-flex align-items-center justify-content-center text-nowrap" onclick="return confirm('@lang('Disconnect extension?')')" title="@lang('Disconnect')">
-                                                <i class="las la-times me-1"></i> <span class="btn-text">@lang('Disconnect')</span>
-                                            </button>
-                                        </form>
-                                    @endif
-                                @else
-                                    <button type="button" class="btn btn--warning d-inline-flex align-items-center justify-content-center text-nowrap" onclick="notify('error', '@lang('ToolsByDcx Flow Main is exclusively supported on Microsoft Edge and Kiwi Browser. Please switch to Edge or Kiwi to launch Flow.')')" title="@lang('Microsoft Edge or Kiwi Browser required')">
-                                        <i class="las la-lock me-1"></i> <span class="btn-text">@lang('Edge / Kiwi Required')</span>
-                                    </button>
+                                <button id="flow-auto-connect" type="button" class="btn btn-outline--base d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
+                                    <i class="las la-plug me-1"></i> <span class="btn-text">@lang('Connect')</span>
+                                </button>
+                                <button id="flow-start" type="button" class="btn btn--base d-inline-flex align-items-center justify-content-center text-nowrap" hidden>
+                                    <i class="las la-rocket me-1"></i> <span class="btn-text">@lang('Open Flow')</span>
+                                </button>
+                                @if(!empty($pairings) && $pairings->count() > 0)
+                                    <form method="POST" action="{{ route('user.extensions.revoke') }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger d-inline-flex align-items-center justify-content-center text-nowrap" onclick="return confirm('@lang('Disconnect extension?')')" title="@lang('Disconnect')">
+                                            <i class="las la-times me-1"></i> <span class="btn-text">@lang('Disconnect')</span>
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </div>
@@ -120,7 +108,7 @@
                             <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
                                 <h4 class="product-item__title d-flex align-items-center mb-0 flex-wrap gap-2">
                                     <span class="text--base">@lang('ToolsByDcx Flow Guard')</span>
-                                    <span class="badge badge--dark ms-2">v1.5.6</span>
+                                    <span class="badge badge--dark ms-2">v1.5.8</span>
                                 </h4>
                                 <div class="mt-1 text-muted small" style="line-height: 1.4;">
                                     <i class="las la-info-circle text--base me-1"></i>@lang('Protects the Google Flow session and must be installed with Flow Main.')
@@ -228,21 +216,8 @@
 
     // 2. Flow Extension Detection & Connect
     const flowBadge = document.getElementById('flow-status-badge');
-    const isFlowAllowed = @json(!empty($isFlowSupportedBrowser)) && (() => {
-        const ua = navigator.userAgent || '';
-        const brands = Array.isArray(navigator?.userAgentData?.brands) ? navigator.userAgentData.brands : [];
-        const isEdge = brands.some(entry => /Microsoft Edge/i.test(entry?.brand || '')) || /\bEdg\/\d+/i.test(ua);
-        const isKiwi = /Kiwi/i.test(ua) || /kiwibrowser/i.test(ua) || (document.cookie.indexOf('is_kiwi=1') !== -1);
-        return isEdge || isKiwi;
-    })();
-
-    if (!isFlowAllowed) {
-        if (flowBadge) {
-            flowBadge.className = 'badge bg-warning text-dark';
-            flowBadge.innerHTML = '<i class="las la-exclamation-triangle me-1"></i> @lang("Edge & Kiwi Browser Required")';
-        }
-        return;
-    }
+    // Chrome, Edge, and Kiwi are supported. The extension itself reports
+    // whether it is installed/connected; the panel no longer blocks Chrome.
 
     const userId = @json(auth()->id());
     const isPaired = @json(!empty($isExtensionPaired));
