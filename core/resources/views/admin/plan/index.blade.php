@@ -11,6 +11,7 @@
                                     <th>@lang('Name')</th>
                                     <th>@lang('Price')</th>
                                     <th>@lang('Platforms')</th>
+                                    <th>@lang('Features')</th>
                                     <th>@lang('Access')</th>
                                     <th>@lang('Users')</th>
                                     <th>@lang('Status')</th>
@@ -30,6 +31,15 @@
                                                     </span>
                                                 @empty
                                                     <span class="text-muted">@lang('No platforms assigned')</span>
+                                                @endforelse
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1" style="max-width: 460px">
+                                                @forelse($plan->feature_list as $feature)
+                                                    <span class="badge badge--dark" title="{{ $feature }}">{{ $feature }}</span>
+                                                @empty
+                                                    <span class="text-muted">@lang('No custom features')</span>
                                                 @endforelse
                                             </div>
                                         </td>
