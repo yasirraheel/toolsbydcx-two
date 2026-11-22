@@ -41,6 +41,7 @@ class User extends Authenticatable
         'reseller_id' => 'integer',
         'google_flow_account_id' => 'integer',
         'tts_access' => 'boolean',
+        'gemini_access' => 'boolean',
         'tts_credit_limit' => 'integer',
         'tts_credits_used' => 'integer',
     ];

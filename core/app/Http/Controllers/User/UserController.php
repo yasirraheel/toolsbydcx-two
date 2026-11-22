@@ -65,7 +65,7 @@ class UserController extends Controller
             : $user->flow_account;
         $flowAccess = (bool) ($user->plan?->status && $user->plan?->flow_access) || (bool) $flowAccount;
         $flowAccountPending = $flowAccess && !$flowAccount;
-        $assignedToolsCount = $assignedAccounts->count() + ($flowAccess ? 1 : 0);
+        $assignedToolsCount = $assignedAccounts->count() + ($flowAccess ? 1 : 0) + ($user->gemini_access ? 1 : 0);
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->where('status', Status::PAYMENT_SUCCESS)->sum('amount');
@@ -77,6 +77,18 @@ class UserController extends Controller
             ->exists();
 
         return view('Template::user.dashboard', compact('pageTitle', 'user', 'assignedAccounts', 'flowAccount', 'flowAccess', 'flowAccountPending', 'assignedToolsCount', 'isExtensionPaired', 'totalDeposit', 'totalWithdrawals', 'isAdmin', 'adminAccounts'));
+    }
+
+    /**
+     * Open Gemini only for users whose access was explicitly granted by an
+     * administrator. The server gate remains authoritative even if someone
+     * manually types the URL instead of using the dashboard/sidebar link.
+     */
+    public function gemini()
+    {
+        abort_unless(auth()->user()?->gemini_access === true, 403, 'Gemini website access has not been assigned to this account.');
+
+        return redirect()->away('https://gemini.google.com/app');
     }
 
     /**

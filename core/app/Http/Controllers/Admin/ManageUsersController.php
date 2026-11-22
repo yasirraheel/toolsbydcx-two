@@ -278,6 +278,7 @@ class ManageUsersController extends Controller
             'expires_at' => 'nullable|date',
             'tts_access' => 'nullable|boolean',
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
+            'gemini_access' => 'nullable|boolean',
         ]);
 
         $name = trim($request->name ?: ($request->firstname . ' ' . $request->lastname));
@@ -533,6 +534,7 @@ class ManageUsersController extends Controller
             ],
             'tts_access' => 'nullable|boolean',
             'tts_credit_limit' => 'nullable|integer|min:0|max:1000000000',
+            'gemini_access' => 'nullable|boolean',
             'flow_guard_credit_limit' => 'nullable|integer|min:0|max:1000000000',
             'flow_guard_generation_cost' => 'nullable|integer|min:1|max:1000000',
             'flow_guard_full_control' => 'nullable|boolean',
@@ -603,6 +605,10 @@ class ManageUsersController extends Controller
             if ($request->has('tts_credit_limit_submitted')) {
                 $user->tts_credit_limit = $request->filled('tts_credit_limit') ? (int) $request->tts_credit_limit : null;
             }
+        }
+
+        if ($request->has('gemini_access_submitted')) {
+            $user->gemini_access = $request->boolean('gemini_access');
         }
 
         if ($request->has('flow_guard_submitted')) {

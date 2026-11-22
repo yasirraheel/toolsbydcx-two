@@ -7,6 +7,13 @@
 
     <a href="{{ route('user.extensions') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive(['user.extensions*', 'user.flow-extension*']) }}"><i class="las la-puzzle-piece fs-5"></i><span>@lang('Extensions')</span></a>
 
+    @if(auth()->user()?->gemini_access)
+        <a href="{{ route('user.gemini') }}" target="_blank" rel="noopener" class="nav-link d-flex align-items-center gap-2">
+            <i class="las la-magic fs-5"></i>
+            <span>@lang('Gemini')</span>
+        </a>
+    @endif
+
     <a href="{{ route('user.chat.history') }}" class="nav-link d-flex align-items-center gap-2 {{ menuActive('user.chat.history') }}">
         <i class="las la-comments fs-5"></i>
         <span>@lang('Chat History')</span>

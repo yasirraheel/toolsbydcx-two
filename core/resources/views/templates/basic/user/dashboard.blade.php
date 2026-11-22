@@ -266,6 +266,23 @@
                     </a>
                 </div>
             </div>
+
+            @if($user->gemini_access)
+                <div class="col-md-6">
+                    <div class="card p-4 h-100" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24;">
+                                <i class="las la-magic fs-4"></i>
+                            </div>
+                            <h5 class="text-white mb-0 fw-bold">@lang('Gemini')</h5>
+                        </div>
+                        <p class="text-muted small mb-3">@lang('Open Gemini using the access assigned to your account.')</p>
+                        <a href="{{ route('user.gemini') }}" target="_blank" rel="noopener" class="btn dcx-dashboard-action dcx-action-warning w-100 fw-bold py-2 mt-auto">
+                            <i class="las la-external-link-alt me-1"></i> @lang('Open Gemini')
+                        </a>
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- Paired Google Flow extension downloads --}}
@@ -357,6 +374,31 @@
                                             <span class="badge badge--warning">@lang('Flow account required')</span>
                                         @endif
                                     </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($user->gemini_access)
+                            <div class="product-item">
+                                <div class="product-item__wrapper flex-grow-1 align-items-center" style="min-width: 0;">
+                                    <div class="product-item__thumb flex-shrink-0" style="width: 70px; margin-right: 15px;">
+                                        <div style="width: 70px; height: 70px; background: rgba(245, 158, 11, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                            <i class="las la-magic" style="font-size: 2.8rem; color: #fbbf24;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="product-item__content flex-grow-1 ps-0" style="width: auto; min-width: 0;">
+                                        <h4 class="product-item__title d-flex align-items-center mb-0">
+                                            <span class="text--base">@lang('Gemini')</span>
+                                        </h4>
+                                        <div class="mt-1 d-flex align-items-center flex-wrap gap-2 text-muted small" style="line-height: 1.4;">
+                                            <span class="d-inline-flex align-items-center text-nowrap"><i class="las la-check-circle text--success me-1"></i>@lang('Website access enabled')</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center flex-wrap flex-shrink-0">
+                                    <a href="{{ route('user.gemini') }}" target="_blank" rel="noopener" class="btn btn--warning d-inline-flex align-items-center justify-content-center text-nowrap">
+                                        <i class="las la-external-link-alt me-1"></i> <span class="btn-text">@lang('Open Gemini')</span>
+                                    </a>
                                 </div>
                             </div>
                         @endif
