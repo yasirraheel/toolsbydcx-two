@@ -28,6 +28,11 @@
                                 @else
                                     <span class="dcx-admin-plan-status dcx-admin-plan-status-disabled">@lang('Disabled')</span>
                                 @endif
+                                @if($plan->frontend_visible)
+                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-visible">@lang('Frontend visible')</span>
+                                @else
+                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-hidden">@lang('Frontend hidden')</span>
+                                @endif
                             </div>
                             <div class="dcx-admin-plan-price">{{ showAmount($plan->price) }} <small>/ @lang('month')</small></div>
                         </div>
@@ -112,6 +117,8 @@
     .dcx-admin-plan-status { display: inline-flex; align-items: center; min-height: 25px; padding: .2rem .6rem; border-radius: 999px; font-size: .7rem; font-weight: 700; }
     .dcx-admin-plan-status-enabled { color: #047857; background: #d1fae5; border: 1px solid #6ee7b7; }
     .dcx-admin-plan-status-disabled { color: #c2410c; background: #ffedd5; border: 1px solid #fdba74; }
+    .dcx-admin-plan-status-visible { color: #1d4ed8; background: #dbeafe; border: 1px solid #93c5fd; }
+    .dcx-admin-plan-status-hidden { color: #64748b; background: #e2e8f0; border: 1px solid #cbd5e1; }
     .dcx-admin-plan-price { color: #0f172a; font-size: 1.65rem; font-weight: 800; letter-spacing: -.03em; }
     .dcx-admin-plan-price small { color: #64748b; font-size: .8rem; font-weight: 500; letter-spacing: 0; }
     .dcx-admin-plan-section-label { color: #475569; font-size: .7rem; font-weight: 800; letter-spacing: .08em; margin-bottom: .7rem; }

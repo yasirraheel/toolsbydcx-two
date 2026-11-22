@@ -28,6 +28,17 @@
 
                             <div class="col-12">
                                 <div class="border rounded p-3">
+                                    <label class="d-flex align-items-center gap-2 mb-1 fw-bold">
+                                        <input type="checkbox" name="frontend_visible" value="1"
+                                            @checked((bool) old('frontend_visible', $plan->exists ? $plan->frontend_visible : true))>
+                                        @lang('Show this plan on the frontend')
+                                    </label>
+                                    <small class="text-muted d-block">@lang('Uncheck to keep the plan active for assignments while hiding it from public pricing pages.')</small>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded p-3">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                                         <div>
                                             <label class="fw-bold mb-1">@lang('Plan Features')</label>

@@ -13,6 +13,7 @@ class Plan extends Model
 
     protected $casts = [
         'features' => 'array',
+        'frontend_visible' => 'boolean',
         'flow_access' => 'boolean',
         'google_flow_account_id' => 'integer',
         'tts_access' => 'boolean',

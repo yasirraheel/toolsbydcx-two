@@ -71,6 +71,7 @@ class PlanController extends Controller
             'name'  => 'required',
             'price' => 'required|numeric|min:0',
             'features' => 'nullable',
+            'frontend_visible' => 'nullable|boolean',
             'platform_ids' => 'nullable|array',
             'platform_ids.*' => [
                 'integer',
@@ -97,6 +98,7 @@ class PlanController extends Controller
 
         $plan->name  = $request->name;
         $plan->price = $request->price;
+        $plan->frontend_visible = $request->boolean('frontend_visible');
         
         $plan->features = $this->normalizeFeatures($request->input('features', []));
         $plan->flow_access = $request->boolean('flow_access');
