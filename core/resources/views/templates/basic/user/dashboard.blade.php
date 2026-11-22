@@ -246,7 +246,7 @@
 
         {{-- Quick Action Cards (Matching Reseller Dashboard Feature Cards) --}}
         <div class="row g-4 mb-4">
-            <div class="col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card p-4 h-100" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
@@ -263,7 +263,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card p-4 h-100" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #34d399;">
@@ -298,9 +298,9 @@
             @endif
         </div>
 
-        {{-- Paired Google Flow extension downloads --}}
+        {{-- Browser extension downloads --}}
         <div class="row g-4 mb-4">
-            <div class="col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card p-4 h-100" style="background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.28); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
@@ -314,7 +314,7 @@
                     </a>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-xl-4 col-md-6">
                 <div class="card p-4 h-100" style="background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.28); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.2); display: flex; align-items: center; justify-content: center; color: #c4b5fd;">
@@ -325,6 +325,20 @@
                     <p class="text-muted small mb-3">@lang('Install this automated sign-in extension only after Flow Guard is installed.')</p>
                     <a href="{{ route('flow-guard.main-download') }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
                         <i class="las la-download me-1"></i> @lang('Download Flow Main (Step 2)')
+                    </a>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="card p-4 h-100" style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.28); border-radius: 12px;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(14, 165, 233, 0.2); display: flex; align-items: center; justify-content: center; color: #7dd3fc;">
+                            <i class="las la-comments fs-4"></i>
+                        </div>
+                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Social Extension')</h5>
+                    </div>
+                    <p class="text-muted small mb-3">@lang('Install this extension to use your assigned ChatGPT and social platform accounts securely.')</p>
+                    <a href="{{ route('extension.download', ['filename' => 'toolsbydcx-ext.zip']) }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
+                        <i class="las la-download me-1"></i> @lang('Download Social Extension')
                     </a>
                 </div>
             </div>
