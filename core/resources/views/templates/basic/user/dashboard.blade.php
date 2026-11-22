@@ -86,6 +86,19 @@
         border-color: rgba(110, 231, 183, 0.75) !important;
     }
 
+    .dcx-user-dashboard .dcx-action-warning {
+        color: #fcd34d !important;
+        background: rgba(245, 158, 11, 0.08) !important;
+        border: 1px solid rgba(251, 191, 36, 0.5) !important;
+    }
+
+    .dcx-user-dashboard .dcx-action-warning:hover,
+    .dcx-user-dashboard .dcx-action-warning:focus-visible {
+        color: #fef3c7 !important;
+        background: rgba(245, 158, 11, 0.18) !important;
+        border-color: rgba(252, 211, 77, 0.8) !important;
+    }
+
     .dcx-user-dashboard .dcx-action-secondary,
     .dcx-user-dashboard .flow-ext-missing-btn,
     .dcx-user-dashboard .social-ext-missing-btn,
