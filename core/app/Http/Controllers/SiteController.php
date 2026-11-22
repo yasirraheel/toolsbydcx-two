@@ -140,7 +140,7 @@ class SiteController extends Controller
         }
 
         $pageTitle = 'Home';
-        $plans = \App\Models\Plan::active()->get();
+        $plans = \App\Models\Plan::active()->with('platforms')->get();
         if (auth()->check() && auth()->user()->plan_id) {
             $currentPlanId = (int) auth()->user()->plan_id;
             $plans = $plans->sortByDesc(fn ($plan) => (int) $plan->id === $currentPlanId)->values();
@@ -174,7 +174,7 @@ class SiteController extends Controller
     public function plans()
     {
         $pageTitle = "Subscription Plans";
-        $plans = \App\Models\Plan::active()->get();
+        $plans = \App\Models\Plan::active()->with('platforms')->get();
         if (auth()->check() && auth()->user()->plan_id) {
             $currentPlanId = (int) auth()->user()->plan_id;
             $plans = $plans->sortByDesc(fn ($plan) => (int) $plan->id === $currentPlanId)->values();

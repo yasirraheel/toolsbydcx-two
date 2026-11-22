@@ -148,29 +148,7 @@
         <div class="row justify-content-center g-4">
             @forelse ($plans as $plan)
                 <div class="col-xl-4 col-md-6 col-sm-10 scroll-reveal">
-                    @php
-                        $flattenFeatures = function ($items) use (&$flattenFeatures) {
-                            $result = [];
-                            foreach ((array) $items as $item) {
-                                if (is_array($item)) {
-                                    $result = array_merge($result, $flattenFeatures($item));
-                                    continue;
-                                }
-                                if (is_string($item)) {
-                                    $decoded = json_decode($item, true);
-                                    if (is_array($decoded)) {
-                                        $result = array_merge($result, $flattenFeatures($decoded));
-                                        continue;
-                                    }
-                                }
-                                if (is_scalar($item) && trim((string) $item) !== '') {
-                                    $result[] = trim(preg_replace('/^[-•]\s*/u', '', (string) $item));
-                                }
-                            }
-                            return $result;
-                        };
-                        $planFeatures = $flattenFeatures($plan->features);
-                    @endphp
+                    @php($planFeatures = $plan->feature_list)
                     <div class="card pricing-card dcx-pricing-card h-100 position-relative d-flex flex-column">
                         {{-- Card Header --}}
                         <div class="card-header border-0 pt-4 pb-3 px-4 text-center bg-transparent">
@@ -196,19 +174,6 @@
                                             <span>{{ __($feature) }}</span>
                                         </li>
                                     @endforeach
-                                @else
-                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
-                                        <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
-                                        <span>@lang('Full Access to All Platform Accounts')</span>
-                                    </li>
-                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
-                                        <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
-                                        <span>@lang('One-Click Browser Extension Login')</span>
-                                    </li>
-                                    <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
-                                        <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
-                                        <span>@lang('Automatic Token & Session Sync')</span>
-                                    </li>
                                 @endif
 
                                 @if($plan->included_resources && count($plan->included_resources) > 0)

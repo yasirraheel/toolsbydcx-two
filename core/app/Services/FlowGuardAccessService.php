@@ -206,6 +206,7 @@ class FlowGuardAccessService
                 'plan_id' => $hasPlan ? (int) $user->plan_id : null,
                 'plan_name' => $plan?->name,
                 'plan_expires_at' => $user->expires_at?->toIso8601String(),
+                'gemini_access' => (bool) $user->gemini_access,
             ],
             'access' => [
                 'enabled' => (bool) $access?->enabled,

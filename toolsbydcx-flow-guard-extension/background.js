@@ -333,6 +333,10 @@ function isFlowUrl(url) {
   return originOf(url) === 'https://flow.google.com';
 }
 
+function isGeminiUrl(url) {
+  return originOf(url) === 'https://gemini.google.com';
+}
+
 function isGoogleLoginUrl(url) {
   return originOf(url) === 'https://accounts.google.com';
 }
@@ -367,6 +371,11 @@ async function reinjectFlowGuard(tabId, url) {
   await chrome.scripting.executeScript({ target: { tabId }, files: ['flow-gate-v2.js'] }).catch(() => {});
 }
 
+async function reinjectGeminiGuard(tabId, url) {
+  if (!Number.isInteger(tabId) || !isGeminiUrl(url)) return;
+  await chrome.scripting.executeScript({ target: { tabId }, files: ['gemini-guard.js'] }).catch(() => {});
+}
+
 async function hasFullControlSession() {
   const cached = (await storage.get(FULL_CONTROL_KEY))[FULL_CONTROL_KEY];
   if (cached === true) {
@@ -379,6 +388,16 @@ async function hasFullControlSession() {
   return status?.authenticated === true
     && status.access?.enabled === true
     && status.access?.full_control === true;
+}
+
+async function hasGeminiAccess() {
+  const saved = (await storage.get(STATUS_KEY))[STATUS_KEY];
+  if (saved?.authenticated === true && saved.user?.gemini_access === true) {
+    void refreshStatus();
+    return true;
+  }
+  const status = await refreshStatus();
+  return status?.authenticated === true && status.user?.gemini_access === true;
 }
 
 async function enforceNavigation(tabId, url) {
@@ -403,6 +422,10 @@ async function enforceNavigation(tabId, url) {
   // restrictions are opt-in per user from the server-controlled toggle.
   const fullControl = await hasFullControlSession();
   if (/^(?:chrome|edge|brave|about|devtools):/i.test(url)) return;
+  if (fullControl && isGeminiUrl(url)) {
+    if (!(await hasGeminiAccess())) await chrome.tabs.update(tabId, { url: GUARD_REDIRECT }).catch(() => {});
+    return;
+  }
   if (fullControl && !isFlowUrl(url) && !isGoogleLoginUrl(url)) {
     await chrome.tabs.update(tabId, { url: GUARD_REDIRECT }).catch(() => {});
   }
@@ -414,6 +437,7 @@ async function sweepOpenTabs() {
     const url = tab.url || tab.pendingUrl || '';
     await enforceNavigation(tab.id, url);
     await reinjectFlowGuard(tab.id, url);
+    await reinjectGeminiGuard(tab.id, url);
   }));
 }
 
@@ -434,6 +458,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (token) status = await refreshStatus();
         }
         return sendResponse({ ok: true, status });
+      }
+      if (message?.type === 'GEMINI_ACCESS') {
+        if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !isGeminiUrl(sender.url)) {
+          return sendResponse({ ok: false, allowed: false, error: 'Gemini access checks are only valid from Gemini.' });
+        }
+        let token = await savedToken();
+        if (!token) {
+          await requestPanelSession();
+          token = await savedToken();
+        }
+        if (!token) return sendResponse({ ok: true, allowed: false, status: { authenticated: false } });
+        const status = await refreshStatus();
+        return sendResponse({
+          ok: true,
+          allowed: status?.authenticated === true && status.user?.gemini_access === true,
+          status
+        });
       }
       if (message?.type === 'OPEN_EDGE_EXTENSIONS') {
         if (!isPanelUrl(sender?.url) || sender?.id !== chrome.runtime.id || sender?.frameId !== 0) {
@@ -585,12 +626,18 @@ chrome.webNavigation?.onBeforeNavigate?.addListener(details => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url) void enforceNavigation(tabId, changeInfo.url);
-  if (changeInfo.status === 'complete') void reinjectFlowGuard(tabId, tab.url || '');
+  if (changeInfo.status === 'complete') {
+    void reinjectFlowGuard(tabId, tab.url || '');
+    void reinjectGeminiGuard(tabId, tab.url || '');
+  }
 });
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   const tab = await chrome.tabs.get(tabId).catch(() => null);
-  if (tab) await reinjectFlowGuard(tabId, tab.url || tab.pendingUrl || '');
+  if (tab) {
+    await reinjectFlowGuard(tabId, tab.url || tab.pendingUrl || '');
+    await reinjectGeminiGuard(tabId, tab.url || tab.pendingUrl || '');
+  }
 });
 
 // Also cover tabs that were already open before the unpacked extension was

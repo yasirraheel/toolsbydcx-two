@@ -18,6 +18,10 @@ export function isFlowUrl(value) {
   try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "flow.google.com"; }
   catch { return false; }
 }
+export function isGeminiUrl(value) {
+  try { const url = new URL(value); return url.protocol === "https:" && url.hostname === "gemini.google.com"; }
+  catch { return false; }
+}
 export function isFlowReadyUrl(value) {
   try {
     const url = new URL(value);
@@ -38,7 +42,7 @@ export function allowedNavigation(value) {
   let dcxFlow = false;
   try { dcxFlow = ["https://toolsbydcx.com", "https://www.toolsbydcx.com"].includes(new URL(value).origin); }
   catch {}
-  return isFlowUrl(value) || dcxFlow || isGoogleLoginUrl(value) || isChromeWebStoreUrl(value);
+  return isFlowUrl(value) || isGeminiUrl(value) || dcxFlow || isGoogleLoginUrl(value) || isChromeWebStoreUrl(value);
 }
 export function blockedNavigation(value) {
   try {

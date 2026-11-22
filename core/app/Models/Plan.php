@@ -57,4 +57,51 @@ class Plan extends Model
             ->pluck('name')
             ->unique();
     }
+
+    /**
+     * Return exactly the feature labels saved by the administrator.
+     *
+     * The admin form stores one label per row, while older records may still
+     * contain nested JSON or newline/comma-separated values. Normalising here
+     * gives every frontend plan card the same source of truth and prevents
+     * view-level fallback copy from masquerading as configured features.
+     */
+    public function getFeatureListAttribute(): array
+    {
+        $flatten = function ($items) use (&$flatten): array {
+            $result = [];
+            foreach ((array) $items as $item) {
+                if (is_array($item)) {
+                    $result = array_merge($result, $flatten($item));
+                    continue;
+                }
+
+                if (is_string($item)) {
+                    $decoded = json_decode($item, true);
+                    if (is_array($decoded)) {
+                        $result = array_merge($result, $flatten($decoded));
+                        continue;
+                    }
+                }
+
+                if (is_scalar($item)) {
+                    $value = trim((string) $item);
+                    if ($value !== '') $result[] = preg_replace('/^[-•]\s*/u', '', $value);
+                }
+            }
+            return $result;
+        };
+
+        $features = $flatten($this->features);
+        if (count($features) === 1 && str_contains($features[0], ',')) {
+            $features = preg_split('/\s*,\s*/', $features[0]);
+        }
+
+        return collect($features)
+            ->map(fn ($feature) => trim((string) $feature))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
 }
