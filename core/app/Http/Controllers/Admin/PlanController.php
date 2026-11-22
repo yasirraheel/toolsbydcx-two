@@ -208,4 +208,20 @@ class PlanController extends Controller
     {
         return Plan::changeStatus($id);
     }
+
+    public function visibility($id)
+    {
+        $plan = Plan::findOrFail($id);
+        $plan->frontend_visible = ! (bool) $plan->frontend_visible;
+        $plan->save();
+
+        $notify[] = [
+            'success',
+            $plan->frontend_visible
+                ? 'Plan is now visible on the frontend.'
+                : 'Plan is now hidden from the frontend.',
+        ];
+
+        return back()->withNotify($notify);
+    }
 }

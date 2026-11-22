@@ -29,9 +29,9 @@
                                     <span class="dcx-admin-plan-status dcx-admin-plan-status-disabled">@lang('Disabled')</span>
                                 @endif
                                 @if($plan->frontend_visible)
-                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-visible">@lang('Frontend visible')</span>
+                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-visible">@lang('Shown on frontend')</span>
                                 @else
-                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-hidden">@lang('Frontend hidden')</span>
+                                    <span class="dcx-admin-plan-status dcx-admin-plan-status-hidden">@lang('Hidden on frontend')</span>
                                 @endif
                             </div>
                             <div class="dcx-admin-plan-price">{{ showAmount($plan->price) }} <small>/ @lang('month')</small></div>
@@ -63,21 +63,27 @@
                         </div>
 
                         <div class="card-footer border-0 bg-transparent px-4 pb-4 pt-0">
-                            <div class="d-flex gap-2">
-                                <a class="btn btn--primary flex-grow-1" href="{{ route('admin.plan.edit', $plan->id) }}">
+                            <div class="d-grid gap-2">
+                                <a class="btn btn--primary w-100" href="{{ route('admin.plan.edit', $plan->id) }}">
                                     <i class="las la-pen"></i> @lang('Edit plan')
                                 </a>
+                                <button class="btn {{ $plan->frontend_visible ? 'btn-outline--warning' : 'btn-outline--info' }} w-100 confirmationBtn" type="button"
+                                    data-question="{{ $plan->frontend_visible ? __('Hide this plan from the frontend? It will remain active for assignments.') : __('Show this plan on the frontend?') }}"
+                                    data-action="{{ route('admin.plan.visibility', $plan->id) }}">
+                                    <i class="las {{ $plan->frontend_visible ? 'la-eye-slash' : 'la-eye' }}"></i>
+                                    {{ $plan->frontend_visible ? __('Hide from frontend') : __('Show on frontend') }}
+                                </button>
                                 @if($plan->status == \App\Constants\Status::ENABLE)
-                                    <button class="btn btn-outline--danger confirmationBtn" type="button"
+                                    <button class="btn btn-outline--danger w-100 confirmationBtn" type="button"
                                         data-question="@lang('Are you sure to disable this plan?')"
                                         data-action="{{ route('admin.plan.status', $plan->id) }}">
-                                        <i class="las la-eye-slash"></i>
+                                        <i class="las la-power-off"></i> @lang('Disable plan')
                                     </button>
                                 @else
-                                    <button class="btn btn-outline--success confirmationBtn" type="button"
+                                    <button class="btn btn-outline--success w-100 confirmationBtn" type="button"
                                         data-question="@lang('Are you sure to enable this plan?')"
                                         data-action="{{ route('admin.plan.status', $plan->id) }}">
-                                        <i class="las la-eye"></i>
+                                        <i class="las la-power-off"></i> @lang('Enable plan')
                                     </button>
                                 @endif
                             </div>

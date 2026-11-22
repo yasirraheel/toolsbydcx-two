@@ -242,6 +242,7 @@ Route::middleware('admin')->group(function () {
         Route::post('store', 'store')->name('store');
         Route::post('store/{id}', 'store')->name('update');
         Route::post('status/{id}', 'status')->name('status');
+        Route::post('visibility/{id}', 'visibility')->name('visibility');
     });
 
 
