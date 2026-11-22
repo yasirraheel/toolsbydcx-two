@@ -20,6 +20,9 @@
                     <div class="card dcx-plan-card h-100">
                         <div class="card-header dcx-plan-card-header text-center py-3">
                             <h5 class="text-white mb-2 dcx-plan-name">{{ __($plan->name) }}</h5>
+                            @if((int) $plan->status !== \App\Constants\Status::ENABLE)
+                                <span class="badge dcx-plan-status-disabled px-2 py-1 rounded-pill mb-2">@lang('Currently unavailable')</span>
+                            @endif
                             <h3 class="my-2 text--primary dcx-plan-price" >
                                 {{ showAmount($plan->price) }}
                             </h3>
@@ -46,7 +49,11 @@
                         </div>
                         
                         <div class="card-footer pb-4 pt-0 bg-transparent border-0">
-                            @auth
+                            @if((int) $plan->status !== \App\Constants\Status::ENABLE)
+                                <button class="btn dcx-plan-action dcx-plan-action-disabled btn-sm w-100 py-2" disabled>
+                                    <i class="las la-ban me-1"></i> @lang('Currently unavailable')
+                                </button>
+                            @elseif(auth()->check())
                                 @if(auth()->user()->plan_id == $plan->id)
                                     <button class="btn dcx-plan-action dcx-plan-action-current btn-sm w-100 py-2" disabled>
                                         <i class="las la-check"></i> @lang('Current Plan')
@@ -60,7 +67,7 @@
                                 <a href="{{ route('user.login') }}" class="btn dcx-plan-action dcx-plan-action-primary btn-sm w-100 py-2">
                                     <i class="las la-sign-in-alt me-1"></i> @lang('Login to Subscribe')
                                 </a>
-                            @endauth
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -151,6 +158,20 @@
         color: #c7d2fe !important;
         background: rgba(99, 102, 241, 0.14) !important;
         border: 1px solid rgba(129, 140, 248, 0.45) !important;
+    }
+
+    .dcx-plans-page .dcx-plan-status-disabled {
+        color: #fed7aa !important;
+        background: rgba(249, 115, 22, 0.14) !important;
+        border: 1px solid rgba(249, 115, 22, 0.35) !important;
+        font-size: .68rem;
+    }
+
+    .dcx-plans-page .dcx-plan-action-disabled {
+        color: #cbd5e1 !important;
+        background: rgba(100, 116, 139, 0.18) !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        cursor: not-allowed;
     }
 
     .dcx-plans-grid > [class*="col-"] {

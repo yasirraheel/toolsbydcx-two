@@ -155,6 +155,9 @@
                             <span class="badge dcx-plan-badge px-3 py-1 rounded-pill mb-3">
                                 {{ __($plan->name) }}
                             </span>
+                            @if((int) $plan->status !== \App\Constants\Status::ENABLE)
+                                <span class="badge dcx-plan-status-disabled px-2 py-1 rounded-pill mb-3">@lang('Currently unavailable')</span>
+                            @endif
                             <div class="dcx-plan-price-wrap d-flex align-items-baseline justify-content-center gap-1 my-2">
                                 <span class="display-6 fw-bold text-white dcx-plan-price">{{ showAmount($plan->price) }}</span>
                                 <span class="text-muted dcx-plan-period">/ @lang('month')</span>
@@ -189,7 +192,11 @@
 
                         {{-- Card Footer: Action Button --}}
                         <div class="card-footer border-0 p-4 bg-transparent pt-0 mt-auto">
-                            @auth
+                            @if((int) $plan->status !== \App\Constants\Status::ENABLE)
+                                <button class="btn dcx-plan-action dcx-plan-action-disabled w-100 py-2.5 rounded-pill fw-bold" disabled>
+                                    <i class="las la-ban me-1"></i> @lang('Currently unavailable')
+                                </button>
+                            @elseif(auth()->check())
                                 @if(auth()->user()->plan_id == $plan->id)
                                     <button class="btn dcx-plan-action dcx-plan-action-current w-100 py-2.5 rounded-pill fw-bold" disabled>
                                         <i class="las la-check-circle me-1"></i> @lang('Current Plan')
@@ -203,7 +210,7 @@
                                 <a href="{{ route('user.login') }}" class="btn dcx-plan-action dcx-plan-action-primary w-100 py-2.5 rounded-pill fw-bold shadow-primary">
                                     <i class="las la-sign-in-alt me-1"></i> @lang('Get Started')
                                 </a>
-                            @endauth
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -489,6 +496,20 @@
         color: #6ee7b7 !important;
         background: rgba(16, 185, 129, 0.08) !important;
         border: 1px solid rgba(52, 211, 153, 0.48) !important;
+    }
+
+    .dcx-plan-status-disabled {
+        color: #fed7aa !important;
+        background: rgba(249, 115, 22, 0.14) !important;
+        border: 1px solid rgba(249, 115, 22, 0.35) !important;
+        font-size: 11px;
+    }
+
+    .dcx-plan-action-disabled {
+        color: #cbd5e1 !important;
+        background: rgba(100, 116, 139, 0.18) !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        cursor: not-allowed;
     }
 
     .icon-box {

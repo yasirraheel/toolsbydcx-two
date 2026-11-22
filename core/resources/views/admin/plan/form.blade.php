@@ -36,7 +36,8 @@
                                         <button type="button" class="btn btn-sm btn-outline--primary" id="add-plan-feature"><i class="las la-plus"></i> @lang('Add feature')</button>
                                     </div>
                                     <div id="plan-features-list" class="d-flex flex-column gap-2">
-                                        @forelse((array) old('features', $plan->features ?? []) as $feature)
+                                        @php($configuredFeatures = old('features', $plan->feature_list ?? []))
+                                        @forelse((array) $configuredFeatures as $feature)
                                             <div class="input-group plan-feature-row">
                                                 <input type="text" class="form-control" name="features[]" maxlength="255" value="{{ $feature }}" placeholder="@lang('e.g. AI Text-to-Speech')">
                                                 <button type="button" class="btn btn-outline--danger remove-plan-feature" title="@lang('Remove feature')"><i class="las la-trash"></i></button>

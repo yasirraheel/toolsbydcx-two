@@ -140,11 +140,9 @@ class SiteController extends Controller
         }
 
         $pageTitle = 'Home';
-        $plans = \App\Models\Plan::active()->with('platforms')->get();
-        if (auth()->check() && auth()->user()->plan_id) {
-            $currentPlanId = (int) auth()->user()->plan_id;
-            $plans = $plans->sortByDesc(fn ($plan) => (int) $plan->id === $currentPlanId)->values();
-        }
+        // The public catalog contains enabled plans only; disabled plans stay
+        // visible in admin for management but are intentionally hidden here.
+        $plans = \App\Models\Plan::active()->with('platforms')->latest()->get();
         $sections = Page::where('tempname',activeTemplate())->where('slug','/')->first();
         $seoContents = @$sections->seo_content;
         $seoImage = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
@@ -174,11 +172,7 @@ class SiteController extends Controller
     public function plans()
     {
         $pageTitle = "Subscription Plans";
-        $plans = \App\Models\Plan::active()->with('platforms')->get();
-        if (auth()->check() && auth()->user()->plan_id) {
-            $currentPlanId = (int) auth()->user()->plan_id;
-            $plans = $plans->sortByDesc(fn ($plan) => (int) $plan->id === $currentPlanId)->values();
-        }
+        $plans = \App\Models\Plan::active()->with('platforms')->latest()->get();
         return view('Template::plans', compact('pageTitle', 'plans'));
     }
 
