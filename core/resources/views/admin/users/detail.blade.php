@@ -622,33 +622,33 @@
         }
         .user-edit-grid > [class*="col-"] { width: auto; }
         .user-edit-grid > .plan-assignment-col { grid-column: 1; grid-row: 2; }
-        .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 2; }
-        .user-edit-grid > .expiry-col { grid-column: 1 / span 2; grid-row: 4; }
+        .user-edit-grid > .account-overrides-col { grid-column: 1; grid-row: 3; }
+        .user-edit-grid > .expiry-col { grid-column: 1; grid-row: 4; }
         .user-edit-grid > .flow-access-stack-col {
-            grid-column: 1 / -1;
-            grid-row: 3;
+            grid-column: 2 / -1;
+            grid-row: 2 / span 2;
             width: auto;
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: .5rem;
             align-items: start;
         }
         .flow-access-stack-col > .tts-assignment-col {
-            grid-column: 1 / span 2;
+            grid-column: 1;
             grid-row: 1;
             width: auto;
             padding-left: 0;
             padding-right: 0;
         }
         .flow-access-stack-col > .flow-account-col {
-            grid-column: 3;
+            grid-column: 2;
             grid-row: 1;
             width: auto;
             padding-left: 0;
             padding-right: 0;
         }
         .flow-access-stack-col > .flow-guard-col {
-            grid-column: 3;
+            grid-column: 2;
             grid-row: 2;
             width: auto;
             padding-left: 0;
