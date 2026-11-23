@@ -202,6 +202,12 @@
         color: inherit;
     }
 
+    .dcx-chat-history .chat-history-share-url--pending {
+        color: #94a3b8;
+        background: rgba(51, 65, 85, .24);
+        border-color: rgba(148, 163, 184, .2);
+    }
+
     @media (max-width: 575.98px) {
         .dcx-chat-history .chat-history-card__header {
             align-items: flex-start;
@@ -279,9 +285,9 @@
                         <div class="chat-history-share-url chat-history-share-url--official">
                             <i class="las la-link me-1"></i><a href="{{ $chat->official_share_url }}" target="_blank" rel="noopener noreferrer">{{ $chat->official_share_url }}</a>
                         </div>
-                    @elseif($chat->is_public && $chat->share_token)
-                        <div class="chat-history-share-url">
-                            <i class="las la-link me-1"></i><a href="{{ route('chat.share', $chat->share_token) }}" target="_blank" rel="noopener noreferrer">{{ route('chat.share', $chat->share_token) }}</a>
+                    @else
+                        <div class="chat-history-share-url chat-history-share-url--pending" aria-live="polite">
+                            <i class="las la-clock me-1"></i>@lang('Official ChatGPT public link is being created…')
                         </div>
                     @endif
                 @endforeach

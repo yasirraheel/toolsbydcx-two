@@ -468,13 +468,21 @@
             if (Date.now() - state.lastPathChangedAt < 1400 || !state.serverChatIds.has(chatId)) return;
             const messages = extractMessages();
             if (!messages.length) return;
+            // The first share attempt can happen before ChatGPT has committed
+            // the conversation node. Once a real message is rendered, retry
+            // the official share flow so the panel never falls back to an
+            // internal ToolsByDcx URL.
+            const title = chatTitle(chatId);
+            if (hasUsableChatTitle(title) && !state.officialShareUrls.has(chatId)) {
+                void createOfficialShare(chatId, title);
+            }
             const signature = `${chatId}:${JSON.stringify(messages)}`;
             if (signature === state.lastArchivedSignature) return;
             state.archiveInFlight = true;
             const response = await send({
                 type: 'CHAT_HISTORY_ARCHIVE',
                 chatId,
-                title: chatTitle(chatId),
+                title,
                 messages
             });
             state.archiveInFlight = false;
