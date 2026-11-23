@@ -214,11 +214,12 @@
 
 @push('style')
 <style>
-    .account-overrides-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+    .account-overrides-grid { display: grid; grid-template-columns: 1fr; gap: .65rem; }
     .account-overrides-grid .mb-2 { margin-bottom: 0 !important; }
+    .account-overrides-grid .select2-container { width: 100% !important; }
     .account-overrides-grid .form-control,
-    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 38px; font-size: .78rem; }
-    @media (max-width: 767px) { .account-overrides-grid { grid-template-columns: 1fr; } }
+    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 46px; font-size: .95rem; }
+    .account-overrides-grid .select2-container--default .select2-selection__rendered { font-size: .95rem; line-height: 44px; }
     .dcx-tts-assignment { border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }

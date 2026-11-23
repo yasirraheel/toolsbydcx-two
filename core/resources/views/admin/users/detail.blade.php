@@ -659,30 +659,31 @@
     .user-edit-grid .form-group { height: 100%; }
     .user-edit-grid .form-control,
     .user-edit-grid .select2-container--default .select2-selection--single,
-    .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 42px; border-radius: 8px; }
+    .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 46px; border-radius: 8px; }
     .user-edit-grid .select2-container { width: 100% !important; }
     .user-edit-grid .select2-container--default .select2-selection--single { display: flex; align-items: center; }
     .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 4px; }
-    .user-edit-grid label.fw-bold { font-size: .82rem; }
-    .user-edit-grid small { font-size: .68rem !important; line-height: 1.3; }
-    .account-overrides-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+    .user-edit-grid label.fw-bold { font-size: .92rem; }
+    .user-edit-grid small { font-size: .78rem !important; line-height: 1.35; }
+    .account-overrides-grid { display: grid; grid-template-columns: 1fr; gap: .65rem; }
     .account-overrides-grid .mb-2 { margin-bottom: 0 !important; }
+    .account-overrides-grid .select2-container { width: 100% !important; }
     .account-overrides-grid .form-control,
-    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 38px; font-size: .78rem; }
-    .dcx-tts-assignment { height: 42px; min-height: 42px; align-items: center !important; padding: 0 10px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 46px; font-size: .95rem; }
+    .account-overrides-grid .select2-container--default .select2-selection__rendered { font-size: .95rem; line-height: 44px; }
+    .dcx-tts-assignment { height: 46px; min-height: 46px; align-items: center !important; padding: 0 10px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment strong, .dcx-tts-assignment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
     .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
     .dcx-expiry-panel { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
-    .dcx-expiry-panel #detailExpiresAtInput { min-height: 54px; }
+    .dcx-expiry-panel #detailExpiresAtInput { min-height: 46px; }
     .dcx-tts-credit-card { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); padding: .75rem !important; }
-    .dcx-tts-credit-card .form-control { min-height: 42px; }
+    .dcx-tts-credit-card .form-control { min-height: 46px; }
     .dcx-tts-credit-card .input-group-text { font-size: .78rem; }
     .dcx-tts-credit-card small { line-height: 1.45; }
     @media (max-width: 767px) {
-        .account-overrides-grid { grid-template-columns: 1fr; }
         .dcx-tts-assignment { height: auto; }
         .dcx-tts-assignment > span { align-items: flex-start; flex-direction: column !important; gap: 2px !important; }
     }
