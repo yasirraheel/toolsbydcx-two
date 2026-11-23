@@ -97,6 +97,27 @@
                 visibility: hidden !important;
                 pointer-events: none !important;
             }
+            /* ChatGPT changes its sidebar wrapper between desktop, mobile,
+               and experiment variants. These stable route fragments keep
+               non-chat navigation hidden even when no wrapper is discoverable. */
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/images" i],
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/scheduled" i],
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/library" i],
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/plugins" i],
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/explore" i],
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/gpts" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/images" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/scheduled" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/library" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/plugins" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/explore" i],
+            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/gpts" i],
+            html[data-toolsbydcx-chat-isolation="loading"] .toolsbydcx-global-sidebar-extra,
+            html[data-toolsbydcx-chat-isolation="ready"] .toolsbydcx-global-sidebar-extra {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
             @media (max-width: 700px) {
                 .toolsbydcx-chat-row > a {
                     min-height: 44px !important;
@@ -282,16 +303,67 @@
         });
     };
 
+    const hideGlobalSidebarItems = () => {
+        const labels = [
+            /^images(?:\b|$)/i,
+            /^scheduled(?:\b|$)/i,
+            /^library(?:\b|$)/i,
+            /^plugins?(?:\b|$)/i,
+            /^explore(?:\b|$)/i,
+            /^projects?(?:\b|$)/i,
+            /^recents?(?:\b|$)/i,
+            /^no\s+projects?$/i,
+            /^claim\s+offer(?:\b|$)/i,
+            /^upgrade(?:\b|$)/i
+        ];
+        const controls = /^(?:search(?:\s+chats?)?|(?:open|close|toggle|collapse|expand)\s+(?:sidebar|navigation|menu))$/i;
+        const knownRoutes = /\/(?:images|scheduled|library|plugins|explore|gpts)(?:\/|$)/i;
+        document.querySelectorAll('a, button, [role="button"], [role="menuitem"], [role="listitem"], li').forEach((element) => {
+            if (element.closest?.(syntheticSelector)) return;
+            if (element.matches?.('a[href*="/c/"]')) return;
+            const href = String(element.getAttribute?.('href') || '');
+            const text = sidebarText(element);
+            const isSidebarControl = (element.matches?.('button, [role="button"]') || element.tagName === 'BUTTON')
+                && controls.test(text);
+            if (!knownRoutes.test(href) && !labels.some((pattern) => pattern.test(text)) && !isSidebarControl) return;
+
+            // A section heading can share a wrapper with the user's chat list;
+            // never hide that wrapper just because it starts with "Recents" or
+            // "Projects".
+            if (element.querySelector?.('a[href*="/c/"], [data-toolsbydcx-chat-row]')) return;
+
+            const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i]') || element;
+            row.classList.add('toolsbydcx-global-sidebar-extra');
+        });
+
+        // Section headings such as Projects/Recents are often plain spans or
+        // divs rather than links. Hide their small wrapper, but never a
+        // wrapper that also contains an allowed chat row.
+        document.querySelectorAll('span, p, h1, h2, h3, h4, h5, h6, div').forEach((element) => {
+            if (element.children.length > 0) return;
+            const text = sidebarText(element);
+            if (!labels.some((pattern) => pattern.test(text))) return;
+            const row = element.parentElement;
+            if (!row || row.querySelector?.('a[href*="/c/"], [data-toolsbydcx-chat-row]')) return;
+            row.classList.add('toolsbydcx-global-sidebar-extra');
+        });
+    };
+
+    const hideUnauthorizedChatLinks = () => {
+        const allowed = state.serverReady ? state.serverChatIds : new Set();
+        document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
+            setHidden(nativeRow(link), !allowed.has(chatIdFromHref(link.getAttribute('href'))));
+        });
+    };
+
     const applySidebarPolicy = () => {
         const root = findSidebarRoot();
+        hideGlobalSidebarItems();
         if (!root) return;
         root.dataset.toolsbydcxSidebarPolicy = 'active';
 
         const allowed = state.serverReady ? state.serverChatIds : new Set();
-        root.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
-            const row = nativeRow(link);
-            setHidden(row, !allowed.has(chatIdFromHref(link.getAttribute('href'))));
-        });
+        hideUnauthorizedChatLinks();
 
         root.querySelectorAll('a, button, [role="button"], [role="menuitem"]').forEach((element) => {
             if (element.closest?.(syntheticSelector)) return;
@@ -349,6 +421,10 @@
 
         applySidebarPolicy();
         if (state.sidebarRoot?.isConnected) setIsolationState('ready');
+        else {
+            hideUnauthorizedChatLinks();
+            setIsolationState('ready');
+        }
         const target = targetSidebar();
         if (!target?.host) return;
 
@@ -423,7 +499,8 @@
         // still active. Only then reveal the sidebar, preventing a one-frame
         // flash of the host user's complete history.
         applySidebarPolicy();
-        setIsolationState(state.sidebarRoot?.isConnected ? 'ready' : 'loading');
+        if (!state.sidebarRoot?.isConnected) hideUnauthorizedChatLinks();
+        setIsolationState('ready');
         scheduleSync();
     };
 
