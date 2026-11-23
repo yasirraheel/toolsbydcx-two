@@ -378,7 +378,71 @@
                 if (!response.ok) throw new Error(payload.detail || payload.message || `ChatGPT share request failed (${response.status}).`);
                 return payload;
             };
+            const isOfficialShareUrl = (value) => /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(String(value || ''));
+            const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+            const saveOfficialShare = async (officialShareUrl) => {
+                if (!isOfficialShareUrl(officialShareUrl)) throw new Error('ChatGPT did not return an official public share URL.');
+                const saved = await send({
+                    type: 'CHAT_HISTORY_OFFICIAL_SHARE',
+                    chatId,
+                    officialShareUrl
+                });
+                if (!saved?.success) throw new Error(saved?.error || 'Could not save the official share URL.');
+                state.officialShareUrls.set(chatId, officialShareUrl);
+                const chat = state.serverChats.find((item) => item.id === chatId);
+                if (chat) chat.officialShareUrl = officialShareUrl;
+                state.officialShareAttempts.delete(chatId);
+                renderChats();
+                return officialShareUrl;
+            };
+
+            // Use the same Share control the user sees. ChatGPT's current UI
+            // can change its internal share payload, while this button always
+            // runs the supported public-link flow and publishes the snapshot.
+            const nativeShareButton = Array.from(document.querySelectorAll('button,[role="button"]'))
+                .filter((button) => !button.closest?.(`#${PANEL_ID}`))
+                .map((button) => ({
+                    button,
+                    rect: button.getBoundingClientRect?.(),
+                    label: String(button.getAttribute?.('aria-label') || button.getAttribute?.('title') || button.textContent || '')
+                        .replace(/\s+/g, ' ').trim()
+                }))
+                .filter(({ rect, label }) => rect && rect.width > 0 && rect.height > 0
+                    && rect.top >= 0 && rect.top < 240 && rect.right > window.innerWidth * .58
+                    && /^(?:share|create\s+(?:a\s+)?public\s+link)$/i.test(label));
+            const shareButton = nativeShareButton.sort((a, b) => (a.rect.top - b.rect.top) || (b.rect.right - a.rect.right))[0]?.button;
+
+            const sharedConversationUrl = async () => {
+                const payload = await chatApi('/backend-api/shared_conversations?order=created&limit=100');
+                const items = Array.isArray(payload?.items)
+                    ? payload.items
+                    : (Array.isArray(payload?.shared_conversations) ? payload.shared_conversations : []);
+                const item = items.find((entry) => String(entry?.conversation_id || entry?.conversationId || '') === chatId);
+                if (!item) return '';
+                let url = String(item?.share_url || item?.shareUrl || '');
+                const shareId = String(item?.id || item?.share_id || item?.shareId || '');
+                if (!url && shareId) url = `https://chatgpt.com/share/${shareId}`;
+                return isOfficialShareUrl(url) ? url : '';
+            };
+
+            if (shareButton) {
+                shareButton.click();
+                await sleep(250);
+                // Older ChatGPT builds show a confirmation dialog after the
+                // header button. Click only the dialog's Create-link control.
+                const createButton = Array.from(document.querySelectorAll('[role="dialog"] button, [role="dialog"] [role="button"], button'))
+                    .filter((button) => !button.closest?.(`#${PANEL_ID}`))
+                    .find((button) => /create\s+(?:a\s+)?(?:public\s+)?link/i.test(String(button.textContent || button.getAttribute?.('aria-label') || '')));
+                if (createButton) createButton.click();
+                for (let attempt = 0; attempt < 10; attempt += 1) {
+                    const url = await sharedConversationUrl().catch(() => '');
+                    if (url) return await saveOfficialShare(url);
+                    await sleep(900);
+                }
+            }
+
+            // Fallback for ChatGPT builds without an accessible header button.
             const conversation = await chatApi(`/backend-api/conversation/${encodeURIComponent(chatId)}`);
             const nodeId = String(
                 conversation?.current_node
@@ -401,10 +465,8 @@
             let officialShareUrl = String(created?.share_url || '');
             if (officialShareUrl.startsWith('/')) officialShareUrl = `${window.location.origin}${officialShareUrl}`;
 
-            // The create endpoint returns the official URL, while the PATCH
-            // makes the visibility explicit and matches ChatGPT's own share UI.
             if (shareId) {
-                const updated = await chatApi(`/backend-api/share/${encodeURIComponent(shareId)}`, {
+                await chatApi(`/backend-api/share/${encodeURIComponent(shareId)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -416,23 +478,9 @@
                         is_anonymous: true
                     })
                 });
-                officialShareUrl = String(updated?.share_url || officialShareUrl || `https://chatgpt.com/share/${shareId}`);
+                officialShareUrl = officialShareUrl || `https://chatgpt.com/share/${shareId}`;
             }
-            if (!/^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(officialShareUrl)) {
-                throw new Error('ChatGPT did not return an official public share URL.');
-            }
-
-            const saved = await send({
-                type: 'CHAT_HISTORY_OFFICIAL_SHARE',
-                chatId,
-                officialShareUrl
-            });
-            if (!saved?.success) throw new Error(saved?.error || 'Could not save the official share URL.');
-            state.officialShareUrls.set(chatId, officialShareUrl);
-            const chat = state.serverChats.find((item) => item.id === chatId);
-            if (chat) chat.officialShareUrl = officialShareUrl;
-            state.officialShareAttempts.delete(chatId);
-            renderChats();
+            return await saveOfficialShare(officialShareUrl);
         } catch (error) {
             const attempts = (state.officialShareAttempts.get(chatId) || 0) + 1;
             state.officialShareAttempts.set(chatId, attempts);

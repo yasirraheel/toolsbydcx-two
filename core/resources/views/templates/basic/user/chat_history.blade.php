@@ -287,7 +287,7 @@
                         </div>
                     @else
                         <div class="chat-history-share-url chat-history-share-url--pending" aria-live="polite">
-                            <i class="las la-clock me-1"></i>@lang('Official ChatGPT public link is being created…')
+                            <i class="las la-external-link-alt me-1"></i>@lang('Open this chat once to create its official ChatGPT public link')
                         </div>
                     @endif
                 @endforeach
