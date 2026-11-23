@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE') {
+    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE' || request.type === 'CHAT_HISTORY_DELETE') {
         handleChatHistoryMessage(request)
             .then((data) => sendResponse({ success: true, data }))
             .catch((error) => sendResponse({ success: false, status: error.status || 0, error: error.message }));
@@ -89,6 +89,18 @@ async function handleChatHistoryMessage(request) {
                 title: String(request.title || '').slice(0, 300),
                 messages
             })
+        });
+    }
+
+    if (request.type === 'CHAT_HISTORY_DELETE') {
+        const chatId = String(request.chatId || '');
+        if (!/^[A-Za-z0-9_-]{4,128}$/.test(chatId)) {
+            throw new Error('Invalid chat id.');
+        }
+        return requestChatHistory('', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'chatgpt', chat_id: chatId })
         });
     }
 

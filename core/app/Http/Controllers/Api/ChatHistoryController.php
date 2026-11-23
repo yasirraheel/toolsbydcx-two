@@ -19,7 +19,7 @@ class ChatHistoryController extends Controller
             header('Access-Control-Allow-Credentials: true');
         }
         header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, Accept');
-        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
     }
 
     private function provider(Request $request): string
@@ -95,6 +95,30 @@ class ChatHistoryController extends Controller
                 'title' => $chat->title,
                 'lastSeenAt' => optional($chat->last_seen_at)->toIso8601String(),
             ],
+        ]);
+    }
+
+    public function destroy(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'chat_id' => ['required', 'string', 'max:128', 'regex:/^[A-Za-z0-9_-]{4,128}$/'],
+        ]);
+        $provider = $this->provider($request);
+        $deleted = UserChatThread::query()
+            ->where('user_id', $user->id)
+            ->where('provider', $provider)
+            ->where('chat_id', $validated['chat_id'])
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted' => $deleted > 0,
+            'chat_id' => $validated['chat_id'],
         ]);
     }
 

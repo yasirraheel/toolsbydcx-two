@@ -30,7 +30,10 @@
         archiveTimer: null,
         archiveInFlight: false,
         registeringIds: new Set(),
+        deletedChatIds: new Set(),
+        registeredTitles: new Map(),
         syncInFlight: false,
+        liveSyncTimer: null,
         lastPath: window.location.pathname,
         observer: null
     };
@@ -143,22 +146,64 @@
                 scrollbar-width: thin;
             }
             #${PANEL_ID} .toolsbydcx-chat-row {
-                display: block;
+                display: flex;
+                align-items: center;
                 min-height: 40px;
                 margin: 2px 0;
-                padding: 9px 12px;
+                padding: 0 4px 0 12px;
                 overflow: hidden;
                 border-radius: 8px;
                 color: #d1d1d6;
-                text-decoration: none;
-                white-space: nowrap;
-                text-overflow: ellipsis;
                 transition: background .12s ease, color .12s ease;
             }
             #${PANEL_ID} .toolsbydcx-chat-row:hover,
             #${PANEL_ID} .toolsbydcx-chat-row:focus-visible {
                 color: #fff;
                 background: rgba(255,255,255,.09);
+            }
+            #${PANEL_ID} .toolsbydcx-chat-link {
+                min-width: 0;
+                flex: 1 1 auto;
+                overflow: hidden;
+                color: inherit;
+                text-decoration: none;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+            #${PANEL_ID} .toolsbydcx-delete-chat {
+                display: grid;
+                place-items: center;
+                width: 27px;
+                height: 27px;
+                flex: 0 0 27px;
+                margin-left: 5px;
+                padding: 0;
+                border: 0;
+                border-radius: 6px;
+                color: #a7a7ad;
+                background: transparent;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity .12s ease, background .12s ease, color .12s ease;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row:hover .toolsbydcx-delete-chat,
+            #${PANEL_ID} .toolsbydcx-chat-row:focus-within .toolsbydcx-delete-chat {
+                opacity: 1;
+            }
+            #${PANEL_ID} .toolsbydcx-delete-chat:hover,
+            #${PANEL_ID} .toolsbydcx-delete-chat:focus-visible {
+                color: #fff;
+                background: rgba(255,255,255,.14);
+                outline: none;
+            }
+            #${PANEL_ID} .toolsbydcx-delete-chat svg {
+                width: 15px;
+                height: 15px;
+                display: block;
+            }
+            #${PANEL_ID} .toolsbydcx-delete-chat:disabled {
+                opacity: .45;
+                cursor: wait;
             }
             #${PANEL_ID} .toolsbydcx-chat-row[data-current="true"] {
                 color: #fff;
@@ -172,7 +217,8 @@
                 #${PANEL_ID} .toolsbydcx-new-chat,
                 #${PANEL_ID} .toolsbydcx-chat-row {
                     min-height: 44px;
-                    padding: 11px 13px;
+                    padding-top: 0;
+                    padding-bottom: 0;
                     font-size: 15px;
                 }
             }
@@ -202,7 +248,20 @@
         return match?.[1] || null;
     };
 
-    const currentChatId = () => chatIdFromHref(window.location.pathname);
+    const currentChatId = () => {
+        const pathId = chatIdFromHref(window.location.pathname);
+        if (pathId) return pathId;
+
+        // ChatGPT creates the conversation id in the DOM before it updates the
+        // browser URL. Pick the active native history link during that short
+        // window so the new conversation can be registered immediately.
+        const active = Array.from(document.querySelectorAll('a[href*="/c/"]'))
+            .find((link) => !link.closest?.(`#${PANEL_ID}`)
+                && (link.getAttribute('aria-current') === 'page'
+                    || link.dataset.active === 'true'
+                    || link.getAttribute('data-active') === 'true'));
+        return chatIdFromHref(active?.getAttribute('href'));
+    };
 
     const hideNativeSidebar = () => {
         const chatLink = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'))
@@ -228,7 +287,18 @@
     };
 
     const chatTitle = (chatId) => {
-        if (!chatId) return document.title || 'Untitled chat';
+        if (chatId) {
+            // Prefer the title rendered by ChatGPT's own history item. This
+            // matches the official sidebar (including its generated title)
+            // instead of using the generic browser document title.
+            const nativeLink = Array.from(document.querySelectorAll('a[href*="/c/"]'))
+                .find((link) => !link.closest?.(`#${PANEL_ID}`)
+                    && chatIdFromHref(link.getAttribute('href')) === chatId);
+            const nativeText = String(nativeLink?.innerText || nativeLink?.textContent || '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (nativeText) return nativeText.slice(0, 300);
+        }
         return String(document.title || 'Untitled chat')
             .replace(/\s*[-|].*$/, '')
             .replace(/\s+/g, ' ')
@@ -255,7 +325,7 @@
         if (state.archiveTimer) window.clearTimeout(state.archiveTimer);
         state.archiveTimer = window.setTimeout(async () => {
             const chatId = state.currentChatId || currentChatId();
-            if (!state.serverReady || !chatId || state.archiveInFlight) return;
+            if (!state.serverReady || !chatId || state.deletedChatIds.has(chatId) || state.archiveInFlight) return;
             const messages = extractMessages();
             if (!messages.length) return;
             const signature = `${chatId}:${JSON.stringify(messages)}`;
@@ -270,6 +340,15 @@
             state.archiveInFlight = false;
             if (response?.success) state.lastArchivedSignature = signature;
         }, 1400);
+    };
+
+    const scheduleLiveSync = () => {
+        if (state.liveSyncTimer) window.clearTimeout(state.liveSyncTimer);
+        state.liveSyncTimer = window.setTimeout(() => {
+            state.liveSyncTimer = null;
+            routeChanged();
+            void refreshServerList();
+        }, 350);
     };
 
     const panel = () => document.getElementById(PANEL_ID);
@@ -321,17 +400,53 @@
         // flashes while ChatGPT is streaming a response.
         state.serverChats.forEach((chat) => {
             let row = existing.get(chat.id);
-            if (!row) {
-                row = document.createElement('a');
+            if (!row || !row.querySelector('.toolsbydcx-chat-link')) {
+                row?.remove();
+                row = document.createElement('div');
                 row.className = 'toolsbydcx-chat-row';
                 row.dataset.chatId = chat.id;
-                row.href = `/c/${encodeURIComponent(chat.id)}`;
+                const link = document.createElement('a');
+                link.className = 'toolsbydcx-chat-link';
+                link.href = `/c/${encodeURIComponent(chat.id)}`;
+                row.appendChild(link);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'toolsbydcx-delete-chat';
+                deleteButton.setAttribute('aria-label', 'Delete chat');
+                deleteButton.title = 'Delete chat';
+                deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12m-9 0V5h6v2m-7 3v7m4-7v7m4-7v7M5 7l1 14h12l1-14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                deleteButton.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (deleteButton.disabled) return;
+                    if (!window.confirm('Delete this chat from your history?')) return;
+                    deleteButton.disabled = true;
+                    const response = await send({ type: 'CHAT_HISTORY_DELETE', chatId: chat.id });
+                    if (!response?.success) {
+                        deleteButton.disabled = false;
+                        return;
+                    }
+                    state.serverChats = state.serverChats.filter((item) => item.id !== chat.id);
+                    state.serverChatIds.delete(chat.id);
+                    state.deletedChatIds.add(chat.id);
+                    state.registeredTitles.delete(chat.id);
+                    if (state.currentChatId === chat.id) state.currentChatId = null;
+                    row.remove();
+                });
+                row.appendChild(deleteButton);
                 list.appendChild(row);
             }
             const title = chat.title || 'Untitled chat';
-            if (row.textContent !== title) row.textContent = title;
+            const link = row.querySelector('.toolsbydcx-chat-link');
+            const deleteButton = row.querySelector('.toolsbydcx-delete-chat');
+            if (link && link.textContent !== title) link.textContent = title;
+            if (link) {
+                link.title = title;
+                link.setAttribute('aria-label', title);
+            }
+            if (deleteButton) deleteButton.setAttribute('aria-label', `Delete ${title}`);
             row.title = title;
-            row.setAttribute('aria-label', title);
             row.dataset.current = chat.id === state.currentChatId ? 'true' : 'false';
             existing.delete(chat.id);
         });
@@ -356,6 +471,7 @@
             .filter((chat) => CHAT_ID_RE.test(chat.id))
             .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
         state.serverChatIds = new Set(state.serverChats.map((chat) => chat.id));
+        state.registeredTitles = new Map(state.serverChats.map((chat) => [chat.id, chat.title]));
         state.serverReady = true;
         renderChats();
     };
@@ -367,14 +483,27 @@
             applyServerList(await send({ type: 'CHAT_HISTORY_LIST' }));
             const id = currentChatId();
             state.currentChatId = id;
-            if (id && !state.serverChatIds.has(id) && !state.registeringIds.has(id)) {
+            const title = id ? chatTitle(id) : '';
+            const titleChanged = id && state.serverChatIds.has(id)
+                && title && state.registeredTitles.get(id) !== title;
+            if (id && !state.deletedChatIds.has(id)
+                && (!state.serverChatIds.has(id) || titleChanged)
+                && !state.registeringIds.has(id)) {
                 state.registeringIds.add(id);
-                const response = await send({ type: 'CHAT_HISTORY_REGISTER', chatId: id, title: chatTitle(id) });
+                const response = await send({ type: 'CHAT_HISTORY_REGISTER', chatId: id, title });
                 state.registeringIds.delete(id);
                 if (response?.success && response.data?.chat?.id) {
                     const chat = response.data.chat;
                     state.serverChatIds.add(id);
-                    state.serverChats.unshift({ id, title: String(chat.title || chatTitle(id)).slice(0, 300) });
+                    const nextTitle = String(chat.title || title || 'Untitled chat')
+                        .replace(/\s+/g, ' ').trim().slice(0, 300);
+                    state.registeredTitles.set(id, nextTitle);
+                    const existing = state.serverChats.find((item) => item.id === id);
+                    if (existing) {
+                        existing.title = nextTitle;
+                    } else {
+                        state.serverChats.unshift({ id, title: nextTitle });
+                    }
                     renderChats();
                 }
             }
@@ -387,9 +516,11 @@
 
     const routeChanged = () => {
         const path = window.location.pathname;
-        if (path === state.lastPath) return;
+        const id = currentChatId();
+        if (path === state.lastPath && id === state.currentChatId) return;
         state.lastPath = path;
-        state.currentChatId = currentChatId();
+        state.currentChatId = id;
+        if (id) state.deletedChatIds.delete(id);
         state.lastArchivedSignature = '';
         renderChats();
         void refreshServerList();
@@ -412,6 +543,10 @@
             }
             if (contentChanged) {
                 if (!document.querySelector('.toolsbydcx-host-sidebar-hidden')) hideNativeSidebar();
+                // A first message creates the /c/{id} route and native title
+                // asynchronously. Debounce a sync so the custom list updates
+                // as soon as ChatGPT has committed that DOM change.
+                scheduleLiveSync();
                 scheduleArchive();
             }
         });
@@ -426,6 +561,11 @@
             };
         }
         window.addEventListener('popstate', routeChanged, { passive: true });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+                scheduleLiveSync();
+            }
+        }, true);
 
         void refreshServerList();
         window.setInterval(() => {

@@ -48,6 +48,7 @@ Route::prefix('api/extension')->name('api.extension.')->namespace('Api')->group(
         Route::get('cookies/{platformId}/{accountId?}', 'ExtensionController@getCookies')->name('cookies');
         Route::get('chat-history', 'ChatHistoryController@index')->middleware('throttle:120,1')->name('chat.history.index');
         Route::post('chat-history', 'ChatHistoryController@store')->middleware('throttle:120,1')->name('chat.history.store');
+        Route::delete('chat-history', 'ChatHistoryController@destroy')->middleware('throttle:60,1')->name('chat.history.destroy');
         Route::post('chat-history/archive', 'ChatHistoryController@archive')->middleware('throttle:30,1')->name('chat.history.archive');
         Route::post('chat-history/share', 'ChatHistoryController@share')->middleware('throttle:30,1')->name('chat.history.share');
     });
