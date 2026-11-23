@@ -95,12 +95,20 @@ class ChatHistoryController extends Controller
             ]
         );
 
+        // A new chat receives its stable ToolsByDcx share link immediately;
+        // archiving messages later only fills the content behind that link.
+        $chat->share_token = $chat->share_token ?: Str::random(48);
+        $chat->is_public = true;
+        $chat->save();
+
         return response()->json([
             'success' => true,
             'chat' => [
                 'id' => $chat->chat_id,
                 'title' => $chat->title,
                 'lastSeenAt' => optional($chat->last_seen_at)->toIso8601String(),
+                'isPublic' => true,
+                'shareUrl' => route('chat.share', $chat->share_token),
             ],
         ]);
     }
