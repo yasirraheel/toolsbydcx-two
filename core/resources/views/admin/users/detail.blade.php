@@ -622,27 +622,23 @@
         }
         .user-edit-grid > [class*="col-"] { width: auto; }
         .user-edit-grid > .plan-assignment-col { grid-column: 1; grid-row: 2; }
-        .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 4; }
+        .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 3; }
         .user-edit-grid > .tts-assignment-col { grid-column: 1 / span 2; grid-row: 3; }
         .user-edit-grid > .expiry-col { grid-column: 1 / span 2; grid-row: 4; }
         .user-edit-grid > .flow-access-stack-col {
-            grid-column: 3;
-            grid-row: 2 / span 2;
-            width: auto;
-            display: flex;
-            flex-direction: column;
-            gap: .5rem;
-            align-items: start;
+            display: contents;
         }
         .flow-access-stack-col > .flow-account-col {
-            order: 1;
-            width: 100%;
+            grid-column: 3;
+            grid-row: 2;
+            width: auto;
             padding-left: 0;
             padding-right: 0;
         }
         .flow-access-stack-col > .flow-guard-col {
-            order: 2;
-            width: 100%;
+            grid-column: 3;
+            grid-row: 4;
+            width: auto;
             padding-left: 0;
             padding-right: 0;
         }
