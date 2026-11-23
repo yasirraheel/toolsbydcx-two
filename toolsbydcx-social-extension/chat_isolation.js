@@ -1,10 +1,11 @@
-// ChatGPT chat isolation for the ToolsByDcx Social extension.
+// ToolsByDcx Social: isolated ChatGPT sidebar.
 //
-// The panel session is the authority. The extension never treats the
-// ChatGPT sidebar as an allow-list: it hides the host rows until the server
-// returns the current panel user's chat ids, then reveals only those ids.
-// DOM work is batched with requestAnimationFrame so ChatGPT's streaming UI
-// does not cause the sidebar to blink or re-render continuously.
+// ChatGPT virtualizes and reorders its native sidebar while messages load.
+// Hiding individual native rows therefore causes a layout/reconciliation loop
+// (the visible blinking users see). This file never edits that list. It hides
+// the host sidebar once, then renders a small stable sidebar owned by the
+// extension and populated only from the authenticated panel user's server
+// allow-list.
 (() => {
     'use strict';
 
@@ -18,21 +19,20 @@
     if (!isChatHost) return;
 
     const CHAT_ID_RE = /^[A-Za-z0-9_-]{4,128}$/;
-    const syntheticSelector = '[data-toolsbydcx-chat-row]';
+    const PANEL_ID = 'toolsbydcx-chat-sidebar';
+    const STYLE_ID = 'toolsbydcx-chat-isolation-style';
     const state = {
         serverReady: false,
         serverChats: [],
         serverChatIds: new Set(),
-        syncQueued: false,
-        bodyObserver: null,
         currentChatId: null,
         lastArchivedSignature: '',
         archiveTimer: null,
         archiveInFlight: false,
-        registeredIds: new Set(),
         registeringIds: new Set(),
+        syncInFlight: false,
         lastPath: window.location.pathname,
-        sidebarRoot: null
+        observer: null
     };
 
     const setIsolationState = (value) => {
@@ -42,87 +42,105 @@
     };
 
     const installStyles = () => {
-        if (document.getElementById('toolsbydcx-chat-isolation-style')) return;
+        if (document.getElementById(STYLE_ID)) return;
         const style = document.createElement('style');
-        style.id = 'toolsbydcx-chat-isolation-style';
+        style.id = STYLE_ID;
         style.textContent = `
-            /* Fail closed before the panel allow-list is loaded. Keep the
-               sidebar invisible until we can apply the user-scoped policy so
-               another user's history never flashes on screen. */
-            html[data-toolsbydcx-chat-isolation="loading"] aside,
-            html[data-toolsbydcx-chat-isolation="loading"] nav,
-            html[data-toolsbydcx-chat-isolation="loading"] [role="navigation"],
-            html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="sidebar" i],
-            html[data-toolsbydcx-chat-isolation="loading"] [class*="sidebar" i] {
-                visibility: hidden !important;
-            }
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/c/"] {
-                visibility: hidden !important;
-                pointer-events: none !important;
-            }
-            .toolsbydcx-chat-hidden {
+            /* Hide the virtualized host sidebar before its first paint. The
+               extension-owned panel below is excluded from every selector. */
+            html[data-toolsbydcx-chat-isolation="loading"] aside:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="loading"] nav:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="loading"] [role="navigation"]:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="sidebar" i]:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="loading"] [class*="sidebar" i]:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="active"] aside:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="active"] nav:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="active"] [role="navigation"]:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="active"] [data-testid*="sidebar" i]:not(#${PANEL_ID}),
+            html[data-toolsbydcx-chat-isolation="active"] [class*="sidebar" i]:not(#${PANEL_ID}) {
                 display: none !important;
                 visibility: hidden !important;
                 pointer-events: none !important;
             }
-            .toolsbydcx-chat-row {
-                list-style: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            .toolsbydcx-chat-row > a {
-                display: flex !important;
-                align-items: center !important;
-                min-height: 40px !important;
-                margin: 2px 8px !important;
-                padding: 8px 12px !important;
-                border-radius: 8px !important;
-                color: #ececf1 !important;
-                font-size: 14px !important;
-                line-height: 20px !important;
-                text-decoration: none !important;
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-            }
-            .toolsbydcx-chat-row > a:hover,
-            .toolsbydcx-chat-row > a:focus-visible {
-                background: rgba(255, 255, 255, .08) !important;
-            }
-            /* The Social extension owns this sidebar surface. Only the New
-               chat control and the current user's chat rows are left visible. */
-            [data-toolsbydcx-sidebar-policy="active"] .toolsbydcx-sidebar-extra,
-            [data-toolsbydcx-sidebar-policy="active"] .toolsbydcx-sidebar-label {
-                display: none !important;
+            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/c/"],
+            html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="history-item" i] {
                 visibility: hidden !important;
                 pointer-events: none !important;
             }
-            /* ChatGPT changes its sidebar wrapper between desktop, mobile,
-               and experiment variants. These stable route fragments keep
-               non-chat navigation hidden even when no wrapper is discoverable. */
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/images" i],
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/scheduled" i],
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/library" i],
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/plugins" i],
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/explore" i],
-            html[data-toolsbydcx-chat-isolation="loading"] a[href*="/gpts" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/images" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/scheduled" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/library" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/plugins" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/explore" i],
-            html[data-toolsbydcx-chat-isolation="ready"] a[href*="/gpts" i],
-            html[data-toolsbydcx-chat-isolation="loading"] .toolsbydcx-global-sidebar-extra,
-            html[data-toolsbydcx-chat-isolation="ready"] .toolsbydcx-global-sidebar-extra {
-                display: none !important;
-                visibility: hidden !important;
-                pointer-events: none !important;
+            #${PANEL_ID} {
+                all: initial;
+                box-sizing: border-box;
+                position: fixed;
+                z-index: 2147483000;
+                inset: 0 auto 0 0;
+                width: 292px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 18px 10px 14px;
+                overflow: hidden;
+                background: #171717;
+                color: #ececf1;
+                border-right: 1px solid rgba(255,255,255,.12);
+                font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 14px;
+                line-height: 1.35;
+                box-shadow: 8px 0 24px rgba(0,0,0,.18);
+            }
+            #${PANEL_ID}, #${PANEL_ID} * { box-sizing: border-box; }
+            #${PANEL_ID} .toolsbydcx-new-chat {
+                display: flex;
+                align-items: center;
+                min-height: 44px;
+                padding: 10px 13px;
+                border-radius: 9px;
+                color: #fff;
+                background: #2f2f2f;
+                font-size: 15px;
+                font-weight: 600;
+                text-decoration: none;
+                transition: background .12s ease;
+            }
+            #${PANEL_ID} .toolsbydcx-new-chat:hover,
+            #${PANEL_ID} .toolsbydcx-new-chat:focus-visible { background: #3d3d3d; }
+            #${PANEL_ID} .toolsbydcx-chat-list {
+                min-height: 0;
+                flex: 1 1 auto;
+                overflow-y: auto;
+                scrollbar-width: thin;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row {
+                display: block;
+                min-height: 40px;
+                margin: 2px 0;
+                padding: 9px 12px;
+                overflow: hidden;
+                border-radius: 8px;
+                color: #d1d1d6;
+                text-decoration: none;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                transition: background .12s ease, color .12s ease;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row:hover,
+            #${PANEL_ID} .toolsbydcx-chat-row:focus-visible {
+                color: #fff;
+                background: rgba(255,255,255,.09);
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row[data-current="true"] {
+                color: #fff;
+                background: #2f2f2f;
             }
             @media (max-width: 700px) {
-                .toolsbydcx-chat-row > a {
-                    min-height: 44px !important;
-                    padding: 10px 14px !important;
-                    font-size: 15px !important;
+                #${PANEL_ID} {
+                    width: min(86vw, 320px);
+                    padding: 12px 8px 10px;
+                }
+                #${PANEL_ID} .toolsbydcx-new-chat,
+                #${PANEL_ID} .toolsbydcx-chat-row {
+                    min-height: 44px;
+                    padding: 11px 13px;
+                    font-size: 15px;
                 }
             }
         `;
@@ -155,9 +173,8 @@
 
     const chatTitle = (chatId) => {
         if (!chatId) return document.title || 'Untitled chat';
-        const link = Array.from(document.querySelectorAll('a[href*="/c/"]'))
-            .find((item) => chatIdFromHref(item.getAttribute('href')) === chatId);
-        return String(link?.innerText || link?.textContent || document.title || 'Untitled chat')
+        return String(document.title || 'Untitled chat')
+            .replace(/\s*[-|].*$/, '')
             .replace(/\s+/g, ' ')
             .trim()
             .slice(0, 300) || 'Untitled chat';
@@ -199,281 +216,50 @@
         }, 1400);
     };
 
-    const sidebarText = (element) => String(
-        element?.getAttribute?.('aria-label')
-        || element?.getAttribute?.('title')
-        || element?.innerText
-        || element?.textContent
-        || ''
-    ).replace(/\s+/g, ' ').trim();
+    const panel = () => document.getElementById(PANEL_ID);
 
-    const isNewChatControl = (element) => {
-        if (!element) return false;
-        const text = sidebarText(element);
-        if (/^new\s+chat(?:\b|$)/i.test(text)) return true;
-        const href = String(element.getAttribute?.('href') || '').trim();
-        return /^\/(?:new(?:-chat)?|new-chat)\/?$/i.test(href)
-            && !element.closest?.('a[href*="/c/"]');
+    const createPanel = () => {
+        const existing = panel();
+        if (existing) return existing;
+        const root = document.createElement('aside');
+        root.id = PANEL_ID;
+        root.setAttribute('aria-label', 'ToolsByDcx chats');
+        root.innerHTML = `
+            <a class="toolsbydcx-new-chat" href="/" aria-label="New chat">New chat</a>
+            <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
+        `;
+        (document.body || document.documentElement).prepend(root);
+        return root;
     };
 
-    const sidebarCandidates = () => Array.from(document.querySelectorAll(
-        'aside, nav, [role="navigation"], [data-testid*="sidebar" i], [class*="sidebar" i]'
-    )).filter((element) => {
-        if (!element || element === document.body) return false;
-        return Boolean(element.querySelector?.('a[href*="/c/"]'))
-            || /new\s+chat/i.test(String(element.textContent || ''));
-    });
+    const renderChats = () => {
+        const root = createPanel();
+        const list = root.querySelector('.toolsbydcx-chat-list');
+        if (!list) return;
+        const existing = new Map(Array.from(list.querySelectorAll('[data-chat-id]'))
+            .map((row) => [row.dataset.chatId, row]));
 
-    const findSidebarRoot = () => {
-        if (state.sidebarRoot?.isConnected) return state.sidebarRoot;
-        const candidates = sidebarCandidates();
-        // Prefer the smallest candidate containing the history links. This
-        // avoids hiding the page shell when ChatGPT nests nav elements.
-        const root = candidates.sort((left, right) => {
-            const leftArea = left.getBoundingClientRect?.().width || Number.MAX_SAFE_INTEGER;
-            const rightArea = right.getBoundingClientRect?.().width || Number.MAX_SAFE_INTEGER;
-            return leftArea - rightArea;
-        })[0] || null;
-        if (root) {
-            state.sidebarRoot = root;
-            return root;
-        }
-
-        // Mobile builds sometimes use an unnamed drawer instead of <aside>.
-        // Walk up from a chat link until the ancestor looks like the narrow
-        // history column and contains the New chat control.
-        const sample = document.querySelector('a[href*="/c/"]');
-        let cursor = sample?.parentElement || null;
-        for (let depth = 0; cursor && depth < 10; depth += 1, cursor = cursor.parentElement) {
-            const rect = cursor.getBoundingClientRect?.();
-            if (rect && rect.width > 120 && rect.width < window.innerWidth * 0.75
-                && /new\s+chat/i.test(String(cursor.textContent || ''))) {
-                state.sidebarRoot = cursor;
-                return cursor;
-            }
-        }
-        return null;
-    };
-
-    const targetSidebar = () => {
-        const nativeLinks = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'));
-        const sample = nativeLinks[nativeLinks.length - 1] || null;
-        const root = findSidebarRoot();
-        if (!sample) return root ? { host: root, sample: null } : null;
-        const row = sample.closest('li, [role="listitem"], [data-testid="history-item"], [data-testid*="history-item" i]');
-        return { host: row?.parentElement || root || sample.parentElement, sample };
-    };
-
-    const setHidden = (element, hidden) => {
-        if (!element) return;
-        const hasClass = element.classList.contains('toolsbydcx-chat-hidden');
-        if (hidden && !hasClass) element.classList.add('toolsbydcx-chat-hidden');
-        if (!hidden && hasClass) element.classList.remove('toolsbydcx-chat-hidden');
-    };
-
-    const nativeRow = (link) => link.closest(
-        'li, [role="listitem"], [data-testid="history-item"], [data-testid*="history-item" i]'
-    ) || link;
-
-    const rowChatId = (row) => {
-        const link = row?.matches?.('a[href*="/c/"]')
-            ? row
-            : row?.querySelector?.('a[href*="/c/"]');
-        return chatIdFromHref(link?.getAttribute?.('href'));
-    };
-
-    const markSidebarExtra = (element, hidden = true) => {
-        if (!element || element === state.sidebarRoot) return;
-        const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i], [data-testid*="history-item" i]')
-            || (element.parentElement && element.parentElement !== state.sidebarRoot ? element.parentElement : element);
-        if (!row || row === state.sidebarRoot) return;
-        row.classList.toggle('toolsbydcx-sidebar-extra', hidden);
-    };
-
-    const hideSidebarLabels = (root) => {
-        const labels = new Set([
-            'images', 'scheduled', 'library', 'plugins', 'explore', 'gpts',
-            'projects', 'recents', 'recent', 'tasks', 'settings', 'help',
-            'upgrade plan', 'claim offer'
-        ]);
-        root.querySelectorAll('*').forEach((element) => {
-            if (element.children.length > 0) return;
-            const value = sidebarText(element).toLowerCase();
-            if (labels.has(value)) element.classList.add('toolsbydcx-sidebar-label');
-        });
-    };
-
-    const hideGlobalSidebarItems = () => {
-        const labels = [
-            /^images(?:\b|$)/i,
-            /^scheduled(?:\b|$)/i,
-            /^library(?:\b|$)/i,
-            /^plugins?(?:\b|$)/i,
-            /^explore(?:\b|$)/i,
-            /^projects?(?:\b|$)/i,
-            /^recents?(?:\b|$)/i,
-            /^no\s+projects?$/i,
-            /^claim\s+offer(?:\b|$)/i,
-            /^upgrade(?:\b|$)/i
-        ];
-        const controls = /^(?:search(?:\s+chats?)?|(?:open|close|toggle|collapse|expand)\s+(?:sidebar|navigation|menu))$/i;
-        const knownRoutes = /\/(?:images|scheduled|library|plugins|explore|gpts)(?:\/|$)/i;
-        document.querySelectorAll('a, button, [role="button"], [role="menuitem"], [role="listitem"], li').forEach((element) => {
-            if (element.closest?.(syntheticSelector)) return;
-            if (element.matches?.('a[href*="/c/"]')) return;
-            const href = String(element.getAttribute?.('href') || '');
-            const text = sidebarText(element);
-            const isSidebarControl = (element.matches?.('button, [role="button"]') || element.tagName === 'BUTTON')
-                && controls.test(text);
-            if (!knownRoutes.test(href) && !labels.some((pattern) => pattern.test(text)) && !isSidebarControl) return;
-
-            // A section heading can share a wrapper with the user's chat list;
-            // never hide that wrapper just because it starts with "Recents" or
-            // "Projects".
-            if (element.querySelector?.('a[href*="/c/"], [data-toolsbydcx-chat-row]')) return;
-
-            const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i]') || element;
-            row.classList.add('toolsbydcx-global-sidebar-extra');
-        });
-
-        // Section headings such as Projects/Recents are often plain spans or
-        // divs rather than links. Hide their small wrapper, but never a
-        // wrapper that also contains an allowed chat row.
-        document.querySelectorAll('span, p, h1, h2, h3, h4, h5, h6, div').forEach((element) => {
-            if (element.children.length > 0) return;
-            const text = sidebarText(element);
-            if (!labels.some((pattern) => pattern.test(text))) return;
-            const row = element.parentElement;
-            if (!row || row.querySelector?.('a[href*="/c/"], [data-toolsbydcx-chat-row]')) return;
-            row.classList.add('toolsbydcx-global-sidebar-extra');
-        });
-    };
-
-    const hideUnauthorizedChatLinks = () => {
-        const allowed = state.serverReady ? state.serverChatIds : new Set();
-        document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
-            setHidden(nativeRow(link), !allowed.has(chatIdFromHref(link.getAttribute('href'))));
-        });
-    };
-
-    const applySidebarPolicy = () => {
-        const root = findSidebarRoot();
-        hideGlobalSidebarItems();
-        if (!root) return;
-        root.dataset.toolsbydcxSidebarPolicy = 'active';
-
-        const allowed = state.serverReady ? state.serverChatIds : new Set();
-        hideUnauthorizedChatLinks();
-
-        root.querySelectorAll('a, button, [role="button"], [role="menuitem"]').forEach((element) => {
-            if (element.closest?.(syntheticSelector)) return;
-            const chatLink = element.matches?.('a[href*="/c/"]')
-                ? element
-                : element.closest?.('a[href*="/c/"]');
-            if (chatLink) {
-                // Keep the entire row (including its overflow button) when the
-                // server has authorised this chat.
-                const row = nativeRow(chatLink);
-                if (allowed.has(chatIdFromHref(chatLink.getAttribute('href')))) {
-                    row.classList.remove('toolsbydcx-sidebar-extra');
-                }
-                return;
-            }
-            const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i], [data-testid*="history-item" i]');
-            const rowChat = rowChatId(row);
-            if (rowChat && allowed.has(rowChat)) return;
-            if (isNewChatControl(element)) {
-                markSidebarExtra(element, false);
-                return;
-            }
-            markSidebarExtra(element, true);
-        });
-
-        hideSidebarLabels(root);
-        root.dataset.toolsbydcxSidebarReady = state.serverReady ? 'ready' : 'waiting';
-    };
-
-    const removeSyntheticRows = () => {
-        document.querySelectorAll(syntheticSelector).forEach((row) => row.remove());
-    };
-
-    const makeSyntheticRow = (chat) => {
-        const row = document.createElement('li');
-        row.className = 'toolsbydcx-chat-row';
-        row.dataset.toolsbydcxChatRow = chat.id;
-        const link = document.createElement('a');
-        link.href = `/c/${encodeURIComponent(chat.id)}`;
-        link.textContent = chat.title || 'Untitled chat';
-        link.title = chat.title || 'Untitled chat';
-        link.setAttribute('aria-label', chat.title || 'Untitled chat');
-        row.appendChild(link);
-        return row;
-    };
-
-    const syncSidebar = () => {
-        if (!state.serverReady) {
-            removeSyntheticRows();
-            document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])')
-                .forEach((link) => setHidden(nativeRow(link), true));
-            applySidebarPolicy();
-            return;
-        }
-
-        applySidebarPolicy();
-        if (state.sidebarRoot?.isConnected) setIsolationState('ready');
-        else {
-            hideUnauthorizedChatLinks();
-            setIsolationState('ready');
-        }
-        const target = targetSidebar();
-        if (!target?.host) return;
-
-        // ChatGPT virtualizes pinned/recent lists. Remove synthetic rows that
-        // belong to an old list container before rendering into the current one.
-        document.querySelectorAll(syntheticSelector).forEach((row) => {
-            if (!target.host.contains(row)) row.remove();
-        });
-
-        const allowed = state.serverChatIds;
-        const visibleNativeIds = new Set();
-        document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
-            const id = chatIdFromHref(link.getAttribute('href'));
-            if (!id) return;
-            const row = nativeRow(link);
-            const isAllowed = allowed.has(id);
-            setHidden(row, !isAllowed);
-            if (isAllowed) visibleNativeIds.add(id);
-        });
-
-        const existing = new Map();
-        target.host.querySelectorAll(syntheticSelector).forEach((row) => existing.set(row.dataset.toolsbydcxChatRow, row));
+        // Update rows in place. No innerHTML replacement means the list never
+        // flashes while ChatGPT is streaming a response.
         state.serverChats.forEach((chat) => {
-            if (visibleNativeIds.has(chat.id)) return;
             let row = existing.get(chat.id);
             if (!row) {
-                row = makeSyntheticRow(chat);
-                target.host.appendChild(row);
+                row = document.createElement('a');
+                row.className = 'toolsbydcx-chat-row';
+                row.dataset.chatId = chat.id;
+                row.href = `/c/${encodeURIComponent(chat.id)}`;
+                list.appendChild(row);
             }
-            const link = row.querySelector('a');
-            if (link) {
-                const title = chat.title || 'Untitled chat';
-                if (link.textContent !== title) link.textContent = title;
-                link.title = title;
-                link.setAttribute('aria-label', title);
-            }
+            const title = chat.title || 'Untitled chat';
+            if (row.textContent !== title) row.textContent = title;
+            row.title = title;
+            row.setAttribute('aria-label', title);
+            row.dataset.current = chat.id === state.currentChatId ? 'true' : 'false';
             existing.delete(chat.id);
         });
-        existing.forEach((row) => row.remove());
-        applySidebarPolicy();
-    };
 
-    const scheduleSync = () => {
-        if (state.syncQueued) return;
-        state.syncQueued = true;
-        window.requestAnimationFrame(() => {
-            state.syncQueued = false;
-            syncSidebar();
-        });
+        existing.forEach((row) => row.remove());
+        if (!state.serverReady) list.replaceChildren();
     };
 
     const applyServerList = (response) => {
@@ -481,11 +267,9 @@
             state.serverReady = false;
             state.serverChats = [];
             state.serverChatIds = new Set();
-            setIsolationState('loading');
-            scheduleSync();
+            renderChats();
             return;
         }
-
         state.serverChats = response.data.chats
             .map((chat) => ({
                 id: String(chat?.id || ''),
@@ -495,32 +279,32 @@
             .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
         state.serverChatIds = new Set(state.serverChats.map((chat) => chat.id));
         state.serverReady = true;
-        // Apply all hiding/allow-list classes while the fail-closed CSS is
-        // still active. Only then reveal the sidebar, preventing a one-frame
-        // flash of the host user's complete history.
-        applySidebarPolicy();
-        if (!state.sidebarRoot?.isConnected) hideUnauthorizedChatLinks();
-        setIsolationState('ready');
-        scheduleSync();
+        renderChats();
     };
 
     const refreshServerList = async () => {
-        applyServerList(await send({ type: 'CHAT_HISTORY_LIST' }));
-        const id = currentChatId();
-        state.currentChatId = id;
-        if (id && !state.serverChatIds.has(id) && !state.registeringIds.has(id)) {
-            state.registeringIds.add(id);
-            const response = await send({ type: 'CHAT_HISTORY_REGISTER', chatId: id, title: chatTitle(id) });
-            state.registeringIds.delete(id);
-            if (response?.success && response.data?.chat?.id) {
-                const chat = response.data.chat;
-                state.registeredIds.add(id);
-                state.serverChatIds.add(id);
-                state.serverChats.unshift({ id, title: String(chat.title || chatTitle(id)).slice(0, 300) });
-                scheduleSync();
+        if (state.syncInFlight) return;
+        state.syncInFlight = true;
+        try {
+            applyServerList(await send({ type: 'CHAT_HISTORY_LIST' }));
+            const id = currentChatId();
+            state.currentChatId = id;
+            if (id && !state.serverChatIds.has(id) && !state.registeringIds.has(id)) {
+                state.registeringIds.add(id);
+                const response = await send({ type: 'CHAT_HISTORY_REGISTER', chatId: id, title: chatTitle(id) });
+                state.registeringIds.delete(id);
+                if (response?.success && response.data?.chat?.id) {
+                    const chat = response.data.chat;
+                    state.serverChatIds.add(id);
+                    state.serverChats.unshift({ id, title: String(chat.title || chatTitle(id)).slice(0, 300) });
+                    renderChats();
+                }
             }
+            renderChats();
+            scheduleArchive();
+        } finally {
+            state.syncInFlight = false;
         }
-        scheduleArchive();
     };
 
     const routeChanged = () => {
@@ -529,26 +313,25 @@
         state.lastPath = path;
         state.currentChatId = currentChatId();
         state.lastArchivedSignature = '';
-        scheduleSync();
-        refreshServerList();
+        renderChats();
+        void refreshServerList();
     };
 
     const start = () => {
         if (!document.body || document.body.dataset.toolsbydcxChatIsolationStarted) return;
         document.body.dataset.toolsbydcxChatIsolationStarted = '1';
+        createPanel();
+        setIsolationState('active');
 
-        state.bodyObserver = new MutationObserver((mutations) => {
-            let structureChanged = false;
+        state.observer = new MutationObserver((mutations) => {
             let contentChanged = false;
             for (const mutation of mutations) {
-                if (mutation.target?.closest?.(syntheticSelector)) continue;
-                if (mutation.type === 'childList') structureChanged = true;
-                if (mutation.type === 'characterData') contentChanged = true;
+                if (mutation.target?.closest?.(`#${PANEL_ID}`)) continue;
+                if (mutation.type === 'characterData' || mutation.type === 'childList') contentChanged = true;
             }
-            if (structureChanged) scheduleSync();
-            if (structureChanged || contentChanged) scheduleArchive();
+            if (contentChanged) scheduleArchive();
         });
-        state.bodyObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+        state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
         for (const method of ['pushState', 'replaceState']) {
             const original = history[method];
@@ -560,13 +343,10 @@
         }
         window.addEventListener('popstate', routeChanged, { passive: true });
 
-        // Apply the fail-closed sidebar policy immediately. This leaves only
-        // New chat visible while the user-scoped chat list is loading.
-        applySidebarPolicy();
-        refreshServerList();
+        void refreshServerList();
         window.setInterval(() => {
             routeChanged();
-            refreshServerList();
+            void refreshServerList();
         }, 30000);
     };
 
