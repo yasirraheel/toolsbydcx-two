@@ -49,15 +49,10 @@
             /* Hide the virtualized host sidebar before its first paint. The
                extension-owned panel below is excluded from every selector. */
             html[data-toolsbydcx-chat-isolation="loading"] aside:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="loading"] nav:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="loading"] [role="navigation"]:not(#${PANEL_ID}),
             html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="sidebar" i]:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="loading"] [class*="sidebar" i]:not(#${PANEL_ID}),
             html[data-toolsbydcx-chat-isolation="active"] aside:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="active"] nav:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="active"] [role="navigation"]:not(#${PANEL_ID}),
             html[data-toolsbydcx-chat-isolation="active"] [data-testid*="sidebar" i]:not(#${PANEL_ID}),
-            html[data-toolsbydcx-chat-isolation="active"] [class*="sidebar" i]:not(#${PANEL_ID}) {
+            html[data-toolsbydcx-chat-isolation="active"] .toolsbydcx-host-sidebar-hidden {
                 display: none !important;
                 visibility: hidden !important;
                 pointer-events: none !important;
@@ -208,6 +203,29 @@
     };
 
     const currentChatId = () => chatIdFromHref(window.location.pathname);
+
+    const hideNativeSidebar = () => {
+        const chatLink = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'))
+            .find((link) => !link.closest?.(`#${PANEL_ID}`));
+        if (!chatLink) return false;
+
+        const candidates = [];
+        let cursor = chatLink.parentElement;
+        for (let depth = 0; cursor && depth < 12; depth += 1, cursor = cursor.parentElement) {
+            if (cursor.id === PANEL_ID || cursor.closest?.(`#${PANEL_ID}`)) continue;
+            const rect = cursor.getBoundingClientRect?.();
+            const text = String(cursor.textContent || '').replace(/\s+/g, ' ');
+            if (!rect || rect.width < 180 || rect.width > 520 || rect.height < 260 || rect.left > 80) continue;
+            if (!/new\s+chat/i.test(text)) continue;
+            const links = cursor.querySelectorAll?.('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').length || 0;
+            if (links < 1) continue;
+            candidates.push({ node: cursor, area: rect.width * rect.height });
+        }
+        const target = candidates.sort((a, b) => a.area - b.area)[0]?.node;
+        if (!target) return false;
+        target.classList.add('toolsbydcx-host-sidebar-hidden');
+        return true;
+    };
 
     const chatTitle = (chatId) => {
         if (!chatId) return document.title || 'Untitled chat';
@@ -382,6 +400,9 @@
         document.body.dataset.toolsbydcxChatIsolationStarted = '1';
         createPanel();
         setIsolationState('active');
+        hideNativeSidebar();
+        window.requestAnimationFrame(hideNativeSidebar);
+        window.setTimeout(hideNativeSidebar, 250);
 
         state.observer = new MutationObserver((mutations) => {
             let contentChanged = false;
@@ -389,7 +410,10 @@
                 if (mutation.target?.closest?.(`#${PANEL_ID}`)) continue;
                 if (mutation.type === 'characterData' || mutation.type === 'childList') contentChanged = true;
             }
-            if (contentChanged) scheduleArchive();
+            if (contentChanged) {
+                if (!document.querySelector('.toolsbydcx-host-sidebar-hidden')) hideNativeSidebar();
+                scheduleArchive();
+            }
         });
         state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
