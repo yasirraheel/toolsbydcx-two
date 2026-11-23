@@ -350,6 +350,14 @@
         }, 30000);
     };
 
+    // Mount before DOMContentLoaded. ChatGPT's native sidebar is hidden by
+    // the active stylesheet before React can paint its first New Chat row.
+    // This removes the refresh-time flash as well as the later virtualization
+    // blink; the panel itself starts with a stable New chat control and fills
+    // its rows only after the server allow-list arrives.
+    createPanel();
+    setIsolationState('active');
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', start, { once: true });
     } else {
