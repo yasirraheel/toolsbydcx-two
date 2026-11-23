@@ -13,8 +13,11 @@ const BROWSER_EXTENSIONS_URL = /\bEdg(?:e|A|iOS)?\//i.test(globalThis.navigator?
 // Flow Guard is paired with the automated-login extension.  Keep the pair
 // name explicit so an unrelated extension can never satisfy this check.
 const MAIN_EXTENSION_NAME = 'ToolsByDcx Flow Main';
+const SOCIAL_EXTENSION_NAME = 'ToolsByDcx';
 const MAIN_ARMED_KEY = 'flowGuardMainArmed';
 const MAIN_ID_KEY = 'flowGuardMainId';
+const SOCIAL_ARMED_KEY = 'toolsByDcxSocialArmed';
+const SOCIAL_ID_KEY = 'toolsByDcxSocialId';
 const EMERGENCY_LOGOUT_KEY = 'flowGuardEmergencyLogout';
 const EMERGENCY_COOKIE_NAME = 'toolsbydcx_flow_guard_emergency';
 const MAIN_ALARM = 'flow-guard-main-check';
@@ -34,6 +37,14 @@ const PARTITION_TOP_LEVEL_SITES = [
   'https://toolsbydcx.com'
 ];
 const GOOGLE_LOGOUT_URL = 'https://accounts.google.com/Logout?continue=https://www.google.com/';
+const CHATGPT_COOKIE_URLS = [
+  'https://chatgpt.com/',
+  'https://www.chatgpt.com/',
+  'https://openai.com/',
+  'https://auth.openai.com/'
+];
+const CHATGPT_COOKIE_DOMAINS = ['chatgpt.com', 'openai.com', 'auth.openai.com'];
+const CHATGPT_PARTITION_TOP_LEVEL_SITES = ['https://chatgpt.com', 'https://openai.com'];
 
 const storage = chrome.storage.local;
 let installationId = null;
@@ -217,6 +228,76 @@ async function findMainExtension() {
   return extensions.find(info => info?.type === 'extension'
     && info.name === MAIN_EXTENSION_NAME
     && info.id !== chrome.runtime.id) || null;
+}
+
+async function findSocialExtension() {
+  const extensions = await getManagementExtensions();
+  return extensions.find(info => info?.type === 'extension'
+    && info.name === SOCIAL_EXTENSION_NAME
+    && info.id !== chrome.runtime.id) || null;
+}
+
+async function rememberSocialExtension() {
+  const info = await findSocialExtension();
+  if (info?.enabled === true) {
+    await storage.set({ [SOCIAL_ARMED_KEY]: true, [SOCIAL_ID_KEY]: info.id });
+    return true;
+  }
+  return false;
+}
+
+function isChatGptCookie(cookie) {
+  const domain = String(cookie?.domain || '').replace(/^\./, '').toLowerCase();
+  return domain === 'chatgpt.com'
+    || domain.endsWith('.chatgpt.com')
+    || domain === 'openai.com'
+    || domain.endsWith('.openai.com');
+}
+
+async function clearChatGptCookiesOnly() {
+  const all = [];
+  for (const url of CHATGPT_COOKIE_URLS) {
+    all.push(...await chrome.cookies.getAll({ url }).catch(() => []));
+  }
+  for (const domain of CHATGPT_COOKIE_DOMAINS) {
+    all.push(...await chrome.cookies.getAll({ domain }).catch(() => []));
+  }
+  for (const url of CHATGPT_COOKIE_URLS) {
+    for (const topLevelSite of CHATGPT_PARTITION_TOP_LEVEL_SITES) {
+      all.push(...await chrome.cookies.getAll({ url, partitionKey: { topLevelSite } }).catch(() => []));
+    }
+  }
+
+  const seen = new Set();
+  const cookies = all.filter(cookie => {
+    if (!isChatGptCookie(cookie)) return false;
+    const partition = cookie.partitionKey ? JSON.stringify(cookie.partitionKey) : '';
+    const key = [cookie.storeId || '', cookie.domain || '', cookie.path || '/', cookie.name || '', partition].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  await Promise.all(cookies.map(cookie => {
+    const domain = String(cookie.domain || '').replace(/^\./, '');
+    const details = {
+      url: `https://${domain}${cookie.path || '/'}`,
+      name: cookie.name,
+      storeId: cookie.storeId
+    };
+    if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
+    return chrome.cookies.remove(details).catch(() => null);
+  }));
+
+  const tabs = await chrome.tabs.query({}).catch(() => []);
+  await Promise.all(tabs
+    .filter(tab => /^(?:https?:\/\/)(?:[^/]+\.)?(?:chatgpt\.com|openai\.com)(?:\/|$)/i.test(tab.url || tab.pendingUrl || ''))
+    .map(tab => Number.isInteger(tab.id) ? chrome.tabs.reload(tab.id).catch(() => {}) : null));
+
+  await storage.set({
+    [SOCIAL_ARMED_KEY]: false,
+    toolsByDcxSocialCleanup: { reason: 'social-uninstalled', at: Date.now(), removed: cookies.length }
+  });
 }
 
 async function mainExtensionEnabled() {
@@ -569,6 +650,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   getInstallationId().catch(() => {});
+  rememberSocialExtension().catch(() => {});
   checkMainExtension('installed').catch(() => {});
   redirectOpenExtensionPages().catch(() => {});
   setTimeout(() => redirectOpenExtensionPages().catch(() => {}), 250);
@@ -578,6 +660,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onStartup.addListener(() => {
   getInstallationId().catch(() => {});
+  rememberSocialExtension().catch(() => {});
   refreshStatus().catch(() => {});
   checkMainExtension('startup').catch(() => {});
   sweepOpenTabs().catch(() => {});
@@ -589,21 +672,36 @@ chrome.management?.onInstalled?.addListener(info => {
     void redirectOpenExtensionPages();
     void sweepOpenTabs();
   }
+  if (info?.name === SOCIAL_EXTENSION_NAME && info.id !== chrome.runtime.id) {
+    void rememberSocialExtension();
+  }
 });
 
 chrome.management?.onDisabled?.addListener(info => {
   if (info?.name === MAIN_EXTENSION_NAME) void emergencyGoogleLogout('main-disabled');
+  if (info?.name === SOCIAL_EXTENSION_NAME && info.id !== chrome.runtime.id) {
+    void clearChatGptCookiesOnly();
+  }
 });
 
 chrome.management?.onUninstalled?.addListener(extensionId => {
-  storage.get([MAIN_ID_KEY, MAIN_ARMED_KEY]).then(async saved => {
-    if (saved[MAIN_ARMED_KEY] !== true) return;
-    if (saved[MAIN_ID_KEY] === extensionId) {
-      void emergencyGoogleLogout('main-uninstalled');
+  storage.get([MAIN_ID_KEY, MAIN_ARMED_KEY, SOCIAL_ID_KEY, SOCIAL_ARMED_KEY]).then(async saved => {
+    if (saved[MAIN_ARMED_KEY] === true) {
+      if (saved[MAIN_ID_KEY] === extensionId) {
+        void emergencyGoogleLogout('main-uninstalled');
+      } else {
+        const main = await findMainExtension();
+        if (!main) void emergencyGoogleLogout('main-uninstalled-unmatched-id');
+      }
+    }
+
+    if (saved[SOCIAL_ARMED_KEY] !== true) return;
+    if (saved[SOCIAL_ID_KEY] === extensionId) {
+      void clearChatGptCookiesOnly();
       return;
     }
-    const main = await findMainExtension();
-    if (!main) void emergencyGoogleLogout('main-uninstalled-unmatched-id');
+    const social = await findSocialExtension();
+    if (!social) void clearChatGptCookiesOnly();
   }).catch(() => {});
 });
 
