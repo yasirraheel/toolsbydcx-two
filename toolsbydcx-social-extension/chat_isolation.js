@@ -172,6 +172,40 @@
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
+            #${PANEL_ID} .toolsbydcx-chat-link[data-loading="true"] {
+                display: block;
+                width: 68%;
+                height: 12px;
+                border-radius: 999px;
+                background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.24), rgba(255,255,255,.10));
+                background-size: 200% 100%;
+                animation: toolsbydcx-chat-title-loading 1.35s ease-in-out infinite;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-loading {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                min-height: 40px;
+                padding: 0 12px;
+                color: #a7a7ad;
+                font-size: 13px;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-loading::before {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: #a7a7ad;
+                content: "";
+                animation: toolsbydcx-chat-loading-pulse 1.15s ease-in-out infinite;
+            }
+            @keyframes toolsbydcx-chat-title-loading {
+                from { background-position: 100% 0; }
+                to { background-position: -100% 0; }
+            }
+            @keyframes toolsbydcx-chat-loading-pulse {
+                0%, 100% { opacity: .35; transform: scale(.8); }
+                50% { opacity: 1; transform: scale(1); }
+            }
             #${PANEL_ID} .toolsbydcx-delete-chat {
                 display: grid;
                 place-items: center;
@@ -251,6 +285,11 @@
     };
 
     const currentChatId = () => chatIdFromHref(window.location.pathname);
+    const isGenericChatTitle = (title) => /^(chatgpt|untitled\s+chat|new\s+chat)$/i.test(String(title || '').trim());
+    const hasUsableChatTitle = (title) => {
+        const value = String(title || '').replace(/\s+/g, ' ').trim();
+        return value.length >= 2 && !isGenericChatTitle(value);
+    };
 
     const hideNativeSidebar = () => {
         const chatLink = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'))
@@ -406,6 +445,15 @@
         const root = createPanel();
         const list = root.querySelector('.toolsbydcx-chat-list');
         if (!list) return;
+        if (!state.serverReady) {
+            list.replaceChildren();
+            const loading = document.createElement('div');
+            loading.className = 'toolsbydcx-chat-loading';
+            loading.textContent = 'Loading chats';
+            list.appendChild(loading);
+            return;
+        }
+        list.querySelector('.toolsbydcx-chat-loading')?.remove();
         const existing = new Map(Array.from(list.querySelectorAll('[data-chat-id]'))
             .map((row) => [row.dataset.chatId, row]));
 
@@ -453,10 +501,19 @@
             const title = chat.title || 'Untitled chat';
             const link = row.querySelector('.toolsbydcx-chat-link');
             const deleteButton = row.querySelector('.toolsbydcx-delete-chat');
-            if (link && link.textContent !== title) link.textContent = title;
+            const loadingTitle = !hasUsableChatTitle(title);
+            if (link) {
+                if (loadingTitle) {
+                    link.textContent = '';
+                    link.dataset.loading = 'true';
+                } else {
+                    if (link.textContent !== title) link.textContent = title;
+                    delete link.dataset.loading;
+                }
+            }
             if (link) {
                 link.title = title;
-                link.setAttribute('aria-label', title);
+                link.setAttribute('aria-label', loadingTitle ? 'Loading chat title' : title);
             }
             if (deleteButton) deleteButton.setAttribute('aria-label', `Delete ${title}`);
             row.title = title;
@@ -465,7 +522,6 @@
         });
 
         existing.forEach((row) => row.remove());
-        if (!state.serverReady) list.replaceChildren();
     };
 
     const applyServerList = (response) => {
@@ -476,13 +532,25 @@
             renderChats();
             return;
         }
-        state.serverChats = response.data.chats
+        const incoming = response.data.chats
             .map((chat) => ({
                 id: String(chat?.id || ''),
                 title: String(chat?.title || '').replace(/\s+/g, ' ').trim().slice(0, 300)
             }))
             .filter((chat) => CHAT_ID_RE.test(chat.id))
             .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
+        if (!state.serverReady) {
+            state.serverChats = incoming;
+        } else {
+            const incomingById = new Map(incoming.map((chat) => [chat.id, chat]));
+            const existingIds = new Set(state.serverChats.map((chat) => chat.id));
+            state.serverChats = state.serverChats
+                .filter((chat) => incomingById.has(chat.id))
+                .map((chat) => ({ ...chat, title: incomingById.get(chat.id).title || chat.title }));
+            incoming.forEach((chat) => {
+                if (!existingIds.has(chat.id)) state.serverChats.push(chat);
+            });
+        }
         state.serverChatIds = new Set(state.serverChats.map((chat) => chat.id));
         state.registeredTitles = new Map(state.serverChats.map((chat) => [chat.id, chat.title]));
         state.serverReady = true;
@@ -498,14 +566,14 @@
             state.currentChatId = id;
             const title = id ? chatTitle(id) : '';
             const titleChanged = id && state.serverChatIds.has(id)
-                && title && state.registeredTitles.get(id) !== title;
+                && hasUsableChatTitle(title) && state.registeredTitles.get(id) !== title;
             const routeAge = Date.now() - state.lastPathChangedAt;
-            if (id && routeAge < 1400) {
+            if (id && (routeAge < 1400 || !hasUsableChatTitle(title))) {
                 if (state.registrationTimer) window.clearTimeout(state.registrationTimer);
                 state.registrationTimer = window.setTimeout(() => {
                     state.registrationTimer = null;
                     void refreshServerList();
-                }, 1450 - routeAge);
+                }, !hasUsableChatTitle(title) ? 900 : 1450 - routeAge);
                 renderChats();
                 scheduleArchive();
                 return;
