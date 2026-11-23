@@ -66,7 +66,11 @@
                             <div class="col-12">
                                 <label class="fw-bold mb-2">@lang('Platforms Included')</label>
                                 <select class="form-control select2" name="platform_ids[]" multiple="multiple" data-placeholder="@lang('Select platforms')">
-                                    @php $selectedPlatforms = collect(old('platform_ids', $plan->platforms?->pluck('id')->all() ?? []))->map(fn($id) => (string) $id)->all(); @endphp
+                                    @php
+                                        $selectedPlatforms = collect(old('platform_ids', $plan->platforms?->pluck('id')->all() ?? []))
+                                            ->map(fn ($id) => (string) $id)
+                                            ->all();
+                                    @endphp
                                     @foreach($platforms as $platform)
                                         <option value="{{ $platform->id }}" @selected(in_array((string) $platform->id, $selectedPlatforms, true))>
                                             {{ $platform->name }} — {{ $platform->active_accounts_count }} @lang('active account(s)')
