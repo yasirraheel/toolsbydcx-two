@@ -195,35 +195,6 @@
                                 </div>
                             </div>
 
-                            <div class="flow-access-stack-col">
-                            {{-- Assign Google Flow Account (Extension) --}}
-                            <div class="col-lg-4 col-md-6 col-12 flow-account-col">
-                                <input type="hidden" name="google_flow_account_submitted" value="1">
-                                <div class="form-group mb-0">
-                                    <label class="fw-bold mb-2">
-                                        <i class="las la-robot text--primary"></i> @lang('Flow Account')
-                                    </label>
-                                    <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
-                                        <option value="">@lang('Flow account unassigned')</option>
-                                        @foreach($googleFlowAccounts as $flowAcc)
-                                            <option value="{{ $flowAcc->id }}" @selected(($currentFlowAccount && $currentFlowAccount->id == $flowAcc->id) || $user->google_flow_account_id == $flowAcc->id)>
-                                                {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        @php
-                                            $activeAssignedFlow = $currentFlowAccount ?? ($user->google_flow_account_id ? $googleFlowAccounts->firstWhere('id', $user->google_flow_account_id) : null);
-                                        @endphp
-                                        @if($activeAssignedFlow)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $activeAssignedFlow->email }}</span>
-                                        @else
-                                            <i class="las la-info-circle"></i> @lang('Assigned account used for Flow auto-login.')
-                                        @endif
-                                    </small>
-                                </div>
-                            </div>
-
                             {{-- Combined Text-to-Speech access and quota --}}
                             <div class="col-lg-4 col-md-6 col-12 tts-assignment-col">
                                 <input type="hidden" name="tts_access_submitted" value="1">
@@ -273,6 +244,35 @@
                                         <strong class="text--warning">{{ $ttsProviderCredits === null ? __('Unavailable') : number_format($ttsProviderCredits, 0) }}</strong>
                                     </div>
                                     <small class="text-muted d-block mt-1">@lang('Leave blank for unlimited access. Credits are enforced server-side for TTS and AI Music.') </small>
+                                </div>
+                            </div>
+
+                            <div class="flow-access-stack-col">
+                            {{-- Assign Google Flow Account (Extension) --}}
+                            <div class="col-lg-4 col-md-6 col-12 flow-account-col">
+                                <input type="hidden" name="google_flow_account_submitted" value="1">
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold mb-2">
+                                        <i class="las la-robot text--primary"></i> @lang('Flow Account')
+                                    </label>
+                                    <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
+                                        <option value="">@lang('Flow account unassigned')</option>
+                                        @foreach($googleFlowAccounts as $flowAcc)
+                                            <option value="{{ $flowAcc->id }}" @selected(($currentFlowAccount && $currentFlowAccount->id == $flowAcc->id) || $user->google_flow_account_id == $flowAcc->id)>
+                                                {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
+                                        @php
+                                            $activeAssignedFlow = $currentFlowAccount ?? ($user->google_flow_account_id ? $googleFlowAccounts->firstWhere('id', $user->google_flow_account_id) : null);
+                                        @endphp
+                                        @if($activeAssignedFlow)
+                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $activeAssignedFlow->email }}</span>
+                                        @else
+                                            <i class="las la-info-circle"></i> @lang('Assigned account used for Flow auto-login.')
+                                        @endif
+                                    </small>
                                 </div>
                             </div>
 
@@ -622,35 +622,27 @@
         }
         .user-edit-grid > [class*="col-"] { width: auto; }
         .user-edit-grid > .plan-assignment-col { grid-column: 1; grid-row: 2; }
-        .user-edit-grid > .account-overrides-col { grid-column: 1; grid-row: 3; }
-        .user-edit-grid > .expiry-col { grid-column: 1; grid-row: 4; }
+        .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 4; }
+        .user-edit-grid > .tts-assignment-col { grid-column: 1 / span 2; grid-row: 3; }
+        .user-edit-grid > .expiry-col { grid-column: 1 / span 2; grid-row: 4; }
         .user-edit-grid > .flow-access-stack-col {
-            grid-column: 2 / -1;
+            grid-column: 3;
             grid-row: 2 / span 2;
             width: auto;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: .5rem;
             align-items: start;
         }
-        .flow-access-stack-col > .tts-assignment-col {
-            grid-column: 1;
-            grid-row: 1;
-            width: auto;
-            padding-left: 0;
-            padding-right: 0;
-        }
         .flow-access-stack-col > .flow-account-col {
-            grid-column: 2;
-            grid-row: 1;
-            width: auto;
+            order: 1;
+            width: 100%;
             padding-left: 0;
             padding-right: 0;
         }
         .flow-access-stack-col > .flow-guard-col {
-            grid-column: 2;
-            grid-row: 2;
-            width: auto;
+            order: 2;
+            width: 100%;
             padding-left: 0;
             padding-right: 0;
         }
@@ -662,10 +654,8 @@
         .flow-access-stack-col { display: flex; flex-direction: column; gap: .5rem; }
         .flow-access-stack-col > .flow-account-col { order: 1; }
         .flow-access-stack-col > .flow-guard-col { order: 2; }
-        .flow-access-stack-col > .tts-assignment-col { order: 3; }
         .flow-access-stack-col > .flow-account-col,
-        .flow-access-stack-col > .flow-guard-col,
-        .flow-access-stack-col > .tts-assignment-col { width: 100%; padding-left: 0; padding-right: 0; }
+        .flow-access-stack-col > .flow-guard-col { width: 100%; padding-left: 0; padding-right: 0; }
     }
     @media (max-width: 767px) {
         .dcx-tts-assignment { height: auto; }
