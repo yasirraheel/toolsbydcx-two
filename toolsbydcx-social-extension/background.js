@@ -137,7 +137,16 @@ function scheduleAuthChecks() {
     setTimeout(() => verifyAuthAndWipeIfInvalid(), 10000);
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+    // Chrome/Edge report a manual developer-mode extension reload with the
+    // runtime reason "reload". Treat that as a local security reset: remove
+    // only the platform domains this extension previously injected, then
+    // clear the saved reinjection state. This does not touch panel cookies.
+    if (details?.reason === 'reload') {
+        wipeAllInjectedCookies().catch((error) => {
+            console.warn('[ToolsByDcx] Reload cookie cleanup failed.', error);
+        });
+    }
     refreshUninstallCleanupUrl();
     scheduleAuthChecks();
 });
