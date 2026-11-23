@@ -192,6 +192,16 @@
         white-space: nowrap;
     }
 
+    .dcx-chat-history .chat-history-share-url--official {
+        color: #86efac;
+        background: rgba(22, 101, 52, .22);
+        border-color: rgba(74, 222, 128, .35);
+    }
+
+    .dcx-chat-history .chat-history-share-url--official a {
+        color: inherit;
+    }
+
     @media (max-width: 575.98px) {
         .dcx-chat-history .chat-history-card__header {
             align-items: flex-start;
@@ -265,7 +275,11 @@
                             </form>
                         </div>
                     </div>
-                    @if($chat->is_public && $chat->share_token)
+                    @if($chat->official_share_url)
+                        <div class="chat-history-share-url chat-history-share-url--official">
+                            <i class="las la-link me-1"></i><a href="{{ $chat->official_share_url }}" target="_blank" rel="noopener noreferrer">{{ $chat->official_share_url }}</a>
+                        </div>
+                    @elseif($chat->is_public && $chat->share_token)
                         <div class="chat-history-share-url">
                             <i class="las la-link me-1"></i><a href="{{ route('chat.share', $chat->share_token) }}" target="_blank" rel="noopener noreferrer">{{ route('chat.share', $chat->share_token) }}</a>
                         </div>

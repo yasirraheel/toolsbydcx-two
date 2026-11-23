@@ -16,6 +16,7 @@ class UserChatThread extends Model
         'messages_encrypted',
         'message_count',
         'share_token',
+        'official_share_url',
         'is_public',
         'archived_at',
     ];

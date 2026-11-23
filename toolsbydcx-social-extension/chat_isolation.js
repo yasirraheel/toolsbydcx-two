@@ -32,6 +32,9 @@
         registeringIds: new Set(),
         deletedChatIds: new Set(),
         registeredTitles: new Map(),
+        officialShareUrls: new Map(),
+        officialShareInFlight: new Set(),
+        officialShareAttempts: new Map(),
         syncInFlight: false,
         liveSyncTimer: null,
         registrationTimer: null,
@@ -357,6 +360,91 @@
             .slice(0, 300) || 'Untitled chat';
     };
 
+    const createOfficialShare = async (chatId, title = '') => {
+        if (!chatId || state.officialShareUrls.has(chatId) || state.officialShareInFlight.has(chatId)) return;
+        state.officialShareInFlight.add(chatId);
+        try {
+            const chatApi = async (path, options = {}) => {
+                const response = await fetch(path, {
+                    credentials: 'include',
+                    cache: 'no-store',
+                    ...options,
+                    headers: {
+                        Accept: 'application/json',
+                        ...(options.headers || {})
+                    }
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.detail || payload.message || `ChatGPT share request failed (${response.status}).`);
+                return payload;
+            };
+
+            const conversation = await chatApi(`/backend-api/conversation/${encodeURIComponent(chatId)}`);
+            const nodeId = String(
+                conversation?.current_node
+                || conversation?.currentNode
+                || Array.from(document.querySelectorAll('[data-message-id]')).pop()?.getAttribute('data-message-id')
+                || ''
+            );
+            if (!nodeId) throw new Error('ChatGPT conversation is not ready for sharing yet.');
+
+            const created = await chatApi('/backend-api/share/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversation_id: chatId,
+                    current_node_id: nodeId,
+                    is_anonymous: true
+                })
+            });
+            const shareId = String(created?.share_id || created?.id || '');
+            let officialShareUrl = String(created?.share_url || '');
+            if (officialShareUrl.startsWith('/')) officialShareUrl = `${window.location.origin}${officialShareUrl}`;
+
+            // The create endpoint returns the official URL, while the PATCH
+            // makes the visibility explicit and matches ChatGPT's own share UI.
+            if (shareId) {
+                const updated = await chatApi(`/backend-api/share/${encodeURIComponent(shareId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        share_id: shareId,
+                        highlighted_message_id: nodeId,
+                        title: title || chatTitle(chatId),
+                        is_public: true,
+                        is_visible: true,
+                        is_anonymous: true
+                    })
+                });
+                officialShareUrl = String(updated?.share_url || officialShareUrl || `https://chatgpt.com/share/${shareId}`);
+            }
+            if (!/^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(officialShareUrl)) {
+                throw new Error('ChatGPT did not return an official public share URL.');
+            }
+
+            const saved = await send({
+                type: 'CHAT_HISTORY_OFFICIAL_SHARE',
+                chatId,
+                officialShareUrl
+            });
+            if (!saved?.success) throw new Error(saved?.error || 'Could not save the official share URL.');
+            state.officialShareUrls.set(chatId, officialShareUrl);
+            const chat = state.serverChats.find((item) => item.id === chatId);
+            if (chat) chat.officialShareUrl = officialShareUrl;
+            state.officialShareAttempts.delete(chatId);
+            renderChats();
+        } catch (error) {
+            const attempts = (state.officialShareAttempts.get(chatId) || 0) + 1;
+            state.officialShareAttempts.set(chatId, attempts);
+            console.warn('[ToolsByDcx] Official ChatGPT share creation is waiting:', error);
+            if (attempts < 5) {
+                window.setTimeout(() => createOfficialShare(chatId, title), Math.min(6000, attempts * 1500));
+            }
+        } finally {
+            state.officialShareInFlight.delete(chatId);
+        }
+    };
+
     const extractMessages = () => {
         const messages = [];
         document.querySelectorAll('[data-message-author-role]').forEach((node) => {
@@ -535,7 +623,8 @@
         const incoming = response.data.chats
             .map((chat) => ({
                 id: String(chat?.id || ''),
-                title: String(chat?.title || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+                title: String(chat?.title || '').replace(/\s+/g, ' ').trim().slice(0, 300),
+                officialShareUrl: String(chat?.officialShareUrl || chat?.shareUrl || '').trim()
             }))
             .filter((chat) => CHAT_ID_RE.test(chat.id))
             .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
@@ -546,13 +635,20 @@
             const existingIds = new Set(state.serverChats.map((chat) => chat.id));
             state.serverChats = state.serverChats
                 .filter((chat) => incomingById.has(chat.id))
-                .map((chat) => ({ ...chat, title: incomingById.get(chat.id).title || chat.title }));
+                .map((chat) => ({
+                    ...chat,
+                    title: incomingById.get(chat.id).title || chat.title,
+                    officialShareUrl: incomingById.get(chat.id).officialShareUrl || chat.officialShareUrl
+                }));
             incoming.forEach((chat) => {
                 if (!existingIds.has(chat.id)) state.serverChats.push(chat);
             });
         }
         state.serverChatIds = new Set(state.serverChats.map((chat) => chat.id));
         state.registeredTitles = new Map(state.serverChats.map((chat) => [chat.id, chat.title]));
+        incoming.forEach((chat) => {
+            if (chat.officialShareUrl) state.officialShareUrls.set(chat.id, chat.officialShareUrl);
+        });
         state.serverReady = true;
         renderChats();
     };
@@ -593,11 +689,21 @@
                     const existing = state.serverChats.find((item) => item.id === id);
                     if (existing) {
                         existing.title = nextTitle;
+                        existing.officialShareUrl = String(response.data.chat.officialShareUrl || '');
                     } else {
-                        state.serverChats.unshift({ id, title: nextTitle });
+                        state.serverChats.unshift({
+                            id,
+                            title: nextTitle,
+                            officialShareUrl: String(response.data.chat.officialShareUrl || '')
+                        });
                     }
                     renderChats();
                 }
+            }
+            const currentChat = state.serverChats.find((chat) => chat.id === id);
+            if (id && currentChat && !state.deletedChatIds.has(id)
+                && hasUsableChatTitle(title) && !state.officialShareUrls.has(id)) {
+                void createOfficialShare(id, title);
             }
             renderChats();
             scheduleArchive();

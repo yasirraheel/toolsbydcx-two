@@ -47,7 +47,7 @@ class ChatHistoryController extends Controller
             ->orderByDesc('last_seen_at')
             ->orderByDesc('id')
             ->limit(500)
-            ->get(['chat_id', 'title', 'last_seen_at', 'messages_encrypted', 'message_count', 'is_public', 'share_token'])
+            ->get(['chat_id', 'title', 'last_seen_at', 'messages_encrypted', 'message_count', 'is_public', 'share_token', 'official_share_url'])
             ->unique('chat_id')
             ->map(fn (UserChatThread $chat) => [
                 'id' => $chat->chat_id,
@@ -56,9 +56,8 @@ class ChatHistoryController extends Controller
                 'hasArchive' => (bool) $chat->messages_encrypted,
                 'messageCount' => (int) $chat->message_count,
                 'isPublic' => (bool) $chat->is_public,
-                'shareUrl' => $chat->is_public && $chat->share_token
-                    ? route('chat.share', $chat->share_token)
-                    : null,
+                'shareUrl' => $chat->official_share_url,
+                'officialShareUrl' => $chat->official_share_url,
             ])
             ->values();
 
@@ -108,7 +107,8 @@ class ChatHistoryController extends Controller
                 'title' => $chat->title,
                 'lastSeenAt' => optional($chat->last_seen_at)->toIso8601String(),
                 'isPublic' => true,
-                'shareUrl' => route('chat.share', $chat->share_token),
+                'shareUrl' => $chat->official_share_url,
+                'officialShareUrl' => $chat->official_share_url,
             ],
         ]);
     }
@@ -134,6 +134,40 @@ class ChatHistoryController extends Controller
             'success' => true,
             'deleted' => $deleted > 0,
             'chat_id' => $validated['chat_id'],
+        ]);
+    }
+
+    public function officialShare(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'chat_id' => ['required', 'string', 'max:128', 'regex:/^[A-Za-z0-9_-]{4,128}$/'],
+            'official_share_url' => ['required', 'url', 'max:500', 'regex:/^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i'],
+        ]);
+
+        $provider = $this->provider($request);
+        $chat = UserChatThread::firstOrNew([
+            'user_id' => $user->id,
+            'provider' => $provider,
+            'chat_id' => $validated['chat_id'],
+        ]);
+        $chat->official_share_url = $validated['official_share_url'];
+        $chat->is_public = true;
+        $chat->last_seen_at = now();
+        $chat->save();
+
+        return response()->json([
+            'success' => true,
+            'chat' => [
+                'id' => $chat->chat_id,
+                'title' => $chat->title,
+                'officialShareUrl' => $chat->official_share_url,
+                'shareUrl' => $chat->official_share_url,
+            ],
         ]);
     }
 

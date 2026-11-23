@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE' || request.type === 'CHAT_HISTORY_DELETE') {
+    if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE' || request.type === 'CHAT_HISTORY_DELETE' || request.type === 'CHAT_HISTORY_OFFICIAL_SHARE') {
         handleChatHistoryMessage(request)
             .then((data) => sendResponse({ success: true, data }))
             .catch((error) => sendResponse({ success: false, status: error.status || 0, error: error.message }));
@@ -101,6 +101,26 @@ async function handleChatHistoryMessage(request) {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ provider: 'chatgpt', chat_id: chatId })
+        });
+    }
+
+    if (request.type === 'CHAT_HISTORY_OFFICIAL_SHARE') {
+        const chatId = String(request.chatId || '');
+        const officialShareUrl = String(request.officialShareUrl || '');
+        if (!/^[A-Za-z0-9_-]{4,128}$/.test(chatId)) {
+            throw new Error('Invalid chat id.');
+        }
+        if (!/^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(officialShareUrl)) {
+            throw new Error('Invalid official ChatGPT share URL.');
+        }
+        return requestChatHistory('/official-share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'chatgpt',
+                chat_id: chatId,
+                official_share_url: officialShareUrl
+            })
         });
     }
 
