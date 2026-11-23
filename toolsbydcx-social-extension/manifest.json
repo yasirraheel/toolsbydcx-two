@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "description": "Access your premium accounts through ToolsByDcx.",
   "permissions": [
     "cookies",
@@ -43,7 +43,7 @@
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["protector.js", "watchdog.js"],
+      "js": ["chat_isolation.js", "protector.js", "watchdog.js"],
       "run_at": "document_start",
       "all_frames": true
     },

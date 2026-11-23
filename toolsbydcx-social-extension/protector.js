@@ -136,7 +136,6 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
         // --- 3. Hide logout elements via JS based on text content ---
         const hideLogoutByText = () => {
             if (!document.body) return;
-            hideNativeChatRows();
             const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;
             while (node = walkers.nextNode()) {
@@ -173,7 +172,7 @@ chrome.storage.local.get(['injectedDomains'], (result) => {
 
             // Dynamic ChatGPT Chat History Isolation. The server owns the allow-list;
             // local extension storage is deliberately not used as an authority.
-            if ((currentHost.includes('chatgpt.com') || currentHost.includes('openai.com')) && !chatIsolationInitialized) {
+            if (false && (currentHost.includes('chatgpt.com') || currentHost.includes('openai.com')) && !chatIsolationInitialized) {
                 chatIsolationInitialized = true;
 
                 const sendChatHistoryMessage = (message, callback) => {
