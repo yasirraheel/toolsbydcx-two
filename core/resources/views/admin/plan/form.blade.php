@@ -47,7 +47,7 @@
                                         <button type="button" class="btn btn-sm btn-outline--primary" id="add-plan-feature"><i class="las la-plus"></i> @lang('Add feature')</button>
                                     </div>
                                     <div id="plan-features-list" class="d-flex flex-column gap-2">
-                                        @php($configuredFeatures = old('features', $plan->feature_list ?? []))
+                                        <?php $configuredFeatures = old('features', $plan->feature_list ?? []); ?>
                                         @forelse((array) $configuredFeatures as $feature)
                                             <div class="input-group plan-feature-row">
                                                 <input type="text" class="form-control" name="features[]" maxlength="255" value="{{ $feature }}" placeholder="@lang('e.g. AI Text-to-Speech')">
@@ -66,11 +66,11 @@
                             <div class="col-12">
                                 <label class="fw-bold mb-2">@lang('Platforms Included')</label>
                                 <select class="form-control select2" name="platform_ids[]" multiple="multiple" data-placeholder="@lang('Select platforms')">
-                                    @php
+                                    <?php
                                         $selectedPlatforms = collect(old('platform_ids', $plan->platforms?->pluck('id')->all() ?? []))
                                             ->map(fn ($id) => (string) $id)
                                             ->all();
-                                    @endphp
+                                    ?>
                                     @foreach($platforms as $platform)
                                         <option value="{{ $platform->id }}" @selected(in_array((string) $platform->id, $selectedPlatforms, true))>
                                             {{ $platform->name }} — {{ $platform->active_accounts_count }} @lang('active account(s)')
@@ -89,7 +89,7 @@
                                     </label>
                                     <div id="plan-flow-account-wrap" class="mt-3">
                                         <label class="fw-bold mb-2">@lang('Flow account for this plan')</label>
-                                        @php $selectedFlowAccount = old('google_flow_account_id', $plan->google_flow_account_id); @endphp
+                                        <?php $selectedFlowAccount = old('google_flow_account_id', $plan->google_flow_account_id); ?>
                                         <select name="google_flow_account_id" id="plan-flow-account" class="form-control">
                                             <option value="">@lang('Select a saved Flow account')</option>
                                             @foreach($flowAccounts as $flowAccount)
