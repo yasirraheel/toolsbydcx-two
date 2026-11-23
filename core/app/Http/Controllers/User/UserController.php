@@ -103,6 +103,7 @@ class UserController extends Controller
         $chatHistory = UserChatThread::query()
             ->where('user_id', auth()->id())
             ->where('provider', 'chatgpt')
+            ->where('chat_id', '<>', 'local-chatgpt')
             ->orderByDesc('last_seen_at')
             ->orderByDesc('id')
             ->limit(500)

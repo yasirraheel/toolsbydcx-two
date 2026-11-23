@@ -47,7 +47,7 @@ class ChatHistoryController extends Controller
             ->orderByDesc('last_seen_at')
             ->orderByDesc('id')
             ->limit(500)
-            ->get(['chat_id', 'title', 'last_seen_at'])
+            ->get(['chat_id', 'title', 'last_seen_at', 'messages_encrypted', 'message_count', 'is_public', 'share_token'])
             ->unique('chat_id')
             ->map(fn (UserChatThread $chat) => [
                 'id' => $chat->chat_id,
@@ -55,6 +55,10 @@ class ChatHistoryController extends Controller
                 'lastSeenAt' => optional($chat->last_seen_at)->toIso8601String(),
                 'hasArchive' => (bool) $chat->messages_encrypted,
                 'messageCount' => (int) $chat->message_count,
+                'isPublic' => (bool) $chat->is_public,
+                'shareUrl' => $chat->is_public && $chat->share_token
+                    ? route('chat.share', $chat->share_token)
+                    : null,
             ])
             ->values();
 
@@ -162,6 +166,13 @@ class ChatHistoryController extends Controller
             }, $validated['messages'])));
         }
 
+        // Keep the archived conversation available independently of the
+        // currently injected ChatGPT account. The generated ToolsByDcx share
+        // URL is stored on the user-owned record and remains stable across
+        // future platform-account changes.
+        $chat->share_token = $chat->share_token ?: Str::random(48);
+        $chat->is_public = true;
+
         $chat->save();
 
         return response()->json([
@@ -171,6 +182,8 @@ class ChatHistoryController extends Controller
                 'title' => $chat->title,
                 'messageCount' => (int) $chat->message_count,
                 'lastSeenAt' => optional($chat->last_seen_at)->toIso8601String(),
+                'isPublic' => (bool) $chat->is_public,
+                'shareUrl' => route('chat.share', $chat->share_token),
             ],
         ]);
     }

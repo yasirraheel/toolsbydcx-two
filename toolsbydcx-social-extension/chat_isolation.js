@@ -275,6 +275,29 @@
         return true;
     };
 
+    const hidePublicLinkBanner = () => {
+        const selectors = [
+            '[role="status"]',
+            '[role="alert"]',
+            '[aria-live]',
+            '[data-testid*="toast" i]',
+            '[data-testid*="banner" i]',
+            '[class*="toast" i]',
+            '[class*="banner" i]'
+        ].join(',');
+        document.querySelectorAll(selectors).forEach((element) => {
+            if (element.closest?.(`#${PANEL_ID}`)) return;
+            const text = String(element.innerText || element.textContent || '')
+                .replace(/\s+/g, ' ').trim();
+            if (!/public\s+link\s+(copied|created)|anyone\s+with\s+the\s+link\s+can\s+view/i.test(text)) return;
+            element.setAttribute('data-toolsbydcx-public-link-banner', 'hidden');
+            element.setAttribute('aria-hidden', 'true');
+            element.style.setProperty('display', 'none', 'important');
+            element.style.setProperty('visibility', 'hidden', 'important');
+            element.style.setProperty('pointer-events', 'none', 'important');
+        });
+    };
+
     const chatTitle = (chatId) => {
         if (chatId) {
             // Prefer the title rendered by ChatGPT's own history item. This
@@ -538,6 +561,7 @@
         createPanel();
         setIsolationState('active');
         hideNativeSidebar();
+        hidePublicLinkBanner();
         window.requestAnimationFrame(hideNativeSidebar);
         window.setTimeout(hideNativeSidebar, 250);
 
@@ -549,6 +573,7 @@
             }
             if (contentChanged) {
                 if (!document.querySelector('.toolsbydcx-host-sidebar-hidden')) hideNativeSidebar();
+                hidePublicLinkBanner();
                 // A first message creates the /c/{id} route and native title
                 // asynchronously. Debounce a sync so the custom list updates
                 // as soon as ChatGPT has committed that DOM change.
