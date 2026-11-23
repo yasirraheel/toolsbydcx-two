@@ -135,7 +135,7 @@ class PlanController extends Controller
         $flowAssignmentWarnings = [];
         foreach ($plan->users()->get() as $user) {
             try {
-                $user->account_ids = $user->syncPlatformsWithLoadBalancing($platformIds);
+                $user->syncPlanAndManualAccounts($platformIds, (array) ($user->manual_account_ids ?? []));
                 $user->save();
                 FlowAccess::assign($user, $flowAssignment ? (int) $flowAssignment : null, true);
             } catch (\Throwable $e) {

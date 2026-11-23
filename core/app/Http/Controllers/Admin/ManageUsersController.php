@@ -17,6 +17,31 @@ class ManageUsersController extends Controller
 {
 
     /**
+     * The admin UI submits one optional explicit account per platform. Keep a
+     * legacy account_ids[] fallback so old forms do not lose assignments.
+     */
+    private function manualAccountIdsFromRequest(Request $request): array
+    {
+        $overrides = $request->input('account_overrides');
+        if (is_array($overrides)) {
+            return collect($overrides)
+                ->filter(fn ($id) => filled($id))
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn (int $id) => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return collect((array) $request->input('account_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Keep a plan user's Flow assignment tied to the account selected on the
      * plan. No-plan users can still be assigned directly from the user form.
      */
@@ -31,17 +56,16 @@ class ManageUsersController extends Controller
     }
 
     /**
-     * Resolve one active account from every platform selected on the plan.
-     * The user stores only those concrete account IDs, so all downstream
-     * dashboard and extension endpoints expose exactly the assigned accounts.
+     * Resolve plan accounts and merge the administrator's explicit account
+     * choices. Plan users may now receive both sources of entitlement.
      */
-    private function syncPlanPlatformAccounts(User $user, ?\App\Models\Plan $plan): void
+    private function syncPlanPlatformAccounts(User $user, ?\App\Models\Plan $plan, array $manualAccountIds = []): void
     {
         $platformIds = $plan
             ? $plan->platforms()->pluck('social_media.id')->map(fn ($id) => (int) $id)->all()
             : [];
 
-        $user->account_ids = $user->syncPlatformsWithLoadBalancing($platformIds);
+        $user->syncPlanAndManualAccounts($platformIds, $manualAccountIds);
     }
 
     public function allUsers()
@@ -267,6 +291,8 @@ class ManageUsersController extends Controller
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'account_overrides' => 'nullable|array',
+            'account_overrides.*' => 'nullable|integer|exists:account_listings,id',
             'google_flow_account_id' => 'nullable|integer|exists:google_flow_accounts,id',
             'plan_id' => [
                 'nullable',
@@ -330,11 +356,11 @@ class ManageUsersController extends Controller
             // from the admin form using the selected plan record.
             $user->plan_id = (int) ($request->input('plan_id') ?: 0);
             $user->account_prices = [];
-            // A plan is the complete account allow-list. Direct account
-            // assignments are only valid for users with no plan.
-            $user->account_ids = $user->plan_id > 0
-                ? []
-                : array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+            // Keep explicit account selections separate from plan-managed
+            // accounts. They are valid for both plan and no-plan users.
+            $manualAccountIds = $this->manualAccountIdsFromRequest($request);
+            $user->manual_account_ids = $manualAccountIds;
+            $user->account_ids = $manualAccountIds;
             $selectedPlan = $user->plan_id > 0 ? \App\Models\Plan::active()->find($user->plan_id) : null;
             if ($request->filled('expires_at')) {
                 $user->expires_at = \Carbon\Carbon::parse($request->expires_at);
@@ -366,7 +392,7 @@ class ManageUsersController extends Controller
 
             try {
                 if ($selectedPlan) {
-                    $this->syncPlanPlatformAccounts($user, $selectedPlan);
+                    $this->syncPlanPlatformAccounts($user, $selectedPlan, $manualAccountIds);
                     $user->save();
                     // The plan-selected account always wins for plan users.
                     $this->syncPlanFlowAssignment($user, $selectedPlan);
@@ -526,6 +552,8 @@ class ManageUsersController extends Controller
             'password' => 'nullable|string|min:4',
             'account_ids' => 'nullable|array',
             'account_ids.*' => 'integer|exists:account_listings,id',
+            'account_overrides' => 'nullable|array',
+            'account_overrides.*' => 'nullable|integer|exists:account_listings,id',
             'plan_id' => [
                 'nullable',
                 'integer',
@@ -567,16 +595,12 @@ class ManageUsersController extends Controller
         }
 
         if ($request->has('account_ids_submitted')) {
-            $user->account_ids = array_values(array_map('intval', (array) ($request->account_ids ?? [])));
+            $user->manual_account_ids = $this->manualAccountIdsFromRequest($request);
+            $user->account_ids = $user->manual_account_ids;
         }
 
         if ($request->has('plan_submitted')) {
             $user->plan_id = (int) ($request->input('plan_id') ?: 0);
-        }
-
-        // Never combine a plan allow-list with direct account assignments.
-        if ((int) $user->plan_id > 0) {
-            $user->account_ids = [];
         }
 
         if ($request->has('privileges_submitted')) {
@@ -657,11 +681,11 @@ class ManageUsersController extends Controller
                 : null;
         }
 
-        // Plan-selected Flow accounts are applied after the form fields so a
-        // manual account cannot accidentally override the plan policy.
+        // Plan-selected accounts are applied after the form fields and are
+        // merged with the explicit account selections.
         if ($selectedPlan) {
             try {
-                $this->syncPlanPlatformAccounts($user, $selectedPlan);
+                $this->syncPlanPlatformAccounts($user, $selectedPlan, (array) ($user->manual_account_ids ?? []));
                 $this->syncPlanFlowAssignment($user, $selectedPlan);
             } catch (\Throwable $e) {
                 $notify[] = ['error', 'Could not apply the plan Google Flow account: ' . $e->getMessage()];

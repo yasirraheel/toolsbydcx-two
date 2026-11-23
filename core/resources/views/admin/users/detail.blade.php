@@ -64,13 +64,27 @@
                     </div>
                 </div>
                 <div class="card-body p-4">
+                    @php
+                        $effectiveAccountIds = array_values(array_map('intval', (array) ($user->account_ids ?? [])));
+                        $effectiveAccounts = $accounts->whereIn('id', $effectiveAccountIds);
+                        $selectedPlan = $plans->firstWhere('id', (int) ($user->plan_id ?? 0));
+                        $summaryFlow = $currentFlowAccount?->email ?: __('Unassigned');
+                    @endphp
+                    <div class="user-assignment-summary mb-3" aria-label="@lang('Current assignments')">
+                        <span><i class="las la-layer-group"></i> <b>@lang('Plan'):</b> {{ $selectedPlan?->name ?: __('Free / No plan') }}</span>
+                        <span><i class="las la-th-large"></i> <b>@lang('Accounts'):</b> {{ $effectiveAccounts->count() ?: __('None') }}</span>
+                        <span><i class="las la-robot"></i> <b>@lang('Flow'):</b> {{ $summaryFlow }}</span>
+                        <span><i class="las la-microphone"></i> <b>@lang('TTS'):</b> {{ $user->tts_access ? __('Enabled') : __('Off') }}</span>
+                        <span><i class="las la-magic"></i> <b>@lang('Gemini'):</b> {{ $user->gemini_access ? __('Enabled') : __('Off') }}</span>
+                        <span><i class="las la-shield-alt"></i> <b>@lang('Guard'):</b> {{ $flowGuardAccess->enabled ? __('Enabled') : __('Off') }}</span>
+                    </div>
                     <form action="{{ route('admin.users.update', [$user->id]) }}" method="POST">
                         @csrf
                         <input type="hidden" name="account_ids_submitted" value="1">
                         <input type="hidden" name="plan_submitted" value="1">
                         <input type="hidden" name="gemini_access_submitted" value="1">
 
-                        <div class="row g-3 user-edit-grid">
+                        <div class="row g-2 user-edit-grid">
                             {{-- Full Name --}}
                             <div class="col-xl-4 col-md-4 col-12">
                                 <div class="form-group mb-0">
@@ -136,34 +150,47 @@
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Plan users receive only that plan\'s accounts. Direct assignments apply only to No plan users.')
+                                        <i class="las la-info-circle"></i> @lang('Plan accounts are added automatically. You may also assign explicit accounts to this user.')
                                     </small>
                                 </div>
                             </div>
 
-                            {{-- Assign Available Accounts --}}
+                            {{-- Explicit account overrides, one dropdown per platform --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
-                                        <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
+                                        <i class="las la-shield-alt text--primary"></i> @lang('Account Overrides by Platform')
                                     </label>
                                     @php
-                                        $assignedIds = (array) ($user->account_ids ?? []);
+                                        $manualIds = array_values(array_map('intval', (array) ($user->manual_account_ids ?? (($user->plan_id ?? 0) ? [] : ($user->account_ids ?? [])))));
+                                        $oldOverrides = old('account_overrides');
+                                        $accountGroups = $accounts->filter(fn($account) => $account->socialMedia)->groupBy('social_media_id');
                                     @endphp
-                                    <select name="account_ids[]" class="form-control select2" multiple="multiple" id="account-selector" data-placeholder="@lang('Select Accounts to Assign')">
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" @selected(in_array($account->id, $assignedIds) || in_array((string)$account->id, $assignedIds))>
-                                                {{ __(@$account->socialMedia->name ?: 'General') }} — {{ __($account->title) }}
-                                                @if($account->status != \App\Constants\Status::LISTING_ACTIVE) (@lang('Disabled')) @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="account-overrides-grid">
+                                    @forelse($accountGroups as $platformId => $platformAccounts)
+                                        @php
+                                            $platform = $platformAccounts->first()->socialMedia;
+                                            $selectedOverride = is_array($oldOverrides)
+                                                ? ($oldOverrides[$platformId] ?? '')
+                                                : ($platformAccounts->first(fn($account) => in_array((int) $account->id, $manualIds, true))?->id ?? '');
+                                        @endphp
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1">{{ __($platform->name) }}</label>
+                                            <select name="account_overrides[{{ $platformId }}]" class="form-control select2 account-platform-selector">
+                                                <option value="">@lang('No explicit account (use plan)')</option>
+                                                @foreach($platformAccounts as $account)
+                                                    <option value="{{ $account->id }}" @selected((string) $selectedOverride === (string) $account->id)>
+                                                        {{ __($account->title) }}@if($account->status != \App\Constants\Status::LISTING_ACTIVE) (@lang('Disabled')) @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @empty
+                                        <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No platform accounts found in Accounts Manager.')</span>
+                                    @endforelse
+                                    </div>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        @if($accounts->count() > 0)
-                                            <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('configured accounts available. Direct assignment applies only when No plan is selected.')</span>
-                                        @else
-                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No accounts found in Accounts Manager.')</span>
-                                        @endif
+                                        <i class="las la-info-circle"></i> @lang('Plan accounts are used by default. Select an account only when you want an explicit override for that platform.')
                                     </small>
                                 </div>
                             </div>
@@ -625,15 +652,24 @@
 
 @push('style')
 <style>
+    .user-assignment-summary { display: flex; flex-wrap: wrap; gap: .4rem .55rem; padding: .65rem .75rem; border: 1px solid rgba(129, 140, 248, .24); border-radius: .65rem; background: rgba(30, 41, 59, .42); color: #cbd5e1; font-size: .75rem; }
+    .user-assignment-summary span { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem .5rem; border-radius: 999px; background: rgba(15, 23, 42, .5); white-space: nowrap; }
+    .user-assignment-summary i { color: #818cf8; }
     .user-edit-grid > [class*="col-"] { min-width: 0; }
     .user-edit-grid .form-group { height: 100%; }
     .user-edit-grid .form-control,
     .user-edit-grid .select2-container--default .select2-selection--single,
-    .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 54px; border-radius: 10px; }
+    .user-edit-grid .select2-container--default .select2-selection--multiple { min-height: 42px; border-radius: 8px; }
     .user-edit-grid .select2-container { width: 100% !important; }
     .user-edit-grid .select2-container--default .select2-selection--single { display: flex; align-items: center; }
-    .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 7px; }
-    .dcx-tts-assignment { height: 54px; min-height: 54px; align-items: center !important; padding: 0 14px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
+    .user-edit-grid .select2-container--default .select2-selection--multiple { padding-top: 4px; }
+    .user-edit-grid label.fw-bold { font-size: .82rem; }
+    .user-edit-grid small { font-size: .68rem !important; line-height: 1.3; }
+    .account-overrides-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+    .account-overrides-grid .mb-2 { margin-bottom: 0 !important; }
+    .account-overrides-grid .form-control,
+    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 38px; font-size: .78rem; }
+    .dcx-tts-assignment { height: 42px; min-height: 42px; align-items: center !important; padding: 0 10px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment strong, .dcx-tts-assignment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -641,11 +677,12 @@
     .dcx-tts-assignment:hover { border-color: rgba(129, 140, 248, .55); background: rgba(79, 70, 229, .1); }
     .dcx-expiry-panel { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
     .dcx-expiry-panel #detailExpiresAtInput { min-height: 54px; }
-    .dcx-tts-credit-card { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); }
+    .dcx-tts-credit-card { border: 1px solid rgba(245, 158, 11, .3); background: rgba(30, 41, 59, .65); padding: .75rem !important; }
     .dcx-tts-credit-card .form-control { min-height: 42px; }
     .dcx-tts-credit-card .input-group-text { font-size: .78rem; }
     .dcx-tts-credit-card small { line-height: 1.45; }
     @media (max-width: 767px) {
+        .account-overrides-grid { grid-template-columns: 1fr; }
         .dcx-tts-assignment { height: auto; }
         .dcx-tts-assignment > span { align-items: flex-start; flex-direction: column !important; gap: 2px !important; }
     }
@@ -902,23 +939,6 @@
             $('#ttsCreditLimitInput').val($(this).data('credits'));
         });
 
-        let lastPlanState = String($('#user-plan-selector').val() || '0') !== '0';
-
-        function resetPlanAssignmentsForNoPlan() {
-            $('#account-selector').val(null).trigger('change');
-            $('#google-flow-account-selector').val('').trigger('change');
-            $('#ttsAccessCheckbox').prop('checked', false);
-            $('#ttsCreditLimitInput').val('');
-        }
-
-        function syncAccountAssignmentState() {
-            const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
-            const selector = $('#account-selector');
-            selector.prop('disabled', hasPlan);
-            if (hasPlan) selector.val(null).trigger('change');
-            if (!hasPlan && lastPlanState) resetPlanAssignmentsForNoPlan();
-            lastPlanState = hasPlan;
-        }
         function syncPlanEntitlements() {
             const option = $('#user-plan-selector option:selected');
             const hasPlan = String(option.val() || '0') !== '0';
@@ -930,9 +950,7 @@
             }
             $('#ttsAccessCheckbox, #ttsCreditLimitInput, .tts-credit-preset').prop('disabled', hasPlan);
         }
-        $('#user-plan-selector').on('change', syncAccountAssignmentState);
         $('#user-plan-selector').on('change', syncPlanEntitlements);
-        syncAccountAssignmentState();
         syncPlanEntitlements();
 
         // Initialize preview on modal open

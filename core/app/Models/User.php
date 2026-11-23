@@ -33,6 +33,7 @@ class User extends Authenticatable
         'kyc_data' => 'object',
         'ver_code_send_at' => 'datetime',
         'account_ids' => 'array',
+        'manual_account_ids' => 'array',
         'expires_at' => 'datetime',
         'last_seen' => 'datetime',
         'account_prices' => 'array',
@@ -314,6 +315,40 @@ class User extends Authenticatable
         }
 
         $this->account_ids = array_values(array_unique($assignedAccountIds));
+        return $this->account_ids;
+    }
+
+    /**
+     * Combine the accounts selected by a subscription plan with accounts an
+     * administrator explicitly assigned to this user. The two sources are
+     * kept separate so a later plan edit cannot erase a manual assignment or
+     * leave an old plan assignment behind.
+     */
+    public function syncPlanAndManualAccounts(array $platformIds, array $manualAccountIds = []): array
+    {
+        $requestedManual = array_values(array_unique(array_map('intval', $manualAccountIds)));
+        $manualAccounts = AccountListing::whereIn('id', $requestedManual)
+            ->get(['id', 'social_media_id'])
+            ->keyBy('social_media_id');
+        // One explicit account is allowed per platform. A selected override
+        // replaces that platform's plan assignment instead of producing two
+        // competing accounts in the user's effective allow-list.
+        $manual = $manualAccounts->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $overriddenPlatforms = $manualAccounts->keys()->map(fn ($id) => (int) $id)->all();
+        $planPlatforms = collect($platformIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0 && !in_array($id, $overriddenPlatforms, true))
+            ->unique()
+            ->values()
+            ->all();
+
+        // The load-balancer may retain one active account per plan platform;
+        // seed it with the explicit choices so those choices remain preferred.
+        $this->account_ids = $manual;
+        $planAccounts = $this->syncPlatformsWithLoadBalancing($planPlatforms);
+        $this->manual_account_ids = $manual;
+        $this->account_ids = array_values(array_unique(array_merge($planAccounts, $manual)));
+
         return $this->account_ids;
     }
 

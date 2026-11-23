@@ -88,31 +88,47 @@
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('No plan users can receive direct accounts. Plan users receive only the accounts configured on that plan.')
+                                        <i class="las la-info-circle"></i> @lang('Plan accounts are added automatically. You may also assign explicit accounts to this user.')
                                     </small>
                                 </div>
                             </div>
 
-                            {{-- Assign Available Accounts --}}
+                            {{-- Explicit account overrides, one dropdown per platform --}}
                             <div class="col-lg-6 col-12">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
-                                        <i class="las la-shield-alt text--primary"></i> @lang('Assign Available Accounts')
+                                        <i class="las la-shield-alt text--primary"></i> @lang('Account Overrides by Platform')
                                     </label>
-                                    <select name="account_ids[]" class="form-control select2" multiple="multiple" id="account-selector" data-placeholder="@lang('Select Accounts to Assign')">
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" @selected(in_array($account->id, (array) old('account_ids', [])))>
-                                                {{ __(@$account->socialMedia->name ?: 'General') }} — {{ __($account->title) }}
-                                                @if($account->status != \App\Constants\Status::LISTING_ACTIVE) (@lang('Disabled')) @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @php
+                                        $oldOverrides = old('account_overrides');
+                                        $legacySelected = (array) old('account_ids', []);
+                                        $accountGroups = $accounts->filter(fn($account) => $account->socialMedia)->groupBy('social_media_id');
+                                    @endphp
+                                    <div class="account-overrides-grid">
+                                    @forelse($accountGroups as $platformId => $platformAccounts)
+                                        @php
+                                            $platform = $platformAccounts->first()->socialMedia;
+                                            $selectedOverride = is_array($oldOverrides)
+                                                ? ($oldOverrides[$platformId] ?? '')
+                                                : ($platformAccounts->first(fn($account) => in_array((string) $account->id, array_map('strval', $legacySelected)))?->id ?? '');
+                                        @endphp
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1">{{ __($platform->name) }}</label>
+                                            <select name="account_overrides[{{ $platformId }}]" class="form-control select2 account-platform-selector">
+                                                <option value="">@lang('No explicit account (use plan)')</option>
+                                                @foreach($platformAccounts as $account)
+                                                    <option value="{{ $account->id }}" @selected((string) $selectedOverride === (string) $account->id)>
+                                                        {{ __($account->title) }}@if($account->status != \App\Constants\Status::LISTING_ACTIVE) (@lang('Disabled')) @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @empty
+                                        <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No platform accounts found in Accounts Manager.')</span>
+                                    @endforelse
+                                    </div>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        @if($accounts->count() > 0)
-                                        <span class="text--success fw-bold"><i class="las la-check-circle"></i> {{ $accounts->count() }} @lang('configured accounts available. Direct assignment applies only when No plan is selected.')</span>
-                                        @else
-                                            <span class="text--warning"><i class="las la-exclamation-triangle"></i> @lang('No accounts found in Accounts Manager.')</span>
-                                        @endif
+                                        <i class="las la-info-circle"></i> @lang('Plan accounts are used by default. Select an account only when you want an explicit override for that platform.')
                                     </small>
                                 </div>
                             </div>
@@ -198,6 +214,11 @@
 
 @push('style')
 <style>
+    .account-overrides-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+    .account-overrides-grid .mb-2 { margin-bottom: 0 !important; }
+    .account-overrides-grid .form-control,
+    .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 38px; font-size: .78rem; }
+    @media (max-width: 767px) { .account-overrides-grid { grid-template-columns: 1fr; } }
     .dcx-tts-assignment { border: 1px solid rgba(148, 163, 184, .18); background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
     .dcx-tts-assignment small { color: #94a3b8 !important; font-size: .75rem; }
@@ -412,24 +433,6 @@
             $(this).removeClass('btn-outline--primary').addClass('btn--primary text-white');
         });
 
-        let lastPlanState = String($('#user-plan-selector').val() || '0') !== '0';
-
-        function resetPlanAssignmentsForNoPlan() {
-            $('#account-selector').val(null).trigger('change');
-            $('#google-flow-account-selector').val('').trigger('change');
-            $('#create-tts-access').prop('checked', false);
-            $('#create-tts-credit-limit').val('');
-        }
-
-        function syncAccountAssignmentState() {
-            const hasPlan = String($('#user-plan-selector').val() || '0') !== '0';
-            const selector = $('#account-selector');
-            selector.prop('disabled', hasPlan);
-            if (hasPlan) selector.val(null).trigger('change');
-            if (!hasPlan && lastPlanState) resetPlanAssignmentsForNoPlan();
-            lastPlanState = hasPlan;
-            selector.closest('.form-group').find('small').first().toggleClass('text-muted', !hasPlan);
-        }
         function syncPlanEntitlements() {
             const option = $('#user-plan-selector option:selected');
             const hasPlan = String(option.val() || '0') !== '0';
@@ -439,9 +442,7 @@
             $('#create-tts-credit-limit').val(hasPlan ? (planCredits ?? '') : $('#create-tts-credit-limit').val());
             $('#create-tts-access, #create-tts-credit-limit').prop('disabled', hasPlan);
         }
-        $('#user-plan-selector').on('change', syncAccountAssignmentState);
         $('#user-plan-selector').on('change', syncPlanEntitlements);
-        syncAccountAssignmentState();
         syncPlanEntitlements();
 
 
