@@ -34,7 +34,9 @@
         registeredTitles: new Map(),
         syncInFlight: false,
         liveSyncTimer: null,
+        registrationTimer: null,
         lastPath: window.location.pathname,
+        lastPathChangedAt: Date.now(),
         observer: null
     };
 
@@ -248,20 +250,7 @@
         return match?.[1] || null;
     };
 
-    const currentChatId = () => {
-        const pathId = chatIdFromHref(window.location.pathname);
-        if (pathId) return pathId;
-
-        // ChatGPT creates the conversation id in the DOM before it updates the
-        // browser URL. Pick the active native history link during that short
-        // window so the new conversation can be registered immediately.
-        const active = Array.from(document.querySelectorAll('a[href*="/c/"]'))
-            .find((link) => !link.closest?.(`#${PANEL_ID}`)
-                && (link.getAttribute('aria-current') === 'page'
-                    || link.dataset.active === 'true'
-                    || link.getAttribute('data-active') === 'true'));
-        return chatIdFromHref(active?.getAttribute('href'));
-    };
+    const currentChatId = () => chatIdFromHref(window.location.pathname);
 
     const hideNativeSidebar = () => {
         const chatLink = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'))
@@ -326,6 +315,7 @@
         state.archiveTimer = window.setTimeout(async () => {
             const chatId = state.currentChatId || currentChatId();
             if (!state.serverReady || !chatId || state.deletedChatIds.has(chatId) || state.archiveInFlight) return;
+            if (Date.now() - state.lastPathChangedAt < 1400 || !state.serverChatIds.has(chatId)) return;
             const messages = extractMessages();
             if (!messages.length) return;
             const signature = `${chatId}:${JSON.stringify(messages)}`;
@@ -486,6 +476,17 @@
             const title = id ? chatTitle(id) : '';
             const titleChanged = id && state.serverChatIds.has(id)
                 && title && state.registeredTitles.get(id) !== title;
+            const routeAge = Date.now() - state.lastPathChangedAt;
+            if (id && routeAge < 1400) {
+                if (state.registrationTimer) window.clearTimeout(state.registrationTimer);
+                state.registrationTimer = window.setTimeout(() => {
+                    state.registrationTimer = null;
+                    void refreshServerList();
+                }, 1450 - routeAge);
+                renderChats();
+                scheduleArchive();
+                return;
+            }
             if (id && !state.deletedChatIds.has(id)
                 && (!state.serverChatIds.has(id) || titleChanged)
                 && !state.registeringIds.has(id)) {
@@ -518,7 +519,12 @@
         const path = window.location.pathname;
         const id = currentChatId();
         if (path === state.lastPath && id === state.currentChatId) return;
+        if (state.registrationTimer) {
+            window.clearTimeout(state.registrationTimer);
+            state.registrationTimer = null;
+        }
         state.lastPath = path;
+        state.lastPathChangedAt = Date.now();
         state.currentChatId = id;
         if (id) state.deletedChatIds.delete(id);
         state.lastArchivedSignature = '';

@@ -41,6 +41,9 @@ class ChatHistoryController extends Controller
         $chats = UserChatThread::query()
             ->where('user_id', $user->id)
             ->where('provider', $provider)
+            // Legacy builds used a shared placeholder id instead of the
+            // platform conversation id. Never expose that duplicate entry.
+            ->where('chat_id', '<>', 'local-chatgpt')
             ->orderByDesc('last_seen_at')
             ->orderByDesc('id')
             ->limit(500)
