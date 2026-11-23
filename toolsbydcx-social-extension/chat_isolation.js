@@ -33,6 +33,7 @@
         deletedChatIds: new Set(),
         registeredTitles: new Map(),
         officialShareUrls: new Map(),
+        detectedOfficialShareUrls: new Map(),
         officialShareInFlight: new Set(),
         officialShareAttempts: new Map(),
         syncInFlight: false,
@@ -282,6 +283,26 @@
         }
     });
 
+    const isOfficialShareUrl = (value) => /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(String(value || ''));
+
+    const persistOfficialShareUrl = async (chatId, officialShareUrl) => {
+        if (!CHAT_ID_RE.test(String(chatId || '')) || !isOfficialShareUrl(officialShareUrl)) {
+            throw new Error('Invalid official ChatGPT share URL.');
+        }
+        const saved = await send({
+            type: 'CHAT_HISTORY_OFFICIAL_SHARE',
+            chatId,
+            officialShareUrl
+        });
+        if (!saved?.success) throw new Error(saved?.error || 'Could not save the official share URL.');
+        state.officialShareUrls.set(chatId, officialShareUrl);
+        const chat = state.serverChats.find((item) => item.id === chatId);
+        if (chat) chat.officialShareUrl = officialShareUrl;
+        state.officialShareAttempts.delete(chatId);
+        renderChats();
+        return officialShareUrl;
+    };
+
     const chatIdFromHref = (value) => {
         const match = String(value || '').match(/\/c\/([A-Za-z0-9_-]{4,128})/);
         return match?.[1] || null;
@@ -378,24 +399,7 @@
                 if (!response.ok) throw new Error(payload.detail || payload.message || `ChatGPT share request failed (${response.status}).`);
                 return payload;
             };
-            const isOfficialShareUrl = (value) => /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(String(value || ''));
             const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-            const saveOfficialShare = async (officialShareUrl) => {
-                if (!isOfficialShareUrl(officialShareUrl)) throw new Error('ChatGPT did not return an official public share URL.');
-                const saved = await send({
-                    type: 'CHAT_HISTORY_OFFICIAL_SHARE',
-                    chatId,
-                    officialShareUrl
-                });
-                if (!saved?.success) throw new Error(saved?.error || 'Could not save the official share URL.');
-                state.officialShareUrls.set(chatId, officialShareUrl);
-                const chat = state.serverChats.find((item) => item.id === chatId);
-                if (chat) chat.officialShareUrl = officialShareUrl;
-                state.officialShareAttempts.delete(chatId);
-                renderChats();
-                return officialShareUrl;
-            };
 
             // Use the same Share control the user sees. ChatGPT's current UI
             // can change its internal share payload, while this button always
@@ -436,8 +440,10 @@
                     .find((button) => /create\s+(?:a\s+)?(?:public\s+)?link/i.test(String(button.textContent || button.getAttribute?.('aria-label') || '')));
                 if (createButton) createButton.click();
                 for (let attempt = 0; attempt < 10; attempt += 1) {
+                    const detectedUrl = state.detectedOfficialShareUrls.get(chatId);
+                    if (detectedUrl) return await persistOfficialShareUrl(chatId, detectedUrl);
                     const url = await sharedConversationUrl().catch(() => '');
-                    if (url) return await saveOfficialShare(url);
+                    if (url) return await persistOfficialShareUrl(chatId, url);
                     await sleep(900);
                 }
             }
@@ -480,7 +486,7 @@
                 });
                 officialShareUrl = officialShareUrl || `https://chatgpt.com/share/${shareId}`;
             }
-            return await saveOfficialShare(officialShareUrl);
+            return await persistOfficialShareUrl(chatId, officialShareUrl);
         } catch (error) {
             const attempts = (state.officialShareAttempts.get(chatId) || 0) + 1;
             state.officialShareAttempts.set(chatId, attempts);
@@ -492,6 +498,20 @@
             state.officialShareInFlight.delete(chatId);
         }
     };
+
+    // ChatGPT's native share button copies the generated URL as its final
+    // step. Capture only official share URLs in the page bridge; the main
+    // world shim in hijack.js turns that one clipboard operation into a
+    // server-save event, so no clipboard permission or user prompt is needed.
+    window.addEventListener('__dcx_official_share_link__', (event) => {
+        const chatId = currentChatId();
+        const officialShareUrl = String(event?.detail || '').trim();
+        if (!chatId || !isOfficialShareUrl(officialShareUrl)) return;
+        state.detectedOfficialShareUrls.set(chatId, officialShareUrl);
+        void persistOfficialShareUrl(chatId, officialShareUrl).catch((error) => {
+            console.warn('[ToolsByDcx] Could not save the native ChatGPT share URL:', error);
+        });
+    }, { passive: true });
 
     const extractMessages = () => {
         const messages = [];

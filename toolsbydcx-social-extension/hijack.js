@@ -68,4 +68,40 @@
             };
         }
     } catch(e) {}
+
+    // ChatGPT's Share control copies the freshly-created public URL as its
+    // final step. Social does not need the clipboard value itself; it sends
+    // the official URL to the panel server. Intercept only ChatGPT share URLs
+    // so the native button keeps working without asking the user for clipboard
+    // permission. All other clipboard writes are left untouched.
+    try {
+        var shareHost = String(window.location.hostname || '').toLowerCase();
+        var isChatHost = shareHost === 'chatgpt.com'
+            || shareHost.endsWith('.chatgpt.com')
+            || shareHost === 'openai.com'
+            || shareHost.endsWith('.openai.com');
+        var officialSharePattern = /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i;
+        var clipboard = isChatHost && navigator.clipboard;
+        if (clipboard && typeof clipboard.writeText === 'function' && !clipboard.writeText.__toolsByDcxShareBridge) {
+            var originalWriteText = clipboard.writeText.bind(clipboard);
+            var bridgedWriteText = function(value) {
+                var text = String(value || '').trim();
+                if (officialSharePattern.test(text)) {
+                    window.dispatchEvent(new CustomEvent('__dcx_official_share_link__', { detail: text }));
+                    return Promise.resolve();
+                }
+                return originalWriteText(value);
+            };
+            Object.defineProperty(bridgedWriteText, '__toolsByDcxShareBridge', { value: true });
+            try {
+                Object.defineProperty(clipboard, 'writeText', {
+                    value: bridgedWriteText,
+                    configurable: true,
+                    writable: true
+                });
+            } catch (_) {
+                clipboard.writeText = bridgedWriteText;
+            }
+        }
+    } catch(e) {}
 })();
