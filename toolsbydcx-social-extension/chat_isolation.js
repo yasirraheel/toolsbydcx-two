@@ -73,11 +73,11 @@
                 position: fixed;
                 z-index: 2147483000;
                 inset: 0 auto 0 0;
-                width: 292px;
+                width: 248px;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
-                padding: 18px 10px 14px;
+                padding: 14px 9px 12px;
                 overflow: hidden;
                 background: #171717;
                 color: #ececf1;
@@ -88,6 +88,39 @@
                 box-shadow: 8px 0 24px rgba(0,0,0,.18);
             }
             #${PANEL_ID}, #${PANEL_ID} * { box-sizing: border-box; }
+            #${PANEL_ID} .toolsbydcx-brand {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                min-height: 34px;
+                padding: 0 8px 12px;
+                border-bottom: 1px solid rgba(255,255,255,.10);
+                color: #f7f7f8;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: -.01em;
+            }
+            #${PANEL_ID} .toolsbydcx-brand-logo,
+            #${PANEL_ID} .toolsbydcx-brand-fallback {
+                width: 25px;
+                height: 25px;
+                flex: 0 0 25px;
+                border-radius: 7px;
+            }
+            #${PANEL_ID} .toolsbydcx-brand-logo {
+                display: block;
+                object-fit: contain;
+                background: #fff;
+            }
+            #${PANEL_ID} .toolsbydcx-brand-fallback {
+                display: none;
+                place-items: center;
+                order: -1;
+                color: #fff;
+                background: #2f2f2f;
+                font-size: 17px;
+                font-weight: 700;
+            }
             #${PANEL_ID} .toolsbydcx-new-chat {
                 display: flex;
                 align-items: center;
@@ -100,6 +133,11 @@
                 font-weight: 600;
                 text-decoration: none;
                 transition: background .12s ease;
+            }
+            #${PANEL_ID} .toolsbydcx-new-chat > span:first-child {
+                margin-right: 8px;
+                font-size: 17px;
+                line-height: 1;
             }
             #${PANEL_ID} .toolsbydcx-new-chat:hover,
             #${PANEL_ID} .toolsbydcx-new-chat:focus-visible { background: #3d3d3d; }
@@ -133,7 +171,7 @@
             }
             @media (max-width: 700px) {
                 #${PANEL_ID} {
-                    width: min(86vw, 320px);
+                    width: min(86vw, 280px);
                     padding: 12px 8px 10px;
                 }
                 #${PANEL_ID} .toolsbydcx-new-chat,
@@ -225,10 +263,21 @@
         root.id = PANEL_ID;
         root.setAttribute('aria-label', 'ToolsByDcx chats');
         root.innerHTML = `
-            <a class="toolsbydcx-new-chat" href="/" aria-label="New chat">New chat</a>
+            <div class="toolsbydcx-brand" aria-label="ChatGPT">
+                <img class="toolsbydcx-brand-logo" src="/favicon.ico" alt="">
+                <span>ChatGPT</span>
+                <span class="toolsbydcx-brand-fallback" aria-hidden="true">✳</span>
+            </div>
+            <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
             <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
         `;
         (document.body || document.documentElement).prepend(root);
+        const logo = root.querySelector('.toolsbydcx-brand-logo');
+        const fallback = root.querySelector('.toolsbydcx-brand-fallback');
+        logo?.addEventListener('error', () => {
+            if (logo) logo.style.display = 'none';
+            if (fallback) fallback.style.display = 'grid';
+        }, { once: true });
         root.querySelector('.toolsbydcx-new-chat')?.addEventListener('click', (event) => {
             event.preventDefault();
             const target = `${window.location.origin}/`;
