@@ -124,10 +124,8 @@ class UserController extends Controller
             ->where('chat_id', $chatId)
             ->firstOrFail();
 
-        abort_if(!$chat->messages_encrypted, 404);
-
         $pageTitle = $chat->title ?: 'Archived Chat';
-        $messages = $chat->decryptedMessages();
+        $messages = $chat->messages_encrypted ? $chat->decryptedMessages() : [];
         return view('Template::user.chat_archive', compact('pageTitle', 'chat', 'messages'));
     }
 
@@ -164,11 +162,10 @@ class UserController extends Controller
             ->where('provider', 'chatgpt')
             ->where('share_token', $token)
             ->where('is_public', true)
-            ->whereNotNull('messages_encrypted')
             ->firstOrFail();
 
         $pageTitle = $chat->title ?: 'Shared Chat';
-        $messages = $chat->decryptedMessages();
+        $messages = $chat->messages_encrypted ? $chat->decryptedMessages() : [];
         return view('Template::user.shared_chat', compact('pageTitle', 'chat', 'messages'));
     }
 

@@ -9,12 +9,16 @@
         </div>
         <div class="card-body">
             <div class="dcx-archive-thread">
-                @foreach($messages as $message)
+                @forelse($messages as $message)
                     <article class="dcx-archive-message dcx-archive-message--{{ $message['role'] === 'user' ? 'user' : 'assistant' }}">
                         <div class="dcx-archive-role">{{ ucfirst($message['role']) }}</div>
                         <div class="dcx-archive-content">{!! nl2br(e($message['content'])) !!}</div>
                     </article>
-                @endforeach
+                @empty
+                    <div class="dcx-archive-message dcx-archive-message--assistant">
+                        @lang('This chat link is ready. Messages will appear here after the conversation syncs.')
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
