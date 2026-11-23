@@ -195,6 +195,7 @@
                                 </div>
                             </div>
 
+                            <div class="flow-access-stack-col">
                             {{-- Assign Google Flow Account (Extension) --}}
                             <div class="col-lg-4 col-md-6 col-12 flow-account-col">
                                 <input type="hidden" name="google_flow_account_submitted" value="1">
@@ -345,6 +346,8 @@
                                     </div>
                                     <small class="text-muted d-block mt-1">@lang('These credits are used only by the separate Flow Guard extension. Existing Flow extension and TTS credits are not changed.') </small>
                                 </div>
+                            </div>
+
                             </div>
 
                             {{-- Account Validity & Expiration Date --}}
@@ -620,15 +623,49 @@
         .user-edit-grid > [class*="col-"] { width: auto; }
         .user-edit-grid > .plan-assignment-col { grid-column: 1; grid-row: 2; }
         .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 2; }
-        .user-edit-grid > .tts-assignment-col { grid-column: 1 / span 2; grid-row: 3; }
-        .user-edit-grid > .flow-account-col { grid-column: 3; grid-row: 3; }
         .user-edit-grid > .expiry-col { grid-column: 1 / span 2; grid-row: 4; }
-        .user-edit-grid > .flow-guard-col { grid-column: 3; grid-row: 4; }
+        .user-edit-grid > .flow-access-stack-col {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            width: auto;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .5rem;
+            align-items: start;
+        }
+        .flow-access-stack-col > .tts-assignment-col {
+            grid-column: 1 / span 2;
+            grid-row: 1;
+            width: auto;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .flow-access-stack-col > .flow-account-col {
+            grid-column: 3;
+            grid-row: 1;
+            width: auto;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .flow-access-stack-col > .flow-guard-col {
+            grid-column: 3;
+            grid-row: 2;
+            width: auto;
+            padding-left: 0;
+            padding-right: 0;
+        }
         .user-edit-grid > .save-actions-col { grid-column: 1 / -1; grid-row: 5; }
     }
     @media (max-width: 991.98px) {
         .user-edit-grid { display: flex; }
         .user-edit-grid > [class*="col-"] { width: 100%; }
+        .flow-access-stack-col { display: flex; flex-direction: column; gap: .5rem; }
+        .flow-access-stack-col > .flow-account-col { order: 1; }
+        .flow-access-stack-col > .flow-guard-col { order: 2; }
+        .flow-access-stack-col > .tts-assignment-col { order: 3; }
+        .flow-access-stack-col > .flow-account-col,
+        .flow-access-stack-col > .flow-guard-col,
+        .flow-access-stack-col > .tts-assignment-col { width: 100%; padding-left: 0; padding-right: 0; }
     }
     @media (max-width: 767px) {
         .dcx-tts-assignment { height: auto; }
