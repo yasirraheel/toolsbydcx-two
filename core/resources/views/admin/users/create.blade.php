@@ -138,10 +138,10 @@
                                 <input type="hidden" name="google_flow_account_submitted" value="1">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
-                                        <i class="las la-robot text--primary"></i> @lang('Assign Google Flow Account (Extension)')
+                                        <i class="las la-robot text--primary"></i> @lang('Flow Account')
                                     </label>
                                     <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
-                                        <option value="">@lang('No Google Flow account (Unassigned)')</option>
+                                        <option value="">@lang('Flow account unassigned')</option>
                                         @foreach($googleFlowAccounts as $flowAcc)
                                             <option value="{{ $flowAcc->id }}" @selected(old('google_flow_account_id') == $flowAcc->id)>
                                                 {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
@@ -149,7 +149,7 @@
                                         @endforeach
                                     </select>
                                     <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Select a Google Flow account for extension auto-login.')
+                                        <i class="las la-info-circle"></i> @lang('Assigned account used for Flow auto-login.')
                                     </small>
                                 </div>
                             </div>

@@ -132,7 +132,7 @@
                             </div>
 
                             {{-- Subscription Plan --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 plan-assignment-col">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-layer-group text--primary"></i> @lang('Subscription Plan')
@@ -156,7 +156,7 @@
                             </div>
 
                             {{-- Explicit account overrides, one dropdown per platform --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 account-overrides-col">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
                                         <i class="las la-shield-alt text--primary"></i> @lang('Account Overrides by Platform')
@@ -196,14 +196,14 @@
                             </div>
 
                             {{-- Assign Google Flow Account (Extension) --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 flow-account-col">
                                 <input type="hidden" name="google_flow_account_submitted" value="1">
                                 <div class="form-group mb-0">
                                     <label class="fw-bold mb-2">
-                                        <i class="las la-robot text--primary"></i> @lang('Assign Google Flow Account (Extension)')
+                                        <i class="las la-robot text--primary"></i> @lang('Flow Account')
                                     </label>
                                     <select name="google_flow_account_id" class="form-control select2" id="google-flow-account-selector">
-                                        <option value="">@lang('No Google Flow account (Unassigned)')</option>
+                                        <option value="">@lang('Flow account unassigned')</option>
                                         @foreach($googleFlowAccounts as $flowAcc)
                                             <option value="{{ $flowAcc->id }}" @selected(($currentFlowAccount && $currentFlowAccount->id == $flowAcc->id) || $user->google_flow_account_id == $flowAcc->id)>
                                                 {{ $flowAcc->email }} {{ $flowAcc->label ? '('.$flowAcc->label.')' : '' }}
@@ -217,14 +217,14 @@
                                         @if($activeAssignedFlow)
                                             <span class="text--success fw-bold"><i class="las la-check-circle"></i> @lang('Currently Assigned'): {{ $activeAssignedFlow->email }}</span>
                                         @else
-                                            <i class="las la-info-circle"></i> @lang('Select a Google Flow account for extension auto-login.')
+                                            <i class="las la-info-circle"></i> @lang('Assigned account used for Flow auto-login.')
                                         @endif
                                     </small>
                                 </div>
                             </div>
 
                             {{-- Combined Text-to-Speech access and quota --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 tts-assignment-col">
                                 <input type="hidden" name="tts_access_submitted" value="1">
                                 <input type="hidden" name="tts_credit_limit_submitted" value="1">
                                 @php
@@ -276,7 +276,7 @@
                             </div>
 
                             {{-- Combined Flow Guard, Gemini access and credit quota --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 flow-guard-col">
                                 <input type="hidden" name="flow_guard_submitted" value="1">
                                 @php
                                     $flowGuardLimit = $flowGuardAccess->credit_limit;
@@ -348,7 +348,7 @@
                             </div>
 
                             {{-- Account Validity & Expiration Date --}}
-                            <div class="col-lg-4 col-md-6 col-12">
+                            <div class="col-lg-4 col-md-6 col-12 expiry-col">
                                 <div class="dcx-expiry-panel p-3 rounded">
                                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
                                         <div>
@@ -372,7 +372,7 @@
                             </div>
 
                             {{-- Save Changes & Copy Details Buttons --}}
-                            <div class="col-12 mt-3 d-flex flex-wrap justify-content-end gap-2">
+                            <div class="col-12 mt-3 d-flex flex-wrap justify-content-end gap-2 save-actions-col">
                                 <button type="submit" class="btn btn--primary px-4 py-2 shadow-sm fw-bold">
                                     <i class="las la-save me-1"></i> @lang('Save Changes')
                                 </button>
@@ -611,6 +611,25 @@
     .dcx-tts-credit-card .form-control { min-height: 46px; }
     .dcx-tts-credit-card .input-group-text { font-size: .78rem; }
     .dcx-tts-credit-card small { line-height: 1.45; }
+    @media (min-width: 992px) {
+        .user-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: start;
+        }
+        .user-edit-grid > [class*="col-"] { width: auto; }
+        .user-edit-grid > .plan-assignment-col { grid-column: 1; grid-row: 2; }
+        .user-edit-grid > .account-overrides-col { grid-column: 3; grid-row: 2; }
+        .user-edit-grid > .tts-assignment-col { grid-column: 1 / span 2; grid-row: 3; }
+        .user-edit-grid > .flow-account-col { grid-column: 3; grid-row: 3; }
+        .user-edit-grid > .expiry-col { grid-column: 1 / span 2; grid-row: 4; }
+        .user-edit-grid > .flow-guard-col { grid-column: 3; grid-row: 4; }
+        .user-edit-grid > .save-actions-col { grid-column: 1 / -1; grid-row: 5; }
+    }
+    @media (max-width: 991.98px) {
+        .user-edit-grid { display: flex; }
+        .user-edit-grid > [class*="col-"] { width: 100%; }
+    }
     @media (max-width: 767px) {
         .dcx-tts-assignment { height: auto; }
         .dcx-tts-assignment > span { align-items: flex-start; flex-direction: column !important; gap: 2px !important; }
