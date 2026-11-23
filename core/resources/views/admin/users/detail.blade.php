@@ -223,26 +223,10 @@
                                 </div>
                             </div>
 
-                            {{-- Assign Text-to-Speech access --}}
+                            {{-- Combined Text-to-Speech access and quota --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="tts_access_submitted" value="1">
                                 <input type="hidden" name="tts_credit_limit_submitted" value="1">
-                                <div class="form-group mb-0">
-                                    <label class="fw-bold mb-2">
-                                        <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
-                                    </label>
-                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-0">
-                                        <input type="checkbox" name="tts_access" value="1" id="ttsAccessCheckbox" @checked(old('tts_access', $user->tts_access))>
-                                        <span>@lang('Enable access')</span>
-                                    </label>
-                                    <small class="text-muted mt-1 d-block" style="font-size: 11.5px;">
-                                        <i class="las la-info-circle"></i> @lang('Allow this user to use the server-side OpenRadio voice tool.')
-                                    </small>
-                                </div>
-                            </div>
-
-                            {{-- Per-user TTS credit quota --}}
-                            <div class="col-lg-4 col-md-6 col-12">
                                 @php
                                     $assignedTtsCredits = $user->tts_credit_limit;
                                     $usedTtsCredits = (int) ($user->tts_credits_used ?? 0);
@@ -250,9 +234,17 @@
                                 <div class="dcx-tts-credit-card p-3 rounded h-100">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                                         <label class="fw-bold mb-0">
-                                            <i class="las la-coins text--warning"></i> @lang('TTS Credit Limit')
+                                            <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
                                         </label>
                                         <span class="badge badge--info">@lang('Per user')</span>
+                                    </div>
+                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
+                                        <input type="checkbox" name="tts_access" value="1" id="ttsAccessCheckbox" @checked(old('tts_access', $user->tts_access))>
+                                        <span>@lang('Enable access')</span>
+                                    </label>
+                                    <small class="text-muted d-block mb-2"><i class="las la-info-circle"></i> @lang('Allow this user to use the server-side OpenRadio voice tool.') </small>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <span class="small text-muted fw-bold">@lang('Credit limit')</span>
                                     </div>
                                     <div class="input-group">
                                         <input type="number" class="form-control" name="tts_credit_limit" id="ttsCreditLimitInput"
@@ -283,7 +275,7 @@
                                 </div>
                             </div>
 
-                            {{-- Separate Flow Guard access and credit quota --}}
+                            {{-- Combined Flow Guard, Gemini access and credit quota --}}
                             <div class="col-lg-4 col-md-6 col-12">
                                 <input type="hidden" name="flow_guard_submitted" value="1">
                                 @php
@@ -306,6 +298,17 @@
                                         <input type="checkbox" name="flow_guard_full_control" value="1" @checked(old('flow_guard_full_control', $flowGuardAccess->full_control))>
                                         <span>@lang('Full browser control')</span>
                                     </label>
+                                    <div class="access-subsection rounded mb-2">
+                                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                            <span class="fw-bold"><i class="las la-magic text--warning"></i> @lang('Gemini Website Access')</span>
+                                            <span class="badge badge--info">@lang('Individual')</span>
+                                        </div>
+                                        <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
+                                            <input type="checkbox" name="gemini_access" value="1" @checked(old('gemini_access', $user->gemini_access))>
+                                            <span>@lang('Enable Gemini access')</span>
+                                        </label>
+                                        <small class="text-muted d-block">@lang('Allows this user to open Gemini from the dashboard and sidebar. Access is enforced server-side.') </small>
+                                    </div>
                                     <small class="text-muted d-block mb-2">@lang('Restricts navigation and browser-page interactions through Flow Guard. Chrome toolbar, F11, and Developer Mode require managed-browser policy.') </small>
                                     <div class="input-group mb-2">
                                         <input type="number" class="form-control" name="flow_guard_credit_limit" min="0" max="1000000000" step="1"
@@ -341,23 +344,6 @@
                                         </span>
                                     </div>
                                     <small class="text-muted d-block mt-1">@lang('These credits are used only by the separate Flow Guard extension. Existing Flow extension and TTS credits are not changed.') </small>
-                                </div>
-                            </div>
-
-                            {{-- Individual Gemini website access --}}
-                            <div class="col-lg-4 col-md-6 col-12">
-                                <div class="dcx-tts-credit-card p-3 rounded h-100">
-                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                                        <label class="fw-bold mb-0">
-                                            <i class="las la-magic text--warning"></i> @lang('Gemini Website Access')
-                                        </label>
-                                        <span class="badge badge--info">@lang('Individual access')</span>
-                                    </div>
-                                    <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
-                                        <input type="checkbox" name="gemini_access" value="1" @checked(old('gemini_access', $user->gemini_access))>
-                                        <span>@lang('Enable Gemini access')</span>
-                                    </label>
-                                    <small class="text-muted d-block">@lang('Allows this user to open Gemini from the dashboard and sidebar. Access is enforced server-side.') </small>
                                 </div>
                             </div>
 
@@ -671,6 +657,8 @@
     .account-overrides-grid .form-control,
     .account-overrides-grid .select2-container--default .select2-selection--single { min-height: 46px; font-size: .95rem; }
     .account-overrides-grid .select2-container--default .select2-selection__rendered { font-size: .95rem; line-height: 44px; }
+    .access-subsection { padding: .65rem; border: 1px solid rgba(245, 158, 11, .28); background: rgba(15, 23, 42, .36); }
+    .access-subsection > .d-flex > .fw-bold { font-size: .82rem; }
     .dcx-tts-assignment { height: 46px; min-height: 46px; align-items: center !important; padding: 0 10px; border: 1px solid rgba(148, 163, 184, .18); color: #e2e8f0; background: rgba(30, 41, 59, .45); cursor: pointer; }
     .dcx-tts-assignment > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dcx-tts-assignment strong { color: #e2e8f0; font-size: .875rem; }
