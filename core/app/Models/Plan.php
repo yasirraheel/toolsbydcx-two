@@ -105,4 +105,18 @@ class Plan extends Model
             ->values()
             ->all();
     }
+
+    /**
+     * Exact capability labels rendered on public plan cards.
+     */
+    public function getFrontendCapabilitiesAttribute(): array
+    {
+        return collect($this->feature_list)
+            ->merge($this->included_resources ?? [])
+            ->map(fn ($capability) => trim((string) $capability))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
 }

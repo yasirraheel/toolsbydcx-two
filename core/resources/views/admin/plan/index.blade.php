@@ -11,13 +11,7 @@
 
         <div class="row g-4 dcx-admin-plans-grid">
             @forelse($plans as $plan)
-                @php
-                    $displayFeatures = collect($plan->feature_list)
-                        ->merge($plan->included_resources ?? [])
-                        ->filter(fn ($feature) => trim((string) $feature) !== '')
-                        ->unique()
-                        ->values();
-                @endphp
+                <?php $displayFeatures = $plan->frontend_capabilities; ?>
                 <div class="col-xl-4 col-md-6">
                     <div class="card dcx-admin-plan-card h-100 d-flex flex-column">
                         <div class="dcx-admin-plan-card-header text-center">

@@ -41,8 +41,8 @@
                                 <div class="border rounded p-3">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                                         <div>
-                                            <label class="fw-bold mb-1">@lang('Plan Features')</label>
-                                            <small class="text-muted d-block">@lang('Each feature is saved separately and can be removed anytime.')</small>
+                                            <label class="fw-bold mb-1">@lang('Frontend Card Features')</label>
+                                            <small class="text-muted d-block">@lang('Every text capability shown on the public plan card is editable here.')</small>
                                         </div>
                                         <button type="button" class="btn btn-sm btn-outline--primary" id="add-plan-feature"><i class="las la-plus"></i> @lang('Add feature')</button>
                                     </div>
@@ -64,21 +64,43 @@
                             </div>
 
                             <div class="col-12">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                        <div>
+                                            <label class="fw-bold mb-1">@lang('Frontend capabilities preview')</label>
+                                            <small class="text-muted d-block">@lang('This live list is generated from the feature rows and selected platforms below.')</small>
+                                        </div>
+                                        <span class="badge badge--info">@lang('Dynamic')</span>
+                                    </div>
+                                    <ul id="frontend-capabilities-preview" class="list-unstyled mb-0 d-flex flex-column gap-1">
+                                        @forelse($plan->frontend_capabilities as $capability)
+                                            <li class="d-flex align-items-center gap-2">
+                                                <i class="las la-check-circle text--success"></i>
+                                                <span>{{ $capability }}</span>
+                                            </li>
+                                        @empty
+                                            <li class="text-muted" data-empty-preview>@lang('No capabilities configured yet')</li>
+                                        @endforelse
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
                                 <label class="fw-bold mb-2">@lang('Platforms Included')</label>
-                                <select class="form-control select2" name="platform_ids[]" multiple="multiple" data-placeholder="@lang('Select platforms')">
+                                <select class="form-control select2" name="platform_ids[]" id="plan-platforms" multiple="multiple" data-placeholder="@lang('Select platforms')">
                                     <?php
                                         $selectedPlatforms = collect(old('platform_ids', $plan->platforms?->pluck('id')->all() ?? []))
                                             ->map(fn ($id) => (string) $id)
                                             ->all();
                                     ?>
                                     @foreach($platforms as $platform)
-                                        <option value="{{ $platform->id }}" @selected(in_array((string) $platform->id, $selectedPlatforms, true))>
+                                        <option value="{{ $platform->id }}" data-capability="{{ $platform->name }}" @selected(in_array((string) $platform->id, $selectedPlatforms, true))>
                                             {{ $platform->name }} — {{ $platform->active_accounts_count }} @lang('active account(s)')
                                             @if(!$platform->status) ({{ __('inactive') }}) @endif
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted d-block mt-1">@lang('Select platforms only. Each user receives one active account from each selected platform, automatically load-balanced across that platform.')</small>
+                                <small class="text-muted d-block mt-1">@lang('Selected platform names are also shown as frontend capabilities. Remove a platform here to remove it from the public card.')</small>
                             </div>
 
                             <div class="col-md-6">
@@ -145,16 +167,47 @@
     (function ($) {
         'use strict';
         function featureRow(value) {
-            return $(`<div class="input-group plan-feature-row">
-                <input type="text" class="form-control" name="features[]" maxlength="255" placeholder="@lang('e.g. AI Text-to-Speech')">
-                <button type="button" class="btn btn-outline--danger remove-plan-feature" title="@lang('Remove feature')"><i class="las la-trash"></i></button>
-            </div>`).find('input').val(value || '').end();
+            return $('<div class="input-group plan-feature-row">' +
+                '<input type="text" class="form-control" name="features[]" maxlength="255" placeholder="e.g. AI Text-to-Speech">' +
+                '<button type="button" class="btn btn-outline--danger remove-plan-feature" title="Remove feature"><i class="las la-trash"></i></button>' +
+            '</div>').find('input').val(value || '').end();
         }
-        $('#add-plan-feature').on('click', function () { $('#plan-features-list').append(featureRow('')); });
+        function refreshCapabilitiesPreview() {
+            const capabilities = [];
+            $('#plan-features-list input[name="features[]"]').each(function () {
+                const value = String($(this).val() || '').trim();
+                if (value) capabilities.push(value);
+            });
+            $('#plan-platforms option:selected').each(function () {
+                const value = String($(this).data('capability') || $(this).text().split('—')[0] || '').trim();
+                if (value) capabilities.push(value);
+            });
+
+            const unique = [...new Set(capabilities)];
+            const $preview = $('#frontend-capabilities-preview').empty();
+            if (!unique.length) {
+                $preview.append($('<li class="text-muted" data-empty-preview>').text('No capabilities configured yet'));
+                return;
+            }
+            unique.forEach(function (value) {
+                $preview.append(
+                    $('<li class="d-flex align-items-center gap-2">')
+                        .append('<i class="las la-check-circle text--success"></i>')
+                        .append($('<span>').text(value))
+                );
+            });
+        }
+        $('#add-plan-feature').on('click', function () {
+            $('#plan-features-list').append(featureRow(''));
+            refreshCapabilitiesPreview();
+        });
         $(document).on('click', '.remove-plan-feature', function () {
             $(this).closest('.plan-feature-row').remove();
             if (!$('#plan-features-list .plan-feature-row').length) $('#plan-features-list').append(featureRow(''));
+            refreshCapabilitiesPreview();
         });
+        $(document).on('input', '#plan-features-list input[name="features[]"]', refreshCapabilitiesPreview);
+        $('#plan-platforms').on('change', refreshCapabilitiesPreview);
         function syncTts() {
             $('#plan-tts-credit-limit, .plan-credit-preset').prop('disabled', !$('#plan-tts-access').is(':checked'));
         }
@@ -168,6 +221,7 @@
         $('.plan-credit-preset').on('click', function () { $('#plan-tts-credit-limit').val($(this).data('credits')); });
         syncTts();
         syncFlow();
+        refreshCapabilitiesPreview();
     })(jQuery);
 </script>
 @endpush

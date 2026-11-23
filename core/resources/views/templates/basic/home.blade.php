@@ -148,7 +148,6 @@
         <div class="row justify-content-center g-4">
             @forelse ($plans as $plan)
                 <div class="col-xl-4 col-md-6 col-sm-10 scroll-reveal">
-                    @php($planFeatures = $plan->feature_list)
                     <div class="card pricing-card dcx-pricing-card h-100 position-relative d-flex flex-column">
                         {{-- Card Header --}}
                         <div class="card-header border-0 pt-4 pb-3 px-4 text-center bg-transparent">
@@ -170,8 +169,8 @@
                                 <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">@lang('INCLUDED CAPABILITIES'):</span>
                             </div>
                             <ul class="list-unstyled mb-0 d-flex flex-column gap-2.5">
-                                @if(count($planFeatures) > 0)
-                                    @foreach($planFeatures as $feature)
+                                @if(count($plan->frontend_capabilities) > 0)
+                                    @foreach($plan->frontend_capabilities as $feature)
                                         <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
                                             <i class="las la-check-circle text-success fs-5 flex-shrink-0 mt-0.5"></i>
                                             <span>{{ __($feature) }}</span>
@@ -179,14 +178,6 @@
                                     @endforeach
                                 @endif
 
-                                @if($plan->included_resources && count($plan->included_resources) > 0)
-                                    @foreach($plan->included_resources as $resource)
-                                        <li class="dcx-plan-feature d-flex align-items-start gap-2.5 text-white small">
-                                            <i class="las la-check-circle text-primary fs-5 flex-shrink-0 mt-0.5"></i>
-                                            <span>{{ $resource }}</span>
-                                        </li>
-                                    @endforeach
-                                @endif
                             </ul>
                         </div>
 

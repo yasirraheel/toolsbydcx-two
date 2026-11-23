@@ -1,6 +1,4 @@
-@php
-    $layout = auth()->check() ? $activeTemplate . 'layouts.master' : $activeTemplate . 'layouts.frontend';
-@endphp
+<?php $layout = auth()->check() ? $activeTemplate . 'layouts.master' : $activeTemplate . 'layouts.frontend'; ?>
 @extends($layout)
 
 @section('content')
@@ -16,7 +14,6 @@
         <div class="row justify-content-center g-3 dcx-plans-grid">
             @forelse ($plans as $plan)
                 <div class="col-xl-3 col-lg-4 col-md-6 col-sm-10">
-                    @php($planFeatures = $plan->feature_list)
                     <div class="card dcx-plan-card h-100">
                         <div class="card-header dcx-plan-card-header text-center py-3">
                             <h5 class="text-white mb-2 dcx-plan-name">{{ __($plan->name) }}</h5>
@@ -30,21 +27,14 @@
 
                         <div class="card-body p-3">
                             <ul class="list-group list-group-flush">
-                                @if(count($planFeatures) > 0)
-                                    @foreach($planFeatures as $feature)
+                                @if(count($plan->frontend_capabilities) > 0)
+                                    @foreach($plan->frontend_capabilities as $feature)
                                         <li class="list-group-item dcx-plan-feature d-flex align-items-center bg-transparent border-0 px-0 py-2 text-white">
                                             <i class="las la-check-circle text--success fs-5 me-2"></i> {{ __($feature) }}
                                         </li>
                                     @endforeach
                                 @endif
 
-                                @if($plan->included_resources && count($plan->included_resources) > 0)
-                                    @foreach($plan->included_resources as $resource)
-                                        <li class="list-group-item dcx-plan-feature d-flex align-items-center bg-transparent border-0 px-0 py-2 text-white">
-                                            <i class="las la-check-circle text--success fs-5 me-2"></i> {{ $resource }}
-                                        </li>
-                                    @endforeach
-                                @endif
                             </ul>
                         </div>
                         
