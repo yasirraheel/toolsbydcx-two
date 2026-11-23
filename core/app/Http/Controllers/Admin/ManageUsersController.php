@@ -429,12 +429,6 @@ class ManageUsersController extends Controller
         $googleFlowAccounts = \App\Models\GoogleFlowAccount::with('user')->get();
         $plans = \App\Models\Plan::active()->orderBy('name')->get(['id', 'name', 'price', 'flow_access', 'tts_access', 'tts_credit_limit']);
         $currentFlowAccount = $user->flow_account;
-        $userPairings = \App\Models\ExtensionPairing::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->where('expires_at', '>', now())
-            ->with('googleFlowAccount')
-            ->get();
-
         $ttsProviderCredits = null;
         try {
             $tts = app(\App\Services\OpenRadioTtsService::class);
@@ -473,7 +467,6 @@ class ManageUsersController extends Controller
             'domain',
             'googleFlowAccounts',
             'currentFlowAccount',
-            'userPairings',
             'plans',
             'ttsProviderCredits',
             'ttsCreditRemaining',

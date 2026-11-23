@@ -385,66 +385,6 @@
                 </div>
             </div>
 
-            {{-- Google Flow Extension Active Sessions --}}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="las la-plug text--primary me-1"></i> @lang('Google Flow Extension Active Sessions')
-                    </h5>
-                    <a href="{{ route('extension.download') }}" class="btn btn-sm btn-outline--primary">
-                        <i class="las la-download me-1"></i> @lang('Download Extension')
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive--md table-responsive">
-                        <table class="table table--light style--two">
-                            <thead>
-                                <tr>
-                                    <th>@lang('Assigned Account')</th>
-                                    <th>@lang('Browser')</th>
-                                    <th>@lang('Extension Version')</th>
-                                    <th>@lang('Expires At')</th>
-                                    <th>@lang('Status')</th>
-                                    <th>@lang('Action')</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($userPairings as $pairing)
-                                    <tr>
-                                        <td>
-                                            <span class="fw-bold">{{ @$pairing->googleFlowAccount->email ?: __('None') }}</span>
-                                            @if(@$pairing->googleFlowAccount->label)
-                                                <small class="d-block text-muted">({{ $pairing->googleFlowAccount->label }})</small>
-                                            @endif
-                                        </td>
-                                        <td>{{ $pairing->browser ?: __('Unknown') }}</td>
-                                        <td>{{ $pairing->extension_version ?: __('N/A') }}</td>
-                                        <td>{{ $pairing->expires_at ? showDateTime($pairing->expires_at) : __('Never') }}</td>
-                                        <td>
-                                            <span class="badge badge--success">@lang('Active')</span>
-                                        </td>
-                                        <td>
-                                            <form action="{{ route('admin.google-flow.revoke-extension', $pairing->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-outline--danger" onclick="return confirm('@lang('Are you sure you want to revoke this extension session?')')">
-                                                    <i class="las la-ban me-1"></i> @lang('Revoke')
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
-                                            <i class="las la-info-circle me-1"></i> @lang('No active extension sessions for this user.')
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
