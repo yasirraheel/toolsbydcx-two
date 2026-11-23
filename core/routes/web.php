@@ -28,7 +28,7 @@ Route::options('api/extension/{any?}', function() {
 
     $response = response('', 200)
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Admin-Key, Accept')
-        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
         ->header('Access-Control-Allow-Credentials', 'true');
 
     return $allowed ? $response->header('Access-Control-Allow-Origin', $origin) : $response;
