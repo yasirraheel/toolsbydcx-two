@@ -31,7 +31,8 @@
         archiveInFlight: false,
         registeredIds: new Set(),
         registeringIds: new Set(),
-        lastPath: window.location.pathname
+        lastPath: window.location.pathname,
+        sidebarRoot: null
     };
 
     const setIsolationState = (value) => {
@@ -45,7 +46,16 @@
         const style = document.createElement('style');
         style.id = 'toolsbydcx-chat-isolation-style';
         style.textContent = `
-            /* Fail closed before the panel allow-list is loaded. */
+            /* Fail closed before the panel allow-list is loaded. Keep the
+               sidebar invisible until we can apply the user-scoped policy so
+               another user's history never flashes on screen. */
+            html[data-toolsbydcx-chat-isolation="loading"] aside,
+            html[data-toolsbydcx-chat-isolation="loading"] nav,
+            html[data-toolsbydcx-chat-isolation="loading"] [role="navigation"],
+            html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="sidebar" i],
+            html[data-toolsbydcx-chat-isolation="loading"] [class*="sidebar" i] {
+                visibility: hidden !important;
+            }
             html[data-toolsbydcx-chat-isolation="loading"] a[href*="/c/"] {
                 visibility: hidden !important;
                 pointer-events: none !important;
@@ -78,6 +88,21 @@
             .toolsbydcx-chat-row > a:hover,
             .toolsbydcx-chat-row > a:focus-visible {
                 background: rgba(255, 255, 255, .08) !important;
+            }
+            /* The Social extension owns this sidebar surface. Only the New
+               chat control and the current user's chat rows are left visible. */
+            [data-toolsbydcx-sidebar-policy="active"] .toolsbydcx-sidebar-extra,
+            [data-toolsbydcx-sidebar-policy="active"] .toolsbydcx-sidebar-label {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+            @media (max-width: 700px) {
+                .toolsbydcx-chat-row > a {
+                    min-height: 44px !important;
+                    padding: 10px 14px !important;
+                    font-size: 15px !important;
+                }
             }
         `;
         (document.head || document.documentElement).appendChild(style);
@@ -153,15 +178,69 @@
         }, 1400);
     };
 
+    const sidebarText = (element) => String(
+        element?.getAttribute?.('aria-label')
+        || element?.getAttribute?.('title')
+        || element?.innerText
+        || element?.textContent
+        || ''
+    ).replace(/\s+/g, ' ').trim();
+
+    const isNewChatControl = (element) => {
+        if (!element) return false;
+        const text = sidebarText(element);
+        if (/^new\s+chat(?:\b|$)/i.test(text)) return true;
+        const href = String(element.getAttribute?.('href') || '').trim();
+        return /^\/(?:new(?:-chat)?|new-chat)\/?$/i.test(href)
+            && !element.closest?.('a[href*="/c/"]');
+    };
+
+    const sidebarCandidates = () => Array.from(document.querySelectorAll(
+        'aside, nav, [role="navigation"], [data-testid*="sidebar" i], [class*="sidebar" i]'
+    )).filter((element) => {
+        if (!element || element === document.body) return false;
+        return Boolean(element.querySelector?.('a[href*="/c/"]'))
+            || /new\s+chat/i.test(String(element.textContent || ''));
+    });
+
+    const findSidebarRoot = () => {
+        if (state.sidebarRoot?.isConnected) return state.sidebarRoot;
+        const candidates = sidebarCandidates();
+        // Prefer the smallest candidate containing the history links. This
+        // avoids hiding the page shell when ChatGPT nests nav elements.
+        const root = candidates.sort((left, right) => {
+            const leftArea = left.getBoundingClientRect?.().width || Number.MAX_SAFE_INTEGER;
+            const rightArea = right.getBoundingClientRect?.().width || Number.MAX_SAFE_INTEGER;
+            return leftArea - rightArea;
+        })[0] || null;
+        if (root) {
+            state.sidebarRoot = root;
+            return root;
+        }
+
+        // Mobile builds sometimes use an unnamed drawer instead of <aside>.
+        // Walk up from a chat link until the ancestor looks like the narrow
+        // history column and contains the New chat control.
+        const sample = document.querySelector('a[href*="/c/"]');
+        let cursor = sample?.parentElement || null;
+        for (let depth = 0; cursor && depth < 10; depth += 1, cursor = cursor.parentElement) {
+            const rect = cursor.getBoundingClientRect?.();
+            if (rect && rect.width > 120 && rect.width < window.innerWidth * 0.75
+                && /new\s+chat/i.test(String(cursor.textContent || ''))) {
+                state.sidebarRoot = cursor;
+                return cursor;
+            }
+        }
+        return null;
+    };
+
     const targetSidebar = () => {
         const nativeLinks = Array.from(document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])'));
         const sample = nativeLinks[nativeLinks.length - 1] || null;
-        if (!sample) {
-            const navigation = document.querySelector('nav, [role="navigation"], aside');
-            return navigation ? { host: navigation, sample: null } : null;
-        }
-        const row = sample.closest('li, [role="listitem"], [data-testid="history-item"]');
-        return { host: row?.parentElement || sample.parentElement, sample };
+        const root = findSidebarRoot();
+        if (!sample) return root ? { host: root, sample: null } : null;
+        const row = sample.closest('li, [role="listitem"], [data-testid="history-item"], [data-testid*="history-item" i]');
+        return { host: row?.parentElement || root || sample.parentElement, sample };
     };
 
     const setHidden = (element, hidden) => {
@@ -171,7 +250,76 @@
         if (!hidden && hasClass) element.classList.remove('toolsbydcx-chat-hidden');
     };
 
-    const nativeRow = (link) => link.closest('li, [role="listitem"], [data-testid="history-item"]') || link;
+    const nativeRow = (link) => link.closest(
+        'li, [role="listitem"], [data-testid="history-item"], [data-testid*="history-item" i]'
+    ) || link;
+
+    const rowChatId = (row) => {
+        const link = row?.matches?.('a[href*="/c/"]')
+            ? row
+            : row?.querySelector?.('a[href*="/c/"]');
+        return chatIdFromHref(link?.getAttribute?.('href'));
+    };
+
+    const markSidebarExtra = (element, hidden = true) => {
+        if (!element || element === state.sidebarRoot) return;
+        const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i], [data-testid*="history-item" i]')
+            || (element.parentElement && element.parentElement !== state.sidebarRoot ? element.parentElement : element);
+        if (!row || row === state.sidebarRoot) return;
+        row.classList.toggle('toolsbydcx-sidebar-extra', hidden);
+    };
+
+    const hideSidebarLabels = (root) => {
+        const labels = new Set([
+            'images', 'scheduled', 'library', 'plugins', 'explore', 'gpts',
+            'projects', 'recents', 'recent', 'tasks', 'settings', 'help',
+            'upgrade plan', 'claim offer'
+        ]);
+        root.querySelectorAll('*').forEach((element) => {
+            if (element.children.length > 0) return;
+            const value = sidebarText(element).toLowerCase();
+            if (labels.has(value)) element.classList.add('toolsbydcx-sidebar-label');
+        });
+    };
+
+    const applySidebarPolicy = () => {
+        const root = findSidebarRoot();
+        if (!root) return;
+        root.dataset.toolsbydcxSidebarPolicy = 'active';
+
+        const allowed = state.serverReady ? state.serverChatIds : new Set();
+        root.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])').forEach((link) => {
+            const row = nativeRow(link);
+            setHidden(row, !allowed.has(chatIdFromHref(link.getAttribute('href'))));
+        });
+
+        root.querySelectorAll('a, button, [role="button"], [role="menuitem"]').forEach((element) => {
+            if (element.closest?.(syntheticSelector)) return;
+            const chatLink = element.matches?.('a[href*="/c/"]')
+                ? element
+                : element.closest?.('a[href*="/c/"]');
+            if (chatLink) {
+                // Keep the entire row (including its overflow button) when the
+                // server has authorised this chat.
+                const row = nativeRow(chatLink);
+                if (allowed.has(chatIdFromHref(chatLink.getAttribute('href')))) {
+                    row.classList.remove('toolsbydcx-sidebar-extra');
+                }
+                return;
+            }
+            const row = element.closest?.('li, [role="listitem"], [data-testid*="nav-item" i], [data-testid*="history-item" i]');
+            const rowChat = rowChatId(row);
+            if (rowChat && allowed.has(rowChat)) return;
+            if (isNewChatControl(element)) {
+                markSidebarExtra(element, false);
+                return;
+            }
+            markSidebarExtra(element, true);
+        });
+
+        hideSidebarLabels(root);
+        root.dataset.toolsbydcxSidebarReady = state.serverReady ? 'ready' : 'waiting';
+    };
 
     const removeSyntheticRows = () => {
         document.querySelectorAll(syntheticSelector).forEach((row) => row.remove());
@@ -195,9 +343,12 @@
             removeSyntheticRows();
             document.querySelectorAll('a[href*="/c/"]:not([data-toolsbydcx-chat-row])')
                 .forEach((link) => setHidden(nativeRow(link), true));
+            applySidebarPolicy();
             return;
         }
 
+        applySidebarPolicy();
+        if (state.sidebarRoot?.isConnected) setIsolationState('ready');
         const target = targetSidebar();
         if (!target?.host) return;
 
@@ -237,6 +388,7 @@
             existing.delete(chat.id);
         });
         existing.forEach((row) => row.remove());
+        applySidebarPolicy();
     };
 
     const scheduleSync = () => {
@@ -267,7 +419,11 @@
             .filter((chat, index, chats) => chats.findIndex((item) => item.id === chat.id) === index);
         state.serverChatIds = new Set(state.serverChats.map((chat) => chat.id));
         state.serverReady = true;
-        setIsolationState('ready');
+        // Apply all hiding/allow-list classes while the fail-closed CSS is
+        // still active. Only then reveal the sidebar, preventing a one-frame
+        // flash of the host user's complete history.
+        applySidebarPolicy();
+        setIsolationState(state.sidebarRoot?.isConnected ? 'ready' : 'loading');
         scheduleSync();
     };
 
@@ -327,6 +483,9 @@
         }
         window.addEventListener('popstate', routeChanged, { passive: true });
 
+        // Apply the fail-closed sidebar policy immediately. This leaves only
+        // New chat visible while the user-scoped chat list is loading.
+        applySidebarPolicy();
         refreshServerList();
         window.setInterval(() => {
             routeChanged();
