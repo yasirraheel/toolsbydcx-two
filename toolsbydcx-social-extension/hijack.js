@@ -84,12 +84,14 @@
         var clipboard = isChatHost && navigator.clipboard;
         if (clipboard && typeof clipboard.writeText === 'function' && !clipboard.writeText.__toolsByDcxShareBridge) {
             var originalWriteText = clipboard.writeText.bind(clipboard);
-            var bridgedWriteText = function(value) {
+            var emitOfficialShare = function(value) {
                 var text = String(value || '').trim();
-                if (officialSharePattern.test(text)) {
-                    window.dispatchEvent(new CustomEvent('__dcx_official_share_link__', { detail: text }));
-                    return Promise.resolve();
-                }
+                if (!officialSharePattern.test(text)) return false;
+                window.dispatchEvent(new CustomEvent('__dcx_official_share_link__', { detail: text }));
+                return true;
+            };
+            var bridgedWriteText = function(value) {
+                if (emitOfficialShare(value)) return Promise.resolve();
                 return originalWriteText(value);
             };
             Object.defineProperty(bridgedWriteText, '__toolsByDcxShareBridge', { value: true });
@@ -101,6 +103,36 @@
                 });
             } catch (_) {
                 clipboard.writeText = bridgedWriteText;
+            }
+
+            if (typeof clipboard.write === 'function' && !clipboard.write.__toolsByDcxShareBridge) {
+                var originalWrite = clipboard.write.bind(clipboard);
+                var bridgedWrite = function(items) {
+                    var list = Array.from(items || []);
+                    return Promise.all(list.map(function(item) {
+                        try {
+                            return item.getType('text/plain').then(function(blob) { return blob.text(); });
+                        } catch (_) {
+                            return Promise.resolve('');
+                        }
+                    })).then(function(values) {
+                        var shareText = values.find(function(value) { return officialSharePattern.test(String(value || '').trim()); });
+                        if (shareText && emitOfficialShare(shareText)) return undefined;
+                        return originalWrite(items);
+                    }).catch(function() {
+                        return originalWrite(items);
+                    });
+                };
+                Object.defineProperty(bridgedWrite, '__toolsByDcxShareBridge', { value: true });
+                try {
+                    Object.defineProperty(clipboard, 'write', {
+                        value: bridgedWrite,
+                        configurable: true,
+                        writable: true
+                    });
+                } catch (_) {
+                    clipboard.write = bridgedWrite;
+                }
             }
         }
     } catch(e) {}
