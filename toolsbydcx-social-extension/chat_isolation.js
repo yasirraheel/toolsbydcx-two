@@ -229,6 +229,17 @@
             <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
         `;
         (document.body || document.documentElement).prepend(root);
+        root.querySelector('.toolsbydcx-new-chat')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = `${window.location.origin}/`;
+            // ChatGPT treats / as its new-chat route. Reloading when already
+            // there is important: assigning the same URL is a browser no-op.
+            if (window.location.pathname === '/' && !window.location.search && !window.location.hash) {
+                window.location.reload();
+            } else {
+                window.location.assign(target);
+            }
+        });
         return root;
     };
 
