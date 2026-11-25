@@ -423,8 +423,8 @@
                 background: rgba(255,255,255,.14);
             }
             #${PANEL_ID} .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat svg path:first-child {
-                fill: currentColor;
-                stroke: currentColor;
+                fill: currentColor !important;
+                stroke: currentColor !important;
             }
             #${PANEL_ID} .toolsbydcx-pin-chat:hover,
             #${PANEL_ID} .toolsbydcx-pin-chat:focus-visible { color: #f4c95d; background: rgba(255,255,255,.14); outline: none; }
@@ -436,12 +436,22 @@
                 background: rgba(255,255,255,.14);
                 outline: none;
             }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-pin-chat,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-pin-chat:hover,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-pin-chat:focus-visible,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-delete-chat:hover,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-delete-chat:focus-visible {
+                color: #202123;
+                background-color: rgba(0,0,0,.08);
+            }
             #${PANEL_ID} .toolsbydcx-pin-chat svg,
             #${PANEL_ID} .toolsbydcx-delete-chat svg {
                 width: 15px;
                 height: 15px;
                 display: block;
+                color: inherit !important;
             }
+            #${PANEL_ID} .toolsbydcx-pin-chat svg path { stroke: currentColor !important; }
             #${PANEL_ID} .toolsbydcx-delete-chat:disabled {
                 opacity: .45;
                 cursor: wait;
@@ -863,9 +873,10 @@
         if (nameNode) nameNode.textContent = 'Tools by DCX';
         if (planNode) planNode.textContent = 'Plus';
         if (avatar) {
-            avatar.src = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+            const faviconUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
                 ? chrome.runtime.getURL('toolsbydcx-favicon.png')
                 : 'https://toolsbydcx.com/favicon.ico';
+            if (avatar.src !== faviconUrl) avatar.src = faviconUrl;
             avatar.alt = '';
         }
     };
@@ -909,11 +920,14 @@
         }
         if (footer.parentElement !== container) container.appendChild(footer);
         footer.setAttribute('aria-label', 'ToolsByDcx account');
-        footer.innerHTML = '<img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" /><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
+        if (!footer.querySelector('img.toolsbydcx-account-footer-avatar')) {
+            footer.innerHTML = '<img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" /><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
+        }
         const avatar = footer.querySelector('.toolsbydcx-account-footer-avatar');
-        if (avatar) avatar.src = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+        const faviconUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
             ? chrome.runtime.getURL('toolsbydcx-favicon.png')
             : 'https://toolsbydcx.com/favicon.ico';
+        if (avatar && avatar.src !== faviconUrl) avatar.src = faviconUrl;
         return footer;
     };
 
@@ -1073,7 +1087,7 @@
             const pinDiff = Number(state.pinnedChatIds.has(b.id)) - Number(state.pinnedChatIds.has(a.id));
             return pinDiff;
         });
-        orderedChats.forEach((chat) => {
+        orderedChats.forEach((chat, index) => {
             let row = existing.get(chat.id);
             if (!row || !row.querySelector('.toolsbydcx-chat-link')) {
                 row?.remove();
@@ -1126,7 +1140,6 @@
                     row.remove();
                 });
                 row.appendChild(deleteButton);
-                list.appendChild(row);
             }
             let pinButton = row.querySelector('.toolsbydcx-pin-chat');
             if (!pinButton) {
@@ -1147,7 +1160,10 @@
             pinButton.title = state.pinnedChatIds.has(chat.id) ? 'Unpin chat' : 'Pin chat';
             pinButton.setAttribute('aria-label', state.pinnedChatIds.has(chat.id) ? `Unpin ${chat.title || 'chat'}` : `Pin ${chat.title || 'chat'}`);
             row.dataset.pinned = state.pinnedChatIds.has(chat.id) ? 'true' : 'false';
-            list.appendChild(row);
+            // Moving an already ordered row resets :hover and makes the text
+            // flicker while background syncs run. Reorder only when needed.
+            const rowAtIndex = list.children[index];
+            if (rowAtIndex !== row) list.insertBefore(row, rowAtIndex || null);
             const title = chat.title || 'Untitled chat';
             const link = row.querySelector('.toolsbydcx-chat-link');
             const deleteButton = row.querySelector('.toolsbydcx-delete-chat');
