@@ -25,6 +25,19 @@
         serverReady: false,
         serverChats: [],
         serverChatIds: new Set(),
+        pinnedChatIds: new Set(),
+        pinnedStorageKey: 'toolsbydcx-pinned-chats',
+        profile: null,
+        theme: (() => {
+            try {
+                const saved = window.localStorage.getItem('toolsbydcx-sidebar-theme');
+                if (saved === 'light' || saved === 'dark') return saved;
+                return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            } catch (_) {
+                return 'dark';
+            }
+        })(),
+        sidebarOpen: !window.matchMedia?.('(max-width: 700px)').matches,
         currentChatId: null,
         lastArchivedSignature: '',
         archiveTimer: null,
@@ -90,8 +103,40 @@
                 font-size: 14px;
                 line-height: 1.35;
                 box-shadow: 8px 0 24px rgba(0,0,0,.18);
+                transform: translateX(0);
+                transition: transform .22s ease, box-shadow .22s ease, background .18s ease, color .18s ease;
+                color-scheme: dark;
             }
             #${PANEL_ID}, #${PANEL_ID} * { box-sizing: border-box; }
+            #${PANEL_ID}[data-open="false"] {
+                transform: translateX(-101%);
+                box-shadow: none;
+                pointer-events: none;
+            }
+            #${PANEL_ID}[data-theme="light"] {
+                background: #f7f7f8;
+                color: #202123;
+                border-right-color: rgba(0,0,0,.12);
+                box-shadow: 8px 0 24px rgba(0,0,0,.10);
+                color-scheme: light;
+            }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-brand { color: #202123; border-bottom-color: rgba(0,0,0,.10); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account { background: #fff; border-color: rgba(0,0,0,.12); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-name { color: #202123; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-plan { color: #6b6f76; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-new-chat,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row[data-current="true"] { color: #202123; background: #e9e9e9; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-new-chat:hover,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-new-chat:focus-visible,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row:hover,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row:focus-within { background: #e3e3e3; color: #202123; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row { color: #4b4f56; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-toggle,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-pin-chat,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-delete-chat { color: #555a63; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-loading { color: #777d86; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-loading::before { background: #777d86; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-link[data-loading="true"] { background: linear-gradient(90deg, rgba(0,0,0,.08), rgba(0,0,0,.18), rgba(0,0,0,.08)); }
             #${PANEL_ID} .toolsbydcx-brand {
                 display: flex;
                 align-items: center;
@@ -104,6 +149,55 @@
                 font-weight: 600;
                 letter-spacing: -.01em;
             }
+            #${PANEL_ID} .toolsbydcx-theme-toggle {
+                display: grid;
+                place-items: center;
+                width: 27px;
+                height: 27px;
+                margin-left: auto;
+                padding: 0;
+                border: 0;
+                border-radius: 7px;
+                color: #cfcfd5;
+                background: transparent;
+                cursor: pointer;
+                font-size: 15px;
+                line-height: 1;
+            }
+            #${PANEL_ID} .toolsbydcx-theme-toggle:hover,
+            #${PANEL_ID} .toolsbydcx-theme-toggle:focus-visible { background: rgba(127,127,127,.18); outline: none; }
+            #${PANEL_ID} .toolsbydcx-account {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                min-height: 48px;
+                padding: 8px 10px;
+                border: 1px solid rgba(255,255,255,.10);
+                border-radius: 10px;
+                background: rgba(255,255,255,.045);
+            }
+            #${PANEL_ID} .toolsbydcx-account-avatar {
+                display: grid;
+                place-items: center;
+                width: 29px;
+                height: 29px;
+                flex: 0 0 29px;
+                border-radius: 50%;
+                color: #fff;
+                background: #5d5fe8;
+                font-size: 13px;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+            #${PANEL_ID} .toolsbydcx-account-copy { min-width: 0; }
+            #${PANEL_ID} .toolsbydcx-account-name,
+            #${PANEL_ID} .toolsbydcx-account-plan {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+            #${PANEL_ID} .toolsbydcx-account-name { color: #f5f5f5; font-size: 13px; font-weight: 600; }
+            #${PANEL_ID} .toolsbydcx-account-plan { margin-top: 1px; color: #a7a7ad; font-size: 11px; }
             #${PANEL_ID} .toolsbydcx-brand-logo,
             #${PANEL_ID} .toolsbydcx-brand-fallback {
                 width: 25px;
@@ -230,12 +324,36 @@
             #${PANEL_ID} .toolsbydcx-chat-row:focus-within .toolsbydcx-delete-chat {
                 opacity: 1;
             }
+            #${PANEL_ID} .toolsbydcx-pin-chat {
+                display: grid;
+                place-items: center;
+                width: 27px;
+                height: 27px;
+                flex: 0 0 27px;
+                margin-left: 3px;
+                padding: 0;
+                border: 0;
+                border-radius: 6px;
+                color: #a7a7ad;
+                background: transparent;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity .12s ease, background .12s ease, color .12s ease;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row:hover .toolsbydcx-pin-chat,
+            #${PANEL_ID} .toolsbydcx-chat-row:focus-within .toolsbydcx-pin-chat,
+            #${PANEL_ID} .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat { opacity: 1; }
+            #${PANEL_ID} .toolsbydcx-pin-chat:hover,
+            #${PANEL_ID} .toolsbydcx-pin-chat:focus-visible { color: #f4c95d; background: rgba(255,255,255,.14); outline: none; }
+            #${PANEL_ID} .toolsbydcx-pin-chat:hover,
+            #${PANEL_ID} .toolsbydcx-pin-chat:focus-visible,
             #${PANEL_ID} .toolsbydcx-delete-chat:hover,
             #${PANEL_ID} .toolsbydcx-delete-chat:focus-visible {
                 color: #fff;
                 background: rgba(255,255,255,.14);
                 outline: none;
             }
+            #${PANEL_ID} .toolsbydcx-pin-chat svg,
             #${PANEL_ID} .toolsbydcx-delete-chat svg {
                 width: 15px;
                 height: 15px;
@@ -261,6 +379,37 @@
                     padding-bottom: 0;
                     font-size: 15px;
                 }
+                #${PANEL_ID} .toolsbydcx-pin-chat,
+                #${PANEL_ID} .toolsbydcx-delete-chat { opacity: 1; }
+            }
+            #toolsbydcx-chat-sidebar-toggle {
+                all: initial;
+                box-sizing: border-box;
+                position: fixed;
+                top: 12px;
+                left: 10px;
+                z-index: 2147483001;
+                display: grid;
+                place-items: center;
+                width: 34px;
+                height: 34px;
+                border: 1px solid rgba(255,255,255,.15);
+                border-radius: 9px;
+                color: #f4f4f5;
+                background: rgba(45,45,45,.94);
+                box-shadow: 0 4px 14px rgba(0,0,0,.22);
+                cursor: pointer;
+                font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 18px;
+                line-height: 1;
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateX(0);
+                transition: opacity .18s ease, transform .18s ease, background .18s ease;
+            }
+            #toolsbydcx-chat-sidebar-toggle:hover { background: rgba(70,70,70,.98); }
+            @media (max-width: 700px) {
+                #toolsbydcx-chat-sidebar-toggle { opacity: 1; pointer-events: auto; }
             }
         `;
         (document.head || document.documentElement).appendChild(style);
@@ -569,9 +718,91 @@
 
     const panel = () => document.getElementById(PANEL_ID);
 
+    const setSidebarTheme = (theme, persist = true) => {
+        state.theme = theme === 'light' ? 'light' : 'dark';
+        if (persist) {
+            try { window.localStorage.setItem('toolsbydcx-sidebar-theme', state.theme); } catch (_) {}
+        }
+        const root = panel();
+        if (!root) return;
+        root.dataset.theme = state.theme;
+        const button = root.querySelector('.toolsbydcx-theme-toggle');
+        if (button) {
+            const next = state.theme === 'dark' ? 'light' : 'dark';
+            button.textContent = state.theme === 'dark' ? '☀' : '☾';
+            button.title = `Switch to ${next} mode`;
+            button.setAttribute('aria-label', `Switch to ${next} mode`);
+        }
+    };
+
+    const setSidebarOpen = (open) => {
+        state.sidebarOpen = Boolean(open);
+        const root = panel();
+        const toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
+        if (root) root.dataset.open = state.sidebarOpen ? 'true' : 'false';
+        if (toggle) {
+            toggle.dataset.open = state.sidebarOpen ? 'true' : 'false';
+            toggle.textContent = state.sidebarOpen ? '‹' : '›';
+            toggle.title = state.sidebarOpen ? 'Close sidebar' : 'Open sidebar';
+            toggle.setAttribute('aria-label', state.sidebarOpen ? 'Close sidebar' : 'Open sidebar');
+            toggle.setAttribute('aria-expanded', state.sidebarOpen ? 'true' : 'false');
+        }
+    };
+
+    const loadPinnedChats = (key = state.pinnedStorageKey) => {
+        state.pinnedStorageKey = key;
+        try {
+            const values = JSON.parse(window.localStorage.getItem(key) || '[]');
+            state.pinnedChatIds = new Set(Array.isArray(values) ? values.filter((id) => CHAT_ID_RE.test(String(id))) : []);
+        } catch (_) {
+            state.pinnedChatIds = new Set();
+        }
+        renderChats();
+    };
+
+    const savePinnedChats = () => {
+        try { window.localStorage.setItem(state.pinnedStorageKey, JSON.stringify([...state.pinnedChatIds])); } catch (_) {}
+    };
+
+    const renderProfile = () => {
+        const root = panel();
+        if (!root) return;
+        const profile = state.profile || {};
+        const name = String(profile.name || profile.username || profile.email || 'ChatGPT').trim();
+        const plan = String(profile.plan?.name || profile.plan_name || profile.subscription_plan || 'ChatGPT').trim();
+        const nameNode = root.querySelector('.toolsbydcx-account-name');
+        const planNode = root.querySelector('.toolsbydcx-account-plan');
+        const avatar = root.querySelector('.toolsbydcx-account-avatar');
+        if (nameNode) nameNode.textContent = name;
+        if (planNode) planNode.textContent = plan;
+        if (avatar) avatar.textContent = name.slice(0, 1).toUpperCase() || 'C';
+    };
+
+    const refreshProfile = async () => {
+        const response = await send({ type: 'PANEL_ME' });
+        if (!response?.success) return;
+        const user = response.data?.user || response.user || null;
+        if (!user) return;
+        state.profile = user;
+        if (user.id) loadPinnedChats(`toolsbydcx-pinned-chats:${user.id}`);
+        renderProfile();
+    };
+
     const createPanel = () => {
         const existing = panel();
-        if (existing) return existing;
+        if (existing) {
+            let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
+            if (!toggle && document.body) {
+                toggle = document.createElement('button');
+                toggle.id = 'toolsbydcx-chat-sidebar-toggle';
+                toggle.type = 'button';
+                document.body.appendChild(toggle);
+                toggle.addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
+            }
+            setSidebarTheme(state.theme, false);
+            setSidebarOpen(state.sidebarOpen);
+            return existing;
+        }
         const root = document.createElement('aside');
         root.id = PANEL_ID;
         root.setAttribute('aria-label', 'ToolsByDcx chats');
@@ -580,11 +811,31 @@
                 <img class="toolsbydcx-brand-logo" src="/favicon.ico" alt="">
                 <span>ChatGPT</span>
                 <span class="toolsbydcx-brand-fallback" aria-hidden="true">✳</span>
+                <button class="toolsbydcx-theme-toggle" type="button" aria-label="Switch to light mode" title="Switch to light mode">☀</button>
+            </div>
+            <div class="toolsbydcx-account" aria-label="Signed-in account">
+                <span class="toolsbydcx-account-avatar" aria-hidden="true">C</span>
+                <span class="toolsbydcx-account-copy"><span class="toolsbydcx-account-name">Loading account</span><span class="toolsbydcx-account-plan">Loading plan</span></span>
             </div>
             <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
             <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
         `;
         (document.body || document.documentElement).prepend(root);
+        root.dataset.theme = state.theme;
+        root.dataset.open = state.sidebarOpen ? 'true' : 'false';
+        let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
+        if (!toggle) {
+            toggle = document.createElement('button');
+            toggle.id = 'toolsbydcx-chat-sidebar-toggle';
+            toggle.type = 'button';
+            document.body?.appendChild(toggle);
+            toggle.addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
+        }
+        setSidebarOpen(state.sidebarOpen);
+        root.querySelector('.toolsbydcx-theme-toggle')?.addEventListener('click', () => {
+            setSidebarTheme(state.theme === 'dark' ? 'light' : 'dark');
+        });
+        renderProfile();
         const logo = root.querySelector('.toolsbydcx-brand-logo');
         const fallback = root.querySelector('.toolsbydcx-brand-fallback');
         logo?.addEventListener('error', () => {
@@ -602,6 +853,7 @@
                 window.location.assign(target);
             }
         });
+        void refreshProfile();
         return root;
     };
 
@@ -622,8 +874,13 @@
             .map((row) => [row.dataset.chatId, row]));
 
         // Update rows in place. No innerHTML replacement means the list never
-        // flashes while ChatGPT is streaming a response.
-        state.serverChats.forEach((chat) => {
+        // flashes while ChatGPT is streaming a response. Pinned chats remain
+        // first without changing the stable order of the server list.
+        const orderedChats = [...state.serverChats].sort((a, b) => {
+            const pinDiff = Number(state.pinnedChatIds.has(b.id)) - Number(state.pinnedChatIds.has(a.id));
+            return pinDiff;
+        });
+        orderedChats.forEach((chat) => {
             let row = existing.get(chat.id);
             if (!row || !row.querySelector('.toolsbydcx-chat-link')) {
                 row?.remove();
@@ -634,6 +891,22 @@
                 link.className = 'toolsbydcx-chat-link';
                 link.href = `/c/${encodeURIComponent(chat.id)}`;
                 row.appendChild(link);
+
+                const pinButton = document.createElement('button');
+                pinButton.type = 'button';
+                pinButton.className = 'toolsbydcx-pin-chat';
+                pinButton.setAttribute('aria-label', 'Pin chat');
+                pinButton.title = 'Pin chat';
+                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Zm4 9v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                pinButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (state.pinnedChatIds.has(chat.id)) state.pinnedChatIds.delete(chat.id);
+                    else state.pinnedChatIds.add(chat.id);
+                    savePinnedChats();
+                    renderChats();
+                });
+                row.appendChild(pinButton);
 
                 const deleteButton = document.createElement('button');
                 deleteButton.type = 'button';
@@ -662,6 +935,26 @@
                 row.appendChild(deleteButton);
                 list.appendChild(row);
             }
+            let pinButton = row.querySelector('.toolsbydcx-pin-chat');
+            if (!pinButton) {
+                pinButton = document.createElement('button');
+                pinButton.type = 'button';
+                pinButton.className = 'toolsbydcx-pin-chat';
+                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Zm4 9v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                pinButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (state.pinnedChatIds.has(chat.id)) state.pinnedChatIds.delete(chat.id);
+                    else state.pinnedChatIds.add(chat.id);
+                    savePinnedChats();
+                    renderChats();
+                });
+                row.insertBefore(pinButton, row.querySelector('.toolsbydcx-delete-chat'));
+            }
+            pinButton.title = state.pinnedChatIds.has(chat.id) ? 'Unpin chat' : 'Pin chat';
+            pinButton.setAttribute('aria-label', state.pinnedChatIds.has(chat.id) ? `Unpin ${chat.title || 'chat'}` : `Pin ${chat.title || 'chat'}`);
+            row.dataset.pinned = state.pinnedChatIds.has(chat.id) ? 'true' : 'false';
+            list.appendChild(row);
             const title = chat.title || 'Untitled chat';
             const link = row.querySelector('.toolsbydcx-chat-link');
             const deleteButton = row.querySelector('.toolsbydcx-delete-chat');

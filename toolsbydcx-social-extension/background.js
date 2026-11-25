@@ -1,4 +1,10 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'PANEL_ME') {
+        requestPanelMe()
+            .then((data) => sendResponse({ success: true, data }))
+            .catch((error) => sendResponse({ success: false, status: error.status || 0, error: error.message }));
+        return true;
+    }
     if (request.type === 'CHAT_HISTORY_LIST' || request.type === 'CHAT_HISTORY_REGISTER' || request.type === 'CHAT_HISTORY_ARCHIVE' || request.type === 'CHAT_HISTORY_DELETE' || request.type === 'CHAT_HISTORY_OFFICIAL_SHARE') {
         handleChatHistoryMessage(request)
             .then((data) => sendResponse({ success: true, data }))
@@ -29,6 +35,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const API_URL = 'https://toolsbydcx.com/api/extension';
+
+async function requestPanelMe() {
+    const response = await fetch(`${API_URL}/me`, {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const error = new Error(payload.message || `Profile request failed (${response.status}).`);
+        error.status = response.status;
+        throw error;
+    }
+    return payload;
+}
 
 async function requestChatHistory(path = '', options = {}) {
     const response = await fetch(`${API_URL}/chat-history${path}`, {
