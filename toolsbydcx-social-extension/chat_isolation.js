@@ -143,6 +143,10 @@
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-toggle,
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-pin-chat,
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-delete-chat { color: #555a63; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat {
+                color: #202123;
+                background: rgba(0,0,0,.10);
+            }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-loading { color: #777d86; }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-loading::before { background: #777d86; }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-link[data-loading="true"] { background: linear-gradient(90deg, rgba(0,0,0,.08), rgba(0,0,0,.18), rgba(0,0,0,.08)); }
@@ -158,21 +162,58 @@
                 font-weight: 600;
                 letter-spacing: -.01em;
             }
+            #${PANEL_ID} .toolsbydcx-theme-picker { position: relative; margin-left: auto; z-index: 4; }
             #${PANEL_ID} .toolsbydcx-theme-toggle {
-                display: grid;
-                place-items: center;
-                width: 27px;
-                height: 27px;
-                margin-left: auto;
-                padding: 0;
-                border: 0;
-                border-radius: 7px;
-                color: #cfcfd5;
-                background: transparent;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-width: 92px;
+                height: 34px;
+                padding: 0 9px;
+                border: 1px solid rgba(255,255,255,.16);
+                border-radius: 9px;
+                color: #d9d9df;
+                background: rgba(255,255,255,.06);
                 cursor: pointer;
-                font-size: 15px;
+                font-size: 12px;
+                font-weight: 600;
                 line-height: 1;
             }
+            #${PANEL_ID} .toolsbydcx-theme-icon { font-size: 20px; line-height: 1; }
+            #${PANEL_ID} .toolsbydcx-theme-label { white-space: nowrap; }
+            #${PANEL_ID} .toolsbydcx-theme-menu {
+                position: absolute;
+                top: calc(100% + 6px);
+                right: 0;
+                width: 148px;
+                padding: 5px;
+                border: 1px solid rgba(255,255,255,.16);
+                border-radius: 9px;
+                background: #242424;
+                box-shadow: 0 10px 28px rgba(0,0,0,.35);
+            }
+            #${PANEL_ID} .toolsbydcx-theme-menu[hidden] { display: none !important; }
+            #${PANEL_ID} .toolsbydcx-theme-option {
+                display: block;
+                width: 100%;
+                padding: 8px 9px;
+                border: 0;
+                border-radius: 6px;
+                color: #e8e8ed;
+                background: transparent;
+                text-align: left;
+                font: inherit;
+                font-size: 12px;
+                cursor: pointer;
+            }
+            #${PANEL_ID} .toolsbydcx-theme-option:hover,
+            #${PANEL_ID} .toolsbydcx-theme-option[aria-checked="true"] { background: rgba(127,127,127,.22); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-toggle { color: #202123; border-color: rgba(0,0,0,.16); background: rgba(0,0,0,.05); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-menu { border-color: rgba(0,0,0,.14); background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.18); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-option { color: #202123; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-option:hover,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-theme-option[aria-checked="true"] { background: #e9e9e9; }
             #${PANEL_ID} .toolsbydcx-theme-toggle:hover,
             #${PANEL_ID} .toolsbydcx-theme-toggle:focus-visible { background: rgba(127,127,127,.18); outline: none; }
             #${PANEL_ID} .toolsbydcx-account-footer {
@@ -207,6 +248,7 @@
                 font-size: 11px;
                 font-weight: 700;
                 text-transform: uppercase;
+                object-fit: cover;
             }
             #${PANEL_ID} .toolsbydcx-account-footer-copy { display: block; min-width: 0; flex: 1 1 auto; line-height: 1.3; }
             #${PANEL_ID} .toolsbydcx-account-footer-copy > span { display: block; width: 100%; }
@@ -768,19 +810,18 @@
         if (!root) return;
         root.dataset.theme = state.theme;
         const button = root.querySelector('.toolsbydcx-theme-toggle');
+        const icon = root.querySelector('.toolsbydcx-theme-icon');
+        const label = root.querySelector('.toolsbydcx-theme-label');
+        const currentLabel = state.themeMode === 'system' ? 'System' : (state.themeMode === 'light' ? 'Light' : 'Dark');
+        if (icon) icon.textContent = state.themeMode === 'system' ? '◐' : (state.theme === 'dark' ? '☀' : '☾');
+        if (label) label.textContent = currentLabel;
         if (button) {
-            const nextMode = state.themeMode === 'system' ? 'light' : (state.themeMode === 'light' ? 'dark' : 'system');
-            const currentLabel = state.themeMode === 'system' ? 'System' : (state.themeMode === 'light' ? 'Light' : 'Dark');
-            const nextLabel = nextMode === 'system' ? 'System' : (nextMode === 'light' ? 'Light' : 'Dark');
-            button.textContent = state.themeMode === 'system' ? '◐' : (state.theme === 'dark' ? '☀' : '☾');
-            button.title = `Theme: ${currentLabel}. Switch to ${nextLabel}`;
-            button.setAttribute('aria-label', `Theme: ${currentLabel}. Switch to ${nextLabel}`);
+            button.title = `Theme: ${currentLabel}. Open theme options`;
+            button.setAttribute('aria-label', `Theme: ${currentLabel}. Open theme options`);
         }
-    };
-
-    const cycleSidebarTheme = () => {
-        const nextMode = state.themeMode === 'system' ? 'light' : (state.themeMode === 'light' ? 'dark' : 'system');
-        setSidebarTheme(nextMode);
+        root.querySelectorAll('.toolsbydcx-theme-option').forEach((option) => {
+            option.setAttribute('aria-checked', option.dataset.themeMode === state.themeMode ? 'true' : 'false');
+        });
     };
 
     const setSidebarOpen = (open) => {
@@ -820,7 +861,12 @@
         const avatar = root.querySelector('.toolsbydcx-account-footer-avatar');
         if (nameNode) nameNode.textContent = 'Tools by DCX';
         if (planNode) planNode.textContent = 'Plus';
-        if (avatar) avatar.textContent = '';
+        if (avatar) {
+            avatar.src = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+                ? chrome.runtime.getURL('toolsbydcx-favicon.png')
+                : 'https://toolsbydcx.com/favicon.ico';
+            avatar.alt = '';
+        }
     };
 
     const ensureChatListStructure = (root) => {
@@ -862,21 +908,55 @@
         }
         if (footer.parentElement !== container) container.appendChild(footer);
         footer.setAttribute('aria-label', 'ToolsByDcx account');
-        footer.innerHTML = '<span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
+        footer.innerHTML = '<img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" /><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
+        const avatar = footer.querySelector('.toolsbydcx-account-footer-avatar');
+        if (avatar) avatar.src = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+            ? chrome.runtime.getURL('toolsbydcx-favicon.png')
+            : 'https://toolsbydcx.com/favicon.ico';
         return footer;
     };
 
     const ensureThemeToggle = (root) => {
-        if (!root || root.querySelector('.toolsbydcx-theme-toggle')) return;
+        if (!root) return;
         const brand = root.querySelector('.toolsbydcx-brand');
         if (!brand) return;
-        const button = document.createElement('button');
-        button.className = 'toolsbydcx-theme-toggle';
-        button.type = 'button';
-        button.addEventListener('click', () => {
-            cycleSidebarTheme();
+        let picker = brand.querySelector('.toolsbydcx-theme-picker');
+        if (!picker) {
+            const oldButton = brand.querySelector('.toolsbydcx-theme-toggle');
+            picker = document.createElement('div');
+            picker.className = 'toolsbydcx-theme-picker';
+            picker.innerHTML = '<button class="toolsbydcx-theme-toggle" type="button" aria-haspopup="true" aria-expanded="false"><span class="toolsbydcx-theme-icon" aria-hidden="true">◐</span><span class="toolsbydcx-theme-label">System</span></button><div class="toolsbydcx-theme-menu" role="menu" hidden><button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="system" aria-checked="true">System (device)</button><button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="light" aria-checked="false">Light</button><button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="dark" aria-checked="false">Dark</button></div>';
+            if (oldButton) oldButton.replaceWith(picker);
+            else brand.appendChild(picker);
+        }
+        const toggle = picker.querySelector('.toolsbydcx-theme-toggle');
+        const menu = picker.querySelector('.toolsbydcx-theme-menu');
+        if (toggle && !toggle.dataset.bound) {
+            toggle.dataset.bound = 'true';
+            toggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const open = menu?.hasAttribute('hidden');
+                if (menu) menu.toggleAttribute('hidden', !open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+        picker.querySelectorAll('.toolsbydcx-theme-option').forEach((option) => {
+            if (option.dataset.bound) return;
+            option.dataset.bound = 'true';
+            option.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setSidebarTheme(option.dataset.themeMode);
+                if (menu) menu.hidden = true;
+                toggle?.setAttribute('aria-expanded', 'false');
+            });
         });
-        brand.appendChild(button);
+        if (!document.documentElement.dataset.toolsbydcxThemeMenuBound) {
+            document.documentElement.dataset.toolsbydcxThemeMenuBound = 'true';
+            document.addEventListener('click', () => {
+                root.querySelectorAll('.toolsbydcx-theme-menu').forEach((menuNode) => { menuNode.hidden = true; });
+                root.querySelectorAll('.toolsbydcx-theme-toggle').forEach((buttonNode) => buttonNode.setAttribute('aria-expanded', 'false'));
+            });
+        }
     };
 
     const createPanel = () => {
@@ -910,13 +990,20 @@
                 <img class="toolsbydcx-brand-logo" src="/favicon.ico" alt="">
                 <span>ChatGPT Plus</span>
                 <span class="toolsbydcx-brand-fallback" aria-hidden="true">✳</span>
-                <button class="toolsbydcx-theme-toggle" type="button" aria-label="Theme: System. Switch to Light" title="Theme: System. Switch to Light">◐</button>
+                <div class="toolsbydcx-theme-picker">
+                    <button class="toolsbydcx-theme-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Theme: System. Open theme options" title="Theme: System. Open theme options"><span class="toolsbydcx-theme-icon" aria-hidden="true">◐</span><span class="toolsbydcx-theme-label">System</span></button>
+                    <div class="toolsbydcx-theme-menu" role="menu" hidden>
+                        <button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="system" aria-checked="true">System (device)</button>
+                        <button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="light" aria-checked="false">Light</button>
+                        <button class="toolsbydcx-theme-option" type="button" role="menuitemradio" data-theme-mode="dark" aria-checked="false">Dark</button>
+                    </div>
+                </div>
             </div>
             <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
             <div class="toolsbydcx-chat-list">
                 <div class="toolsbydcx-chat-list-content" role="list" aria-label="Your chats"></div>
                 <div class="toolsbydcx-account-footer" aria-label="ToolsByDcx account">
-                    <span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span>
+                    <img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" />
                     <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>
                 </div>
             </div>
@@ -934,9 +1021,7 @@
             toggle.addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
         }
         setSidebarOpen(state.sidebarOpen);
-        root.querySelector('.toolsbydcx-theme-toggle')?.addEventListener('click', () => {
-            cycleSidebarTheme();
-        });
+        ensureThemeToggle(root);
         renderProfile();
         const logo = root.querySelector('.toolsbydcx-brand-logo');
         const fallback = root.querySelector('.toolsbydcx-brand-fallback');
