@@ -21,6 +21,19 @@
     const CHAT_ID_RE = /^[A-Za-z0-9_-]{4,128}$/;
     const PANEL_ID = 'toolsbydcx-chat-sidebar';
     const STYLE_ID = 'toolsbydcx-chat-isolation-style';
+    const readThemeMode = () => {
+        try {
+            const savedMode = window.localStorage.getItem('toolsbydcx-sidebar-theme-mode');
+            if (savedMode === 'system' || savedMode === 'light' || savedMode === 'dark') return savedMode;
+            // Migrate the previous two-state preference without changing the
+            // user's explicit choice. New installs follow the device theme.
+            const legacy = window.localStorage.getItem('toolsbydcx-sidebar-theme');
+            if (legacy === 'light' || legacy === 'dark') return legacy;
+        } catch (_) {}
+        return 'system';
+    };
+    const systemTheme = () => window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    const resolveTheme = (mode) => mode === 'system' ? systemTheme() : (mode === 'light' ? 'light' : 'dark');
     const state = {
         serverReady: false,
         serverChats: [],
@@ -29,15 +42,8 @@
         pinnedStorageKey: 'toolsbydcx-pinned-chats',
         profile: null,
         profileRequested: false,
-        theme: (() => {
-            try {
-                const saved = window.localStorage.getItem('toolsbydcx-sidebar-theme');
-                if (saved === 'light' || saved === 'dark') return saved;
-                return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-            } catch (_) {
-                return 'dark';
-            }
-        })(),
+        themeMode: readThemeMode(),
+        theme: 'dark',
         sidebarOpen: !window.matchMedia?.('(max-width: 700px)').matches,
         currentChatId: null,
         lastArchivedSignature: '',
@@ -57,6 +63,7 @@
         lastPathChangedAt: Date.now(),
         observer: null
     };
+    state.theme = resolveTheme(state.themeMode);
 
     const setIsolationState = (value) => {
         try {
@@ -172,10 +179,17 @@
                 display: flex;
                 align-items: center;
                 gap: 9px;
-                min-height: 58px;
-                margin-top: 4px;
-                padding: 10px 8px 2px;
+                flex: 0 0 62px;
+                width: 100%;
+                min-height: 62px;
+                margin-top: auto;
+                padding: 10px 8px 8px;
                 border-top: 1px solid rgba(255,255,255,.10);
+                background: #171717;
+                position: relative;
+                z-index: 2;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
             #${PANEL_ID} .toolsbydcx-account-footer-avatar {
                 display: grid;
@@ -185,7 +199,7 @@
                 flex: 0 0 31px;
                 border-radius: 50%;
                 color: #fff;
-                background: #19c3a4;
+                background: linear-gradient(135deg, #19c3a4, #0d9488);
                 font-size: 11px;
                 font-weight: 700;
                 text-transform: uppercase;
@@ -721,21 +735,29 @@
 
     const panel = () => document.getElementById(PANEL_ID);
 
-    const setSidebarTheme = (theme, persist = true) => {
-        state.theme = theme === 'light' ? 'light' : 'dark';
+    const setSidebarTheme = (mode, persist = true) => {
+        state.themeMode = mode === 'system' || mode === 'light' || mode === 'dark' ? mode : 'system';
+        state.theme = resolveTheme(state.themeMode);
         if (persist) {
-            try { window.localStorage.setItem('toolsbydcx-sidebar-theme', state.theme); } catch (_) {}
+            try { window.localStorage.setItem('toolsbydcx-sidebar-theme-mode', state.themeMode); } catch (_) {}
         }
         const root = panel();
         if (!root) return;
         root.dataset.theme = state.theme;
         const button = root.querySelector('.toolsbydcx-theme-toggle');
         if (button) {
-            const next = state.theme === 'dark' ? 'light' : 'dark';
-            button.textContent = state.theme === 'dark' ? '☀' : '☾';
-            button.title = `Switch to ${next} mode`;
-            button.setAttribute('aria-label', `Switch to ${next} mode`);
+            const nextMode = state.themeMode === 'system' ? 'light' : (state.themeMode === 'light' ? 'dark' : 'system');
+            const currentLabel = state.themeMode === 'system' ? 'System' : (state.themeMode === 'light' ? 'Light' : 'Dark');
+            const nextLabel = nextMode === 'system' ? 'System' : (nextMode === 'light' ? 'Light' : 'Dark');
+            button.textContent = state.themeMode === 'system' ? '◐' : (state.theme === 'dark' ? '☀' : '☾');
+            button.title = `Theme: ${currentLabel}. Switch to ${nextLabel}`;
+            button.setAttribute('aria-label', `Theme: ${currentLabel}. Switch to ${nextLabel}`);
         }
+    };
+
+    const cycleSidebarTheme = () => {
+        const nextMode = state.themeMode === 'system' ? 'light' : (state.themeMode === 'light' ? 'dark' : 'system');
+        setSidebarTheme(nextMode);
     };
 
     const setSidebarOpen = (open) => {
@@ -770,18 +792,12 @@
     const renderProfile = () => {
         const root = panel();
         if (!root) return;
-        const profile = state.profile || {};
-        const name = String(profile.name || profile.username || profile.email || 'ChatGPT').trim();
-        const rawPlan = String(profile.plan?.name || profile.plan_name || profile.subscription_plan || '').trim();
-        const plan = /free/i.test(rawPlan) ? 'Free' : (rawPlan ? 'Plus' : 'Plus');
         const nameNode = root.querySelector('.toolsbydcx-account-footer-name');
         const planNode = root.querySelector('.toolsbydcx-account-footer-plan');
-        const brandNode = root.querySelector('.toolsbydcx-account-footer-brand');
         const avatar = root.querySelector('.toolsbydcx-account-footer-avatar');
-        if (nameNode) nameNode.textContent = name;
-        if (planNode) planNode.textContent = plan;
-        if (brandNode) brandNode.textContent = 'ToolsByDcx';
-        if (avatar) avatar.textContent = name.slice(0, 1).toUpperCase() || 'C';
+        if (nameNode) nameNode.textContent = 'Tools by DCX';
+        if (planNode) planNode.textContent = 'Plus';
+        if (avatar) avatar.textContent = '';
     };
 
     const refreshProfile = async () => {
@@ -795,12 +811,16 @@
     };
 
     const ensureSidebarFooter = (root) => {
-        if (!root || root.querySelector('.toolsbydcx-account-footer')) return;
-        const footer = document.createElement('div');
-        footer.className = 'toolsbydcx-account-footer';
+        if (!root) return null;
+        let footer = root.querySelector('.toolsbydcx-account-footer');
+        if (!footer) {
+            footer = document.createElement('div');
+            footer.className = 'toolsbydcx-account-footer';
+            root.appendChild(footer);
+        }
         footer.setAttribute('aria-label', 'ToolsByDcx account');
-        footer.innerHTML = '<span class="toolsbydcx-account-footer-avatar" aria-hidden="true">C</span><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Loading account</span><span class="toolsbydcx-account-footer-plan">Plus</span><span class="toolsbydcx-account-footer-brand">ToolsByDcx</span></span>';
-        root.appendChild(footer);
+        footer.innerHTML = '<span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
+        return footer;
     };
 
     const ensureThemeToggle = (root) => {
@@ -811,7 +831,7 @@
         button.className = 'toolsbydcx-theme-toggle';
         button.type = 'button';
         button.addEventListener('click', () => {
-            setSidebarTheme(state.theme === 'dark' ? 'light' : 'dark');
+            cycleSidebarTheme();
         });
         brand.appendChild(button);
     };
@@ -829,7 +849,7 @@
                 document.body.appendChild(toggle);
                 toggle.addEventListener('click', () => setSidebarOpen(!state.sidebarOpen));
             }
-            setSidebarTheme(state.theme, false);
+            setSidebarTheme(state.themeMode, false);
             setSidebarOpen(state.sidebarOpen);
             renderProfile();
             if (!state.profileRequested) {
@@ -842,17 +862,17 @@
         root.id = PANEL_ID;
         root.setAttribute('aria-label', 'ToolsByDcx chats');
         root.innerHTML = `
-            <div class="toolsbydcx-brand" aria-label="ChatGPT">
+            <div class="toolsbydcx-brand" aria-label="ChatGPT Plus">
                 <img class="toolsbydcx-brand-logo" src="/favicon.ico" alt="">
-                <span>ChatGPT</span>
+                <span>ChatGPT Plus</span>
                 <span class="toolsbydcx-brand-fallback" aria-hidden="true">✳</span>
-                <button class="toolsbydcx-theme-toggle" type="button" aria-label="Switch to light mode" title="Switch to light mode">☀</button>
+                <button class="toolsbydcx-theme-toggle" type="button" aria-label="Theme: System. Switch to Light" title="Theme: System. Switch to Light">◐</button>
             </div>
             <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
             <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
             <div class="toolsbydcx-account-footer" aria-label="ToolsByDcx account">
-                <span class="toolsbydcx-account-footer-avatar" aria-hidden="true">C</span>
-                <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Loading account</span><span class="toolsbydcx-account-footer-plan">Plus</span><span class="toolsbydcx-account-footer-brand">ToolsByDcx</span></span>
+                <span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span>
+                <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>
             </div>
         `;
         (document.body || document.documentElement).prepend(root);
@@ -868,7 +888,7 @@
         }
         setSidebarOpen(state.sidebarOpen);
         root.querySelector('.toolsbydcx-theme-toggle')?.addEventListener('click', () => {
-            setSidebarTheme(state.theme === 'dark' ? 'light' : 'dark');
+            cycleSidebarTheme();
         });
         renderProfile();
         const logo = root.querySelector('.toolsbydcx-brand-logo');
@@ -1193,6 +1213,11 @@
     // its rows only after the server allow-list arrives.
     createPanel();
     setIsolationState('active');
+
+    const themeMedia = window.matchMedia?.('(prefers-color-scheme: light)');
+    themeMedia?.addEventListener?.('change', () => {
+        if (state.themeMode === 'system') setSidebarTheme('system', false);
+    });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', start, { once: true });
