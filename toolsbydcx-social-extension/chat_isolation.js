@@ -153,7 +153,7 @@
             #${PANEL_ID} .toolsbydcx-brand {
                 display: flex;
                 align-items: center;
-                gap: 9px;
+                gap: 6px;
                 min-height: 34px;
                 padding: 0 8px 12px;
                 border-bottom: 1px solid rgba(255,255,255,.10);
@@ -162,25 +162,26 @@
                 font-weight: 600;
                 letter-spacing: -.01em;
             }
+            #${PANEL_ID} .toolsbydcx-brand > span { min-width: 0; white-space: nowrap; }
             #${PANEL_ID} .toolsbydcx-theme-picker { position: relative; margin-left: auto; z-index: 4; }
             #${PANEL_ID} .toolsbydcx-theme-toggle {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 6px;
-                min-width: 92px;
-                height: 34px;
-                padding: 0 9px;
+                gap: 4px;
+                min-width: 74px;
+                height: 32px;
+                padding: 0 6px;
                 border: 1px solid rgba(255,255,255,.16);
                 border-radius: 9px;
                 color: #d9d9df;
                 background: rgba(255,255,255,.06);
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 11px;
                 font-weight: 600;
                 line-height: 1;
             }
-            #${PANEL_ID} .toolsbydcx-theme-icon { font-size: 20px; line-height: 1; }
+            #${PANEL_ID} .toolsbydcx-theme-icon { font-size: 18px; line-height: 1; }
             #${PANEL_ID} .toolsbydcx-theme-label { white-space: nowrap; }
             #${PANEL_ID} .toolsbydcx-theme-menu {
                 position: absolute;
