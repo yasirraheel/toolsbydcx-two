@@ -28,6 +28,7 @@
         pinnedChatIds: new Set(),
         pinnedStorageKey: 'toolsbydcx-pinned-chats',
         profile: null,
+        profileRequested: false,
         theme: (() => {
             try {
                 const saved = window.localStorage.getItem('toolsbydcx-sidebar-theme');
@@ -793,9 +794,33 @@
         renderProfile();
     };
 
+    const ensureSidebarFooter = (root) => {
+        if (!root || root.querySelector('.toolsbydcx-account-footer')) return;
+        const footer = document.createElement('div');
+        footer.className = 'toolsbydcx-account-footer';
+        footer.setAttribute('aria-label', 'ToolsByDcx account');
+        footer.innerHTML = '<span class="toolsbydcx-account-footer-avatar" aria-hidden="true">C</span><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Loading account</span><span class="toolsbydcx-account-footer-plan">Plus</span><span class="toolsbydcx-account-footer-brand">ToolsByDcx</span></span>';
+        root.appendChild(footer);
+    };
+
+    const ensureThemeToggle = (root) => {
+        if (!root || root.querySelector('.toolsbydcx-theme-toggle')) return;
+        const brand = root.querySelector('.toolsbydcx-brand');
+        if (!brand) return;
+        const button = document.createElement('button');
+        button.className = 'toolsbydcx-theme-toggle';
+        button.type = 'button';
+        button.addEventListener('click', () => {
+            setSidebarTheme(state.theme === 'dark' ? 'light' : 'dark');
+        });
+        brand.appendChild(button);
+    };
+
     const createPanel = () => {
         const existing = panel();
         if (existing) {
+            ensureSidebarFooter(existing);
+            ensureThemeToggle(existing);
             let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
             if (!toggle && document.body) {
                 toggle = document.createElement('button');
@@ -806,6 +831,11 @@
             }
             setSidebarTheme(state.theme, false);
             setSidebarOpen(state.sidebarOpen);
+            renderProfile();
+            if (!state.profileRequested) {
+                state.profileRequested = true;
+                void refreshProfile();
+            }
             return existing;
         }
         const root = document.createElement('aside');
@@ -858,7 +888,10 @@
                 window.location.assign(target);
             }
         });
-        void refreshProfile();
+        if (!state.profileRequested) {
+            state.profileRequested = true;
+            void refreshProfile();
+        }
         return root;
     };
 
