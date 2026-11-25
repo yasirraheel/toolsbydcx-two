@@ -121,9 +121,10 @@
                 color-scheme: light;
             }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-brand { color: #202123; border-bottom-color: rgba(0,0,0,.10); }
-            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account { background: #fff; border-color: rgba(0,0,0,.12); }
-            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-name { color: #202123; }
-            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-plan { color: #6b6f76; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-footer { background: #fff; border-top-color: rgba(0,0,0,.12); }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-footer-name { color: #202123; }
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-footer-plan,
+            #${PANEL_ID}[data-theme="light"] .toolsbydcx-account-footer-brand { color: #6b6f76; }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-new-chat,
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-chat-row[data-current="true"] { color: #202123; background: #e9e9e9; }
             #${PANEL_ID}[data-theme="light"] .toolsbydcx-new-chat:hover,
@@ -166,38 +167,39 @@
             }
             #${PANEL_ID} .toolsbydcx-theme-toggle:hover,
             #${PANEL_ID} .toolsbydcx-theme-toggle:focus-visible { background: rgba(127,127,127,.18); outline: none; }
-            #${PANEL_ID} .toolsbydcx-account {
+            #${PANEL_ID} .toolsbydcx-account-footer {
                 display: flex;
                 align-items: center;
                 gap: 9px;
-                min-height: 48px;
-                padding: 8px 10px;
-                border: 1px solid rgba(255,255,255,.10);
-                border-radius: 10px;
-                background: rgba(255,255,255,.045);
+                min-height: 58px;
+                margin-top: 4px;
+                padding: 10px 8px 2px;
+                border-top: 1px solid rgba(255,255,255,.10);
             }
-            #${PANEL_ID} .toolsbydcx-account-avatar {
+            #${PANEL_ID} .toolsbydcx-account-footer-avatar {
                 display: grid;
                 place-items: center;
-                width: 29px;
-                height: 29px;
-                flex: 0 0 29px;
+                width: 31px;
+                height: 31px;
+                flex: 0 0 31px;
                 border-radius: 50%;
                 color: #fff;
-                background: #5d5fe8;
-                font-size: 13px;
+                background: #19c3a4;
+                font-size: 11px;
                 font-weight: 700;
                 text-transform: uppercase;
             }
-            #${PANEL_ID} .toolsbydcx-account-copy { min-width: 0; }
-            #${PANEL_ID} .toolsbydcx-account-name,
-            #${PANEL_ID} .toolsbydcx-account-plan {
+            #${PANEL_ID} .toolsbydcx-account-footer-copy { min-width: 0; flex: 1 1 auto; }
+            #${PANEL_ID} .toolsbydcx-account-footer-name,
+            #${PANEL_ID} .toolsbydcx-account-footer-plan,
+            #${PANEL_ID} .toolsbydcx-account-footer-brand {
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
-            #${PANEL_ID} .toolsbydcx-account-name { color: #f5f5f5; font-size: 13px; font-weight: 600; }
-            #${PANEL_ID} .toolsbydcx-account-plan { margin-top: 1px; color: #a7a7ad; font-size: 11px; }
+            #${PANEL_ID} .toolsbydcx-account-footer-name { color: #f5f5f5; font-size: 13px; font-weight: 600; }
+            #${PANEL_ID} .toolsbydcx-account-footer-plan { margin-top: 1px; color: #a7a7ad; font-size: 11px; }
+            #${PANEL_ID} .toolsbydcx-account-footer-brand { margin-top: 1px; color: #8d8d95; font-size: 10px; }
             #${PANEL_ID} .toolsbydcx-brand-logo,
             #${PANEL_ID} .toolsbydcx-brand-fallback {
                 width: 25px;
@@ -769,12 +771,15 @@
         if (!root) return;
         const profile = state.profile || {};
         const name = String(profile.name || profile.username || profile.email || 'ChatGPT').trim();
-        const plan = String(profile.plan?.name || profile.plan_name || profile.subscription_plan || 'ChatGPT').trim();
-        const nameNode = root.querySelector('.toolsbydcx-account-name');
-        const planNode = root.querySelector('.toolsbydcx-account-plan');
-        const avatar = root.querySelector('.toolsbydcx-account-avatar');
+        const rawPlan = String(profile.plan?.name || profile.plan_name || profile.subscription_plan || '').trim();
+        const plan = /free/i.test(rawPlan) ? 'Free' : (rawPlan ? 'Plus' : 'Plus');
+        const nameNode = root.querySelector('.toolsbydcx-account-footer-name');
+        const planNode = root.querySelector('.toolsbydcx-account-footer-plan');
+        const brandNode = root.querySelector('.toolsbydcx-account-footer-brand');
+        const avatar = root.querySelector('.toolsbydcx-account-footer-avatar');
         if (nameNode) nameNode.textContent = name;
         if (planNode) planNode.textContent = plan;
+        if (brandNode) brandNode.textContent = 'ToolsByDcx';
         if (avatar) avatar.textContent = name.slice(0, 1).toUpperCase() || 'C';
     };
 
@@ -813,12 +818,12 @@
                 <span class="toolsbydcx-brand-fallback" aria-hidden="true">✳</span>
                 <button class="toolsbydcx-theme-toggle" type="button" aria-label="Switch to light mode" title="Switch to light mode">☀</button>
             </div>
-            <div class="toolsbydcx-account" aria-label="Signed-in account">
-                <span class="toolsbydcx-account-avatar" aria-hidden="true">C</span>
-                <span class="toolsbydcx-account-copy"><span class="toolsbydcx-account-name">Loading account</span><span class="toolsbydcx-account-plan">Loading plan</span></span>
-            </div>
             <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
             <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
+            <div class="toolsbydcx-account-footer" aria-label="ToolsByDcx account">
+                <span class="toolsbydcx-account-footer-avatar" aria-hidden="true">C</span>
+                <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Loading account</span><span class="toolsbydcx-account-footer-plan">Plus</span><span class="toolsbydcx-account-footer-brand">ToolsByDcx</span></span>
+            </div>
         `;
         (document.body || document.documentElement).prepend(root);
         root.dataset.theme = state.theme;
