@@ -102,7 +102,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
-                padding: 14px 9px 82px;
+                padding: 14px 9px 12px;
                 overflow: hidden;
                 background: #171717;
                 color: #ececf1;
@@ -179,15 +179,13 @@
                 display: flex;
                 align-items: center;
                 gap: 9px;
-                position: absolute;
-                left: 9px;
-                right: 9px;
-                bottom: 10px;
-                z-index: 3;
-                width: auto;
+                position: relative;
+                z-index: 2;
+                flex: 0 0 62px;
+                width: 100%;
                 height: 62px;
                 min-height: 62px;
-                margin: 0;
+                margin: 8px 0 0;
                 padding: 10px 8px;
                 border-top: 1px solid rgba(255,255,255,.10);
                 border-radius: 8px;
@@ -262,6 +260,13 @@
             #${PANEL_ID} .toolsbydcx-new-chat:hover,
             #${PANEL_ID} .toolsbydcx-new-chat:focus-visible { background: #3d3d3d; }
             #${PANEL_ID} .toolsbydcx-chat-list {
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                flex: 1 1 auto;
+                overflow: hidden;
+            }
+            #${PANEL_ID} .toolsbydcx-chat-list-content {
                 min-height: 0;
                 flex: 1 1 auto;
                 overflow-y: auto;
@@ -401,9 +406,8 @@
             @media (max-width: 700px) {
                 #${PANEL_ID} {
                     width: min(86vw, 280px);
-                    padding: 12px 8px 82px;
+                    padding: 12px 8px 10px;
                 }
-                #${PANEL_ID} .toolsbydcx-account-footer { left: 8px; right: 8px; bottom: 8px; }
                 #${PANEL_ID} .toolsbydcx-new-chat,
                 #${PANEL_ID} .toolsbydcx-chat-row {
                     min-height: 44px;
@@ -815,6 +819,25 @@
         if (avatar) avatar.textContent = '';
     };
 
+    const ensureChatListStructure = (root) => {
+        const container = root?.querySelector('.toolsbydcx-chat-list');
+        if (!container) return null;
+        let content = container.querySelector('.toolsbydcx-chat-list-content');
+        if (!content) {
+            content = document.createElement('div');
+            content.className = 'toolsbydcx-chat-list-content';
+            content.setAttribute('role', 'list');
+            content.setAttribute('aria-label', 'Your chats');
+            Array.from(container.childNodes).forEach((node) => {
+                if (!node.classList?.contains('toolsbydcx-account-footer')) content.appendChild(node);
+            });
+            container.prepend(content);
+        }
+        const footer = root.querySelector('.toolsbydcx-account-footer');
+        if (footer && footer.parentElement !== container) container.appendChild(footer);
+        return content;
+    };
+
     const refreshProfile = async () => {
         const response = await send({ type: 'PANEL_ME' });
         if (!response?.success) return;
@@ -827,12 +850,13 @@
 
     const ensureSidebarFooter = (root) => {
         if (!root) return null;
+        const container = root.querySelector('.toolsbydcx-chat-list') || root;
         let footer = root.querySelector('.toolsbydcx-account-footer');
         if (!footer) {
             footer = document.createElement('div');
             footer.className = 'toolsbydcx-account-footer';
-            root.appendChild(footer);
         }
+        if (footer.parentElement !== container) container.appendChild(footer);
         footer.setAttribute('aria-label', 'ToolsByDcx account');
         footer.innerHTML = '<span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
         return footer;
@@ -854,6 +878,7 @@
     const createPanel = () => {
         const existing = panel();
         if (existing) {
+            ensureChatListStructure(existing);
             ensureSidebarFooter(existing);
             ensureThemeToggle(existing);
             let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
@@ -884,13 +909,16 @@
                 <button class="toolsbydcx-theme-toggle" type="button" aria-label="Theme: System. Switch to Light" title="Theme: System. Switch to Light">◐</button>
             </div>
             <a class="toolsbydcx-new-chat" href="/" aria-label="New chat"><span aria-hidden="true">✎</span><span>New chat</span></a>
-            <div class="toolsbydcx-chat-list" role="list" aria-label="Your chats"></div>
-            <div class="toolsbydcx-account-footer" aria-label="ToolsByDcx account">
-                <span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span>
-                <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>
+            <div class="toolsbydcx-chat-list">
+                <div class="toolsbydcx-chat-list-content" role="list" aria-label="Your chats"></div>
+                <div class="toolsbydcx-account-footer" aria-label="ToolsByDcx account">
+                    <span class="toolsbydcx-account-footer-avatar" aria-hidden="true"></span>
+                    <span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>
+                </div>
             </div>
         `;
         (document.body || document.documentElement).prepend(root);
+        ensureChatListStructure(root);
         root.dataset.theme = state.theme;
         root.dataset.open = state.sidebarOpen ? 'true' : 'false';
         let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
@@ -932,7 +960,7 @@
 
     const renderChats = () => {
         const root = createPanel();
-        const list = root.querySelector('.toolsbydcx-chat-list');
+        const list = ensureChatListStructure(root);
         if (!list) return;
         if (!state.serverReady) {
             list.replaceChildren();
