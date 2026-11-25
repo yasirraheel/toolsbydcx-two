@@ -2,6 +2,37 @@
 
 @section('panel')
     <div class="row mb-none-30">
+        {{-- Global update policy --}}
+        <div class="col-xl-12 mb-30">
+            <div class="card b-radius--10">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div>
+                            <h5 class="card-title mb-1">
+                                <i class="las la-shield-alt text--primary me-1"></i> @lang('Extension Update Policy')
+                            </h5>
+                            <p class="text-muted mb-0 small">
+                                @lang('When enabled, users with an older extension see a required-update dialog. Turn this off to stop that dialog immediately.')
+                            </p>
+                        </div>
+                        <form action="{{ route('admin.extension.force-update') }}" method="POST" class="d-flex align-items-center gap-3">
+                            @csrf
+                            <input type="hidden" name="force_extension_update" value="0">
+                            <div class="form-check form-switch mb-0">
+                                <input type="checkbox" class="form-check-input" name="force_extension_update" value="1" id="globalForceUpdateSwitch" {{ $forceUpdate ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="globalForceUpdateSwitch">
+                                    {{ $forceUpdate ? __('Force update ON') : __('Force update OFF') }}
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn--primary btn-sm px-3">
+                                <i class="las la-save me-1"></i> @lang('Save Policy')
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Card 1: ToolsByDcx Social --}}
         <div class="col-xl-6 col-lg-6 mb-30">
             <div class="card b-radius--10">
@@ -105,25 +136,10 @@
                             <small class="text-muted">@lang('Google Flow workspace automation. Filename: toolsbydcx-flow.zip')</small>
                         </div>
 
-                        <div class="row">
-                            <div class="col-sm-7">
-                                <div class="form-group">
-                                    <label>@lang('Extension Version')</label>
-                                    <input type="text" class="form-control" name="min_extension_version" value="{{ $flowVersion }}" placeholder="e.g. 1.0.3" required>
-                                    <small class="text-muted">@lang('Auto-updated from manifest.json')</small>
-                                </div>
-                            </div>
-                            <div class="col-sm-5">
-                                <div class="form-group">
-                                    <label>@lang('Force Update')</label>
-                                    <div class="form-check form-switch mt-2">
-                                        <input type="checkbox" class="form-check-input" name="force_extension_update" value="1" id="forceUpdateSwitch" {{ $forceUpdate ? 'checked' : '' }}>
-                                        <label class="form-check-label ms-1" for="forceUpdateSwitch">
-                                            <small class="fw-bold">{{ $forceUpdate ? __('STRICT') : __('SOFT') }}</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label>@lang('Extension Version')</label>
+                            <input type="text" class="form-control" name="min_extension_version" value="{{ $flowVersion }}" placeholder="e.g. 1.0.3" required>
+                            <small class="text-muted">@lang('Auto-updated from manifest.json')</small>
                         </div>
 
                         <button type="submit" class="btn btn--primary w-100 h-45">

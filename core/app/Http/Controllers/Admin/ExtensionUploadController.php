@@ -96,6 +96,34 @@ class ExtensionUploadController extends Controller
         ));
     }
 
+    /**
+     * Toggle the global extension update policy without uploading a release.
+     *
+     * The policy is intentionally independent from a specific extension
+     * upload.  This lets an administrator turn the user-facing update modal
+     * off immediately and prevents a later Social/Flow upload from silently
+     * changing the policy.
+     */
+    public function updateForceUpdate(Request $request)
+    {
+        $request->validate([
+            'force_extension_update' => 'required|boolean',
+        ]);
+
+        $general = gs();
+        $general->force_extension_update = $request->boolean('force_extension_update') ? 1 : 0;
+        $general->save();
+
+        $notify[] = [
+            'success',
+            $general->force_extension_update
+                ? 'Forced extension updates are now enabled.'
+                : 'Forced extension updates are now disabled. Users will not see the update dialog.',
+        ];
+
+        return back()->withNotify($notify);
+    }
+
     public function upload(Request $request)
     {
         $request->validate([
@@ -239,7 +267,12 @@ class ExtensionUploadController extends Controller
         if ($extType !== 'kiwi') {
             $general = gs();
             $general->min_extension_version = $cleanVersion;
-            $general->force_extension_update = $request->force_extension_update ? 1 : 0;
+            // The force-update policy has its own admin control. Keep this
+            // backward-compatible for older forms that still submit the
+            // field, but never reset the setting when a normal upload omits it.
+            if ($request->has('force_extension_update')) {
+                $general->force_extension_update = $request->boolean('force_extension_update') ? 1 : 0;
+            }
             $general->save();
         }
 
