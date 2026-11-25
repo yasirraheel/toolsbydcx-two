@@ -176,12 +176,13 @@
             #${PANEL_ID} .toolsbydcx-theme-toggle:hover,
             #${PANEL_ID} .toolsbydcx-theme-toggle:focus-visible { background: rgba(127,127,127,.18); outline: none; }
             #${PANEL_ID} .toolsbydcx-account-footer {
-                display: flex;
+                display: flex !important;
                 align-items: center;
                 gap: 9px;
                 position: relative;
                 z-index: 2;
                 flex: 0 0 62px;
+                flex-shrink: 0;
                 width: 100%;
                 height: 62px;
                 min-height: 62px;
@@ -207,7 +208,8 @@
                 font-weight: 700;
                 text-transform: uppercase;
             }
-            #${PANEL_ID} .toolsbydcx-account-footer-copy { min-width: 0; flex: 1 1 auto; }
+            #${PANEL_ID} .toolsbydcx-account-footer-copy { display: block; min-width: 0; flex: 1 1 auto; line-height: 1.3; }
+            #${PANEL_ID} .toolsbydcx-account-footer-copy > span { display: block; width: 100%; }
             #${PANEL_ID} .toolsbydcx-account-footer-name,
             #${PANEL_ID} .toolsbydcx-account-footer-plan,
             #${PANEL_ID} .toolsbydcx-account-footer-brand {
@@ -263,12 +265,14 @@
                 display: flex;
                 flex-direction: column;
                 min-height: 0;
-                flex: 1 1 auto;
+                height: 0;
+                flex: 1 1 0%;
                 overflow: hidden;
+                isolation: isolate;
             }
             #${PANEL_ID} .toolsbydcx-chat-list-content {
                 min-height: 0;
-                flex: 1 1 auto;
+                flex: 1 1 0%;
                 overflow-y: auto;
                 padding-bottom: 8px;
                 scrollbar-width: thin;
