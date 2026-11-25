@@ -102,7 +102,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
-                padding: 14px 9px 12px;
+                padding: 14px 9px 82px;
                 overflow: hidden;
                 background: #171717;
                 color: #ececf1;
@@ -179,17 +179,22 @@
                 display: flex;
                 align-items: center;
                 gap: 9px;
-                flex: 0 0 62px;
-                width: 100%;
+                position: absolute;
+                left: 9px;
+                right: 9px;
+                bottom: 10px;
+                z-index: 3;
+                width: auto;
+                height: 62px;
                 min-height: 62px;
-                margin-top: auto;
-                padding: 10px 8px 8px;
+                margin: 0;
+                padding: 10px 8px;
                 border-top: 1px solid rgba(255,255,255,.10);
+                border-radius: 8px;
                 background: #171717;
-                position: relative;
-                z-index: 2;
                 visibility: visible !important;
                 opacity: 1 !important;
+                transform: translateZ(0);
             }
             #${PANEL_ID} .toolsbydcx-account-footer-avatar {
                 display: grid;
@@ -260,6 +265,7 @@
                 min-height: 0;
                 flex: 1 1 auto;
                 overflow-y: auto;
+                padding-bottom: 8px;
                 scrollbar-width: thin;
             }
             #${PANEL_ID} .toolsbydcx-chat-row {
@@ -360,6 +366,14 @@
             #${PANEL_ID} .toolsbydcx-chat-row:hover .toolsbydcx-pin-chat,
             #${PANEL_ID} .toolsbydcx-chat-row:focus-within .toolsbydcx-pin-chat,
             #${PANEL_ID} .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat { opacity: 1; }
+            #${PANEL_ID} .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat {
+                color: #fff;
+                background: rgba(255,255,255,.14);
+            }
+            #${PANEL_ID} .toolsbydcx-chat-row[data-pinned="true"] .toolsbydcx-pin-chat svg path:first-child {
+                fill: currentColor;
+                stroke: currentColor;
+            }
             #${PANEL_ID} .toolsbydcx-pin-chat:hover,
             #${PANEL_ID} .toolsbydcx-pin-chat:focus-visible { color: #f4c95d; background: rgba(255,255,255,.14); outline: none; }
             #${PANEL_ID} .toolsbydcx-pin-chat:hover,
@@ -387,8 +401,9 @@
             @media (max-width: 700px) {
                 #${PANEL_ID} {
                     width: min(86vw, 280px);
-                    padding: 12px 8px 10px;
+                    padding: 12px 8px 82px;
                 }
+                #${PANEL_ID} .toolsbydcx-account-footer { left: 8px; right: 8px; bottom: 8px; }
                 #${PANEL_ID} .toolsbydcx-new-chat,
                 #${PANEL_ID} .toolsbydcx-chat-row {
                     min-height: 44px;
@@ -955,7 +970,7 @@
                 pinButton.className = 'toolsbydcx-pin-chat';
                 pinButton.setAttribute('aria-label', 'Pin chat');
                 pinButton.title = 'Pin chat';
-                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Zm4 9v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 13v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
                 pinButton.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -998,7 +1013,7 @@
                 pinButton = document.createElement('button');
                 pinButton.type = 'button';
                 pinButton.className = 'toolsbydcx-pin-chat';
-                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Zm4 9v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                pinButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4h8l-1 6 3 3H6l3-3-1-6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 13v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
                 pinButton.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
