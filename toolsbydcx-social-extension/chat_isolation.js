@@ -1013,6 +1013,8 @@
         ensureChatListStructure(root);
         root.dataset.theme = state.theme;
         root.dataset.open = state.sidebarOpen ? 'true' : 'false';
+        ensureThemeToggle(root);
+        setSidebarTheme(state.themeMode, false);
         let toggle = document.getElementById('toolsbydcx-chat-sidebar-toggle');
         if (!toggle) {
             toggle = document.createElement('button');
