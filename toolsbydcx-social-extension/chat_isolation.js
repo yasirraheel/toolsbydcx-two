@@ -18,6 +18,20 @@
         || host.endsWith('.openai.com');
     if (!isChatHost) return;
 
+    const staleContextError = (value) => /extension context invalidated|message port closed/i.test(String(value || ''));
+    window.addEventListener('error', (event) => {
+        if (staleContextError(event?.error?.message || event?.message)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+    window.addEventListener('unhandledrejection', (event) => {
+        if (staleContextError(event?.reason?.message || event?.reason)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
     const CHAT_ID_RE = /^[A-Za-z0-9_-]{4,128}$/;
     const PANEL_ID = 'toolsbydcx-chat-sidebar';
     const STYLE_ID = 'toolsbydcx-chat-isolation-style';
@@ -890,7 +904,7 @@
         if (nameNode) nameNode.textContent = 'Tools by DCX';
         if (planNode) planNode.textContent = 'Plus';
         if (avatar) {
-            const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/favicon.ico');
+            const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/assets/images/logo_icon/favicon.png');
             if (avatar.src !== faviconUrl) avatar.src = faviconUrl;
             avatar.alt = '';
         }
@@ -939,7 +953,7 @@
             footer.innerHTML = '<img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" /><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
         }
         const avatar = footer.querySelector('.toolsbydcx-account-footer-avatar');
-        const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/favicon.ico');
+        const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/assets/images/logo_icon/favicon.png');
         if (avatar && avatar.src !== faviconUrl) avatar.src = faviconUrl;
         return footer;
     };
