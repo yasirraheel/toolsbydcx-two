@@ -65,6 +65,18 @@
     };
     state.theme = resolveTheme(state.themeMode);
 
+    const extensionAssetUrl = (path, fallback) => {
+        try {
+            const runtime = globalThis.chrome?.runtime;
+            if (runtime && typeof runtime.getURL === 'function') return runtime.getURL(path);
+        } catch (_) {
+            // A page can briefly retain an old content script while Chrome is
+            // replacing the extension. Fall back to the public asset instead
+            // of surfacing "Extension context invalidated" to the page.
+        }
+        return fallback;
+    };
+
     const setIsolationState = (value) => {
         try {
             document.documentElement.setAttribute('data-toolsbydcx-chat-isolation', value);
@@ -514,11 +526,16 @@
     const send = (message) => new Promise((resolve) => {
         try {
             chrome.runtime.sendMessage(message, (response) => {
-                if (chrome.runtime.lastError) {
-                    resolve({ success: false, error: chrome.runtime.lastError.message });
-                    return;
+                try {
+                    const lastError = chrome.runtime.lastError;
+                    if (lastError) {
+                        resolve({ success: false, error: lastError.message });
+                        return;
+                    }
+                    resolve(response || { success: false, error: 'No response from extension worker.' });
+                } catch (error) {
+                    resolve({ success: false, error: error.message });
                 }
-                resolve(response || { success: false, error: 'No response from extension worker.' });
             });
         } catch (error) {
             resolve({ success: false, error: error.message });
@@ -873,9 +890,7 @@
         if (nameNode) nameNode.textContent = 'Tools by DCX';
         if (planNode) planNode.textContent = 'Plus';
         if (avatar) {
-            const faviconUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
-                ? chrome.runtime.getURL('toolsbydcx-favicon.png')
-                : 'https://toolsbydcx.com/favicon.ico';
+            const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/favicon.ico');
             if (avatar.src !== faviconUrl) avatar.src = faviconUrl;
             avatar.alt = '';
         }
@@ -924,9 +939,7 @@
             footer.innerHTML = '<img class="toolsbydcx-account-footer-avatar" aria-hidden="true" alt="" /><span class="toolsbydcx-account-footer-copy"><span class="toolsbydcx-account-footer-name">Tools by DCX</span><span class="toolsbydcx-account-footer-plan">Plus</span></span>';
         }
         const avatar = footer.querySelector('.toolsbydcx-account-footer-avatar');
-        const faviconUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
-            ? chrome.runtime.getURL('toolsbydcx-favicon.png')
-            : 'https://toolsbydcx.com/favicon.ico';
+        const faviconUrl = extensionAssetUrl('toolsbydcx-favicon.png', 'https://toolsbydcx.com/favicon.ico');
         if (avatar && avatar.src !== faviconUrl) avatar.src = faviconUrl;
         return footer;
     };
