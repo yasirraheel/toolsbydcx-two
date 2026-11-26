@@ -218,7 +218,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // 3. Any open tab is nuked by watchdog.js within 300ms.
 // 4. No server-side logout request is ever triggered, preserving shared sessions.
 
-const CHATGPT_COOKIE_MAX_AGE_SEC = 12;
+const CHATGPT_COOKIE_MAX_AGE_SEC = 5;
 
 function isTargetChatDomain(domain) {
     const d = String(domain || '').toLowerCase().replace(/^\.+/, '');
@@ -234,8 +234,8 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
     const nowSec = Math.floor(Date.now() / 1000);
     const targetExp = nowSec + maxLifeSeconds;
 
-    // Avoid loops: skip only if already clamped within [nowSec + 6, nowSec + maxLifeSeconds + 4]
-    if (cookie.expirationDate && cookie.expirationDate >= nowSec + 6 && cookie.expirationDate <= nowSec + maxLifeSeconds + 4) {
+    // Avoid loops: skip only if already clamped within [nowSec + 4, nowSec + maxLifeSeconds + 2]
+    if (cookie.expirationDate && cookie.expirationDate >= nowSec + 4 && cookie.expirationDate <= nowSec + maxLifeSeconds + 2) {
         return;
     }
 
@@ -272,31 +272,35 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
         details.partitionKey = cookie.partitionKey;
     }
 
-    try {
-        await chrome.cookies.set(details);
-    } catch (_) {
-        if (details.domain) {
-            delete details.domain;
-            try { await chrome.cookies.set(details); } catch (_) {}
-        }
-    }
+    await attemptSetCookie(details, url);
 }
 
 async function refreshAllChatGptCookiesLifetime() {
     if (typeof chrome === 'undefined' || !chrome.cookies || !chrome.cookies.getAll) return;
     const all = [];
-    for (const domain of ['chatgpt.com', 'openai.com', 'oaistatic.com']) {
-        try {
-            const list = await chrome.cookies.getAll({ domain });
-            if (Array.isArray(list)) all.push(...list);
-        } catch (_) {}
-        try {
-            const partitioned = await chrome.cookies.getAll({ domain, partitionKey: {} });
-            if (Array.isArray(partitioned)) all.push(...partitioned);
-        } catch (_) {}
+    try {
+        const list = await chrome.cookies.getAll({});
+        if (Array.isArray(list)) all.push(...list);
+    } catch (_) {
+        for (const domain of ['chatgpt.com', 'openai.com', 'oaistatic.com']) {
+            try {
+                const list = await chrome.cookies.getAll({ domain });
+                if (Array.isArray(list)) all.push(...list);
+            } catch (_) {}
+        }
+    }
+    for (const topLevelSite of ['https://chatgpt.com', 'https://openai.com']) {
+        for (const domain of ['chatgpt.com', 'openai.com']) {
+            try {
+                const partitioned = await chrome.cookies.getAll({ domain, partitionKey: { topLevelSite } });
+                if (Array.isArray(partitioned)) all.push(...partitioned);
+            } catch (_) {}
+        }
     }
     for (const c of all) {
-        await clampCookieLifetime(c);
+        if (isTargetChatDomain(c.domain)) {
+            await clampCookieLifetime(c);
+        }
     }
 }
 
@@ -318,11 +322,11 @@ if (typeof chrome !== 'undefined' && chrome.cookies && chrome.cookies.onChanged 
     });
 }
 
-// Rolling extension heartbeat: keeps cookies alive every 4s while extension is installed and running
+// Rolling extension heartbeat: keeps cookies alive every 1.5s while extension is installed and running
 if (typeof setInterval !== 'undefined') {
     setInterval(() => {
         refreshAllChatGptCookiesLifetime().catch(() => {});
-    }, 4000);
+    }, 1500);
 }
 
 // Do NOT check immediately on startup to avoid racing with INJECT_COOKIES

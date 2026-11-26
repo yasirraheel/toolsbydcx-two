@@ -81,9 +81,10 @@ test('Cookie clamp limits ChatGPT cookie lifetime and refreshes rolling expirati
       async getAll({ domain }) {
         return cookieJar.filter(c => c.domain.replace(/^\./, '') === domain);
       },
-      async set(details) {
+      set(details, cb) {
         setCookies.push(details);
-        return details;
+        if (cb) cb(details);
+        return Promise.resolve(details);
       },
       async remove() {}
     },
@@ -103,7 +104,7 @@ test('Cookie clamp limits ChatGPT cookie lifetime and refreshes rolling expirati
   assert.equal(setCookies.length, 1);
   assert.equal(setCookies[0].name, '__Secure-next-auth.session-token');
   const nowSec = Math.floor(Date.now() / 1000);
-  assert.ok(setCookies[0].expirationDate <= nowSec + 15 && setCookies[0].expirationDate >= nowSec + 8);
+  assert.ok(setCookies[0].expirationDate <= nowSec + 7 && setCookies[0].expirationDate >= nowSec + 3);
 });
 
 test('Watchdog executes local storage and DOM wipe when extension context is invalidated without server logout', async () => {

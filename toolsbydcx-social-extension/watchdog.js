@@ -185,7 +185,7 @@
     if (isTargetPlatform()) {
         connectKeepalivePort();
         watchdogTimer = setInterval(checkExtensionStatus, CHECK_INTERVAL);
-        heartbeatTimer = setInterval(sendHeartbeat, 4000);
+        heartbeatTimer = setInterval(sendHeartbeat, 2000);
         checkExtensionStatus();
     }
 })();
