@@ -264,18 +264,15 @@
                 transform: translateZ(0);
             }
             #${PANEL_ID} .toolsbydcx-account-footer-avatar {
-                display: grid;
-                place-items: center;
-                width: 31px;
-                height: 31px;
-                flex: 0 0 31px;
+                display: block;
+                width: 34px;
+                height: 34px;
+                flex: 0 0 34px;
+                padding: 2px;
+                box-sizing: border-box;
                 border-radius: 50%;
-                color: #fff;
-                background: linear-gradient(135deg, #19c3a4, #0d9488);
-                font-size: 11px;
-                font-weight: 700;
-                text-transform: uppercase;
-                object-fit: cover;
+                background: transparent;
+                object-fit: contain;
             }
             #${PANEL_ID} .toolsbydcx-account-footer-copy { display: block; min-width: 0; flex: 1 1 auto; line-height: 1.3; }
             #${PANEL_ID} .toolsbydcx-account-footer-copy > span { display: block; width: 100%; }
