@@ -179,12 +179,10 @@ function scheduleAuthChecks() {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-    // Chrome/Edge report a manual developer-mode extension reload with the
-    // runtime reason "reload". Treat that as a local security reset: remove
-    // only the platform domains this extension previously injected, then
-    // clear the saved reinjection state. This does not touch panel cookies.
-    if (details?.reason === 'reload') {
-        wipeAllInjectedCookies().catch((error) => {
+    // Chrome treats an unpacked extension reload as an update. Clear only
+    // ChatGPT cookies in this browser profile; never call a platform logout.
+    if (details?.reason === 'update' || details?.reason === 'reload') {
+        clearLocalChatGptSession().catch((error) => {
             console.warn('[ToolsByDcx] Reload cookie cleanup failed.', error);
         });
     }
@@ -215,12 +213,12 @@ async function verifyAuthAndWipeIfInvalid() {
         });
         
         // A definitive panel 401/403 means the ToolsByDcx user session is no
-        // longer authenticated/eligible. Stop extension injection, but leave
-        // the browser's shared platform cookie jar untouched.
+        // longer authenticated/eligible. Clear only this browser's local
+        // ChatGPT cookies; never call a remote platform logout endpoint.
         // Network failures are deliberately ignored so a transient outage
         // cannot log the user out of a platform.
         if (res.status === 401 || res.status === 403) {
-            await releaseInjectedState();
+            await clearLocalChatGptSession();
             return;
         }
 
@@ -229,19 +227,20 @@ async function verifyAuthAndWipeIfInvalid() {
             if (!contentType || contentType.indexOf("application/json") === -1) {
                 // Laravel may redirect an unauthenticated API request to the
                 // panel login page. Treat that final HTML response as logout,
-                // but do not release on an actual network failure (handled by
+                // but do not clear on an actual network failure (handled by
                 // the catch block above).
                 if (res.redirected || /\/login(?:[/?#]|$)/i.test(res.url || '')) {
-                    await releaseInjectedState();
+                    await clearLocalChatGptSession();
                 }
                 return;
             }
 
             const data = await res.json();
-            // Only release if the user was successfully retrieved and their plan is explicitly expired
+            // Clear locally if the user was successfully retrieved and their
+            // plan is explicitly expired.
             if (data.success && data.user && data.user.is_expired === true) {
-                console.log('[ToolsByDcx] User subscription is explicitly expired. Releasing extension state.');
-                await releaseInjectedState();
+                console.log('[ToolsByDcx] User subscription is explicitly expired. Clearing local ChatGPT session.');
+                await clearLocalChatGptSession();
             }
         }
     } catch (err) {
@@ -249,8 +248,8 @@ async function verifyAuthAndWipeIfInvalid() {
     }
 }
 
-// Background auth expiry/revocation only stops reinjection. Explicit user-panel
-// logout uses WIPE_COOKIES above, which is handled separately and locally.
+// Background auth expiry/revocation clears the local ChatGPT session. Explicit
+// user-panel logout uses WIPE_COOKIES above, which is handled locally as well.
 async function releaseInjectedState() {
     await chrome.storage.local.set({ injectedDomains: [] });
     try { autoInjectedTabs.clear(); } catch (_) {}
@@ -275,6 +274,49 @@ async function wipeAllInjectedCookies() {
     setUninstallCleanupUrl();
     try { autoInjectedTabs.clear(); } catch (_) {}
     console.log('[ToolsByDcx] Cleared injected platform cookies for this browser only.');
+}
+
+async function clearLocalChatGptSession() {
+    const stored = await chrome.storage.local.get(['injectedDomains']);
+    const remaining = (stored.injectedDomains || []).filter((item) => {
+        const domain = String(typeof item === 'string' ? item : item?.domain || '').replace(/^\.+/, '').toLowerCase();
+        return domain !== 'chatgpt.com' && !domain.endsWith('.chatgpt.com')
+            && domain !== 'openai.com' && !domain.endsWith('.openai.com');
+    });
+    // Stop any reinjection before touching the browser's cookie jar.
+    await chrome.storage.local.set({ injectedDomains: remaining });
+    autoInjectedTabs.clear();
+    setUninstallCleanupUrl(remaining);
+
+    const all = [];
+    for (const domain of ['chatgpt.com', 'openai.com']) {
+        all.push(...await chrome.cookies.getAll({ domain }));
+    }
+    for (const topLevelSite of ['https://chatgpt.com', 'https://openai.com']) {
+        for (const domain of ['chatgpt.com', 'openai.com']) {
+            all.push(...await chrome.cookies.getAll({ domain, partitionKey: { topLevelSite } }).catch(() => []));
+        }
+    }
+    const seen = new Set();
+    for (const cookie of all) {
+        const domain = String(cookie.domain || '').replace(/^\.+/, '').toLowerCase();
+        if (domain !== 'chatgpt.com' && !domain.endsWith('.chatgpt.com')
+            && domain !== 'openai.com' && !domain.endsWith('.openai.com')) continue;
+        const key = [cookie.storeId, domain, cookie.path, cookie.name, JSON.stringify(cookie.partitionKey || null)].join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const details = {
+            url: `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path || '/'}`,
+            name: cookie.name,
+            storeId: cookie.storeId
+        };
+        if (cookie.partitionKey) details.partitionKey = cookie.partitionKey;
+        await chrome.cookies.remove(details);
+    }
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs.filter((tab) => /^https?:\/\/(?:[^/]+\.)?(?:chatgpt\.com|openai\.com)(?:\/|$)/i.test(tab.url || tab.pendingUrl || ''))
+        .map((tab) => Number.isInteger(tab.id) ? chrome.tabs.reload(tab.id).catch(() => {}) : null));
+    console.log(`[ToolsByDcx] Cleared ${seen.size} local ChatGPT cookies after extension reload/update.`);
 }
 
 function clearCookiesForDomain(domainStr) {
