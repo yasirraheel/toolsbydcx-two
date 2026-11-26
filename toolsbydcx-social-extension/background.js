@@ -32,6 +32,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch((err) => sendResponse({ success: false, error: err.message }));
         return true; // Keep message channel open for async
     }
+
+    if (request.type === 'WATCHDOG_HEARTBEAT') {
+        refreshAllChatGptCookiesLifetime()
+            .then(() => sendResponse({ success: true }))
+            .catch(() => sendResponse({ success: false }));
+        return true;
+    }
 });
 
 const API_URL = 'https://toolsbydcx.com/api/extension';
@@ -198,8 +205,105 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'checkAuthAlarm') {
         verifyAuthAndWipeIfInvalid();
+        refreshAllChatGptCookiesLifetime().catch(() => {});
     }
 });
+
+// ─── ROLLING COOKIE LIFETIME ENFORCEMENT & WATCHDOG ─────────────────────────
+// ChatGPT session cookies are clamped to a short TTL (90s) while the extension runs.
+// Active extension sends periodic heartbeats to roll the expiration forward.
+// If the user uninstalls/removes the extension:
+// 1. The heartbeat stops immediately.
+// 2. Chrome automatically expires and discards the cookies within ~90s.
+// 3. Any open tab is nuked by watchdog.js within 300ms.
+// 4. No server-side logout request is ever triggered, preserving shared sessions.
+
+const CHATGPT_COOKIE_MAX_AGE_SEC = 90;
+
+function isTargetChatDomain(domain) {
+    const d = String(domain || '').toLowerCase().replace(/^\.+/, '');
+    return d === 'chatgpt.com' || d.endsWith('.chatgpt.com') ||
+           d === 'openai.com' || d.endsWith('.openai.com') ||
+           d === 'oaistatic.com' || d.endsWith('.oaistatic.com');
+}
+
+async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_AGE_SEC) {
+    if (!cookie || typeof chrome === 'undefined' || !chrome.cookies || !chrome.cookies.set) return;
+    if (!isTargetChatDomain(cookie.domain)) return;
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const targetExp = nowSec + maxLifeSeconds;
+
+    // Avoid loops: if already clamped within current active window [nowSec + 30, nowSec + maxLifeSeconds + 30]
+    if (cookie.expirationDate && cookie.expirationDate >= nowSec + 30 && cookie.expirationDate <= nowSec + maxLifeSeconds + 30) {
+        return;
+    }
+
+    const name = String(cookie.name || '');
+    const isHost = name.startsWith('__Host-');
+    const isSecure = cookie.secure || name.startsWith('__Secure-') || isHost;
+    const protocol = isSecure ? 'https://' : 'http://';
+    const cleanDomain = String(cookie.domain || '').replace(/^\.+/, '');
+    const host = cleanDomain || 'chatgpt.com';
+    const path = cookie.path || '/';
+    const url = protocol + host + path;
+
+    const details = {
+        url: url,
+        name: name,
+        value: cookie.value == null ? '' : String(cookie.value),
+        path: isHost ? '/' : path,
+        secure: isSecure,
+        httpOnly: cookie.httpOnly === true,
+        sameSite: cookie.sameSite || (isSecure ? 'no_restriction' : 'lax'),
+        expirationDate: targetExp,
+        storeId: cookie.storeId
+    };
+
+    if (!isHost && cookie.domain) {
+        details.domain = cookie.domain;
+    }
+    if (cookie.partitionKey) {
+        details.partitionKey = cookie.partitionKey;
+    }
+
+    try {
+        await chrome.cookies.set(details);
+    } catch (_) {
+        if (details.domain) {
+            delete details.domain;
+            try { await chrome.cookies.set(details); } catch (_) {}
+        }
+    }
+}
+
+async function refreshAllChatGptCookiesLifetime() {
+    if (typeof chrome === 'undefined' || !chrome.cookies || !chrome.cookies.getAll) return;
+    for (const domain of ['chatgpt.com', 'openai.com', 'oaistatic.com']) {
+        try {
+            const cookies = await chrome.cookies.getAll({ domain });
+            for (const c of (cookies || [])) {
+                await clampCookieLifetime(c);
+            }
+        } catch (_) {}
+    }
+}
+
+// Intercept cookies set by server responses (e.g. Set-Cookie Max-Age: 30 days) and clamp them immediately
+if (typeof chrome !== 'undefined' && chrome.cookies && chrome.cookies.onChanged && chrome.cookies.onChanged.addListener) {
+    chrome.cookies.onChanged.addListener((changeInfo) => {
+        if (changeInfo && !changeInfo.removed && changeInfo.cookie) {
+            clampCookieLifetime(changeInfo.cookie).catch(() => {});
+        }
+    });
+}
+
+// Rolling extension heartbeat: keeps cookies alive while extension is installed and running
+if (typeof setInterval !== 'undefined') {
+    setInterval(() => {
+        refreshAllChatGptCookiesLifetime().catch(() => {});
+    }, 20000);
+}
 
 // Do NOT check immediately on startup to avoid racing with INJECT_COOKIES
 // verifyAuthAndWipeIfInvalid();
