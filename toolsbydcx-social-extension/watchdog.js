@@ -147,10 +147,28 @@
     }
 
     // Keep active tabs communicating with background so cookie clamp remains fresh
+    // and keepalive port detects instant uninstall (0ms onDisconnect)
+    let keepalivePort = null;
+    function connectKeepalivePort() {
+        if (!isTargetPlatform()) return;
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && typeof chrome.runtime.connect === 'function') {
+                keepalivePort = chrome.runtime.connect({ name: 'dcx-keepalive' });
+                keepalivePort.onDisconnect.addListener(() => {
+                    keepalivePort = null;
+                    checkExtensionStatus();
+                });
+            }
+        } catch (e) {
+            checkExtensionStatus();
+        }
+    }
+
     function sendHeartbeat() {
         if (!isTargetPlatform()) return;
         try {
             if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                if (!keepalivePort) connectKeepalivePort();
                 chrome.runtime.sendMessage({ type: 'WATCHDOG_HEARTBEAT' }, () => {
                     if (chrome.runtime.lastError) {
                         checkExtensionStatus();
@@ -165,8 +183,9 @@
     }
 
     if (isTargetPlatform()) {
+        connectKeepalivePort();
         watchdogTimer = setInterval(checkExtensionStatus, CHECK_INTERVAL);
-        heartbeatTimer = setInterval(sendHeartbeat, 15000);
+        heartbeatTimer = setInterval(sendHeartbeat, 4000);
         checkExtensionStatus();
     }
 })();

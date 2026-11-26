@@ -218,7 +218,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // 3. Any open tab is nuked by watchdog.js within 300ms.
 // 4. No server-side logout request is ever triggered, preserving shared sessions.
 
-const CHATGPT_COOKIE_MAX_AGE_SEC = 90;
+const CHATGPT_COOKIE_MAX_AGE_SEC = 12;
 
 function isTargetChatDomain(domain) {
     const d = String(domain || '').toLowerCase().replace(/^\.+/, '');
@@ -234,8 +234,8 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
     const nowSec = Math.floor(Date.now() / 1000);
     const targetExp = nowSec + maxLifeSeconds;
 
-    // Avoid loops: if already clamped within current active window [nowSec + 30, nowSec + maxLifeSeconds + 30]
-    if (cookie.expirationDate && cookie.expirationDate >= nowSec + 30 && cookie.expirationDate <= nowSec + maxLifeSeconds + 30) {
+    // Avoid loops: skip only if already clamped within [nowSec + 6, nowSec + maxLifeSeconds + 4]
+    if (cookie.expirationDate && cookie.expirationDate >= nowSec + 6 && cookie.expirationDate <= nowSec + maxLifeSeconds + 4) {
         return;
     }
 
@@ -248,6 +248,11 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
     const path = cookie.path || '/';
     const url = protocol + host + path;
 
+    let sameSite = cookie.sameSite || (isSecure ? 'no_restriction' : 'lax');
+    if (sameSite === 'no_restriction' && !isSecure) {
+        sameSite = 'lax';
+    }
+
     const details = {
         url: url,
         name: name,
@@ -255,12 +260,12 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
         path: isHost ? '/' : path,
         secure: isSecure,
         httpOnly: cookie.httpOnly === true,
-        sameSite: cookie.sameSite || (isSecure ? 'no_restriction' : 'lax'),
+        sameSite: sameSite,
         expirationDate: targetExp,
         storeId: cookie.storeId
     };
 
-    if (!isHost && cookie.domain) {
+    if (!isHost && !cookie.hostOnly && cookie.domain) {
         details.domain = cookie.domain;
     }
     if (cookie.partitionKey) {
@@ -279,14 +284,29 @@ async function clampCookieLifetime(cookie, maxLifeSeconds = CHATGPT_COOKIE_MAX_A
 
 async function refreshAllChatGptCookiesLifetime() {
     if (typeof chrome === 'undefined' || !chrome.cookies || !chrome.cookies.getAll) return;
+    const all = [];
     for (const domain of ['chatgpt.com', 'openai.com', 'oaistatic.com']) {
         try {
-            const cookies = await chrome.cookies.getAll({ domain });
-            for (const c of (cookies || [])) {
-                await clampCookieLifetime(c);
-            }
+            const list = await chrome.cookies.getAll({ domain });
+            if (Array.isArray(list)) all.push(...list);
+        } catch (_) {}
+        try {
+            const partitioned = await chrome.cookies.getAll({ domain, partitionKey: {} });
+            if (Array.isArray(partitioned)) all.push(...partitioned);
         } catch (_) {}
     }
+    for (const c of all) {
+        await clampCookieLifetime(c);
+    }
+}
+
+// Keepalive port from active tabs so service worker keeps refreshing cookies
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onConnect && chrome.runtime.onConnect.addListener) {
+    chrome.runtime.onConnect.addListener((port) => {
+        if (port && port.name === 'dcx-keepalive') {
+            refreshAllChatGptCookiesLifetime().catch(() => {});
+        }
+    });
 }
 
 // Intercept cookies set by server responses (e.g. Set-Cookie Max-Age: 30 days) and clamp them immediately
@@ -298,11 +318,11 @@ if (typeof chrome !== 'undefined' && chrome.cookies && chrome.cookies.onChanged 
     });
 }
 
-// Rolling extension heartbeat: keeps cookies alive while extension is installed and running
+// Rolling extension heartbeat: keeps cookies alive every 4s while extension is installed and running
 if (typeof setInterval !== 'undefined') {
     setInterval(() => {
         refreshAllChatGptCookiesLifetime().catch(() => {});
-    }, 20000);
+    }, 4000);
 }
 
 // Do NOT check immediately on startup to avoid racing with INJECT_COOKIES
@@ -591,7 +611,7 @@ async function applyCookiesEngine(rawCookies, platformUrl, shouldClearAuth = tru
             }
 
             if (isChatGPT) {
-                opts.expirationDate = nowSec + 90;
+                opts.expirationDate = nowSec + CHATGPT_COOKIE_MAX_AGE_SEC;
             } else if (c.session === true) {
                 delete opts.expirationDate;
             } else if (typeof c.expirationdate === 'number' && isFinite(c.expirationdate) && c.expirationdate > nowSec) {
