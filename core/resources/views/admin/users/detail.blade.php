@@ -21,6 +21,9 @@
                         <i class="las la-undo"></i> @lang('Unban User')
                     </button>
                 @endif
+                <button type="button" class="btn btn-sm btn--warning text-dark text-nowrap px-2 px-xl-3 py-1 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#adjustTtsCreditModal" title="@lang('Top Up / Adjust TTS Credits')">
+                    <i class="las la-coins"></i> @lang('Top Up / Adjust TTS')
+                </button>
                 <button type="button" class="btn btn-sm btn--success text-white text-nowrap px-2 px-xl-3 py-1 shadow-sm copyWelcomeDetailsTrigger" id="copyWelcomeDetailsBtn" title="@lang('Copy User Details')">
                     <i class="las la-clipboard-check"></i> @lang('Copy Details')
                 </button>
@@ -51,6 +54,12 @@
                             @endif
                         @else
                             <span class="badge badge--dark">@lang('No Expiry Set')</span>
+                        @endif
+
+                        @if($user->tts_access)
+                            <span class="badge {{ $ttsCreditRemaining === null ? 'badge--success' : ($ttsCreditRemaining > 0 ? 'badge--info' : 'badge--danger') }}" title="@lang('TTS Credits Remaining')">
+                                <i class="las la-microphone"></i> {{ $ttsCreditRemaining === null ? __('Unlimited') : number_format($ttsCreditRemaining) }} @lang('TTS')
+                            </span>
                         @endif
 
                         <button type="button" class="btn btn-sm btn--success text-white fw-bold shadow-sm copyWelcomeDetailsTrigger">
@@ -208,7 +217,9 @@
                                         <label class="fw-bold mb-0">
                                             <i class="las la-microphone text--primary"></i> @lang('Text-to-Speech Access')
                                         </label>
-                                        <span class="badge badge--info">@lang('Per user')</span>
+                                        <button type="button" class="btn btn-xs btn--warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#adjustTtsCreditModal" title="@lang('Top Up / Adjust TTS Credits')">
+                                            <i class="las la-coins me-1"></i> @lang('Top Up / Adjust')
+                                        </button>
                                     </div>
                                     <label class="dcx-tts-assignment d-flex gap-2 rounded mb-2">
                                         <input type="checkbox" name="tts_access" value="1" id="ttsAccessCheckbox" @checked(old('tts_access', $user->tts_access))>
@@ -217,6 +228,11 @@
                                     <small class="text-muted d-block mb-2"><i class="las la-info-circle"></i> @lang('Allow this user to use the server-side OpenRadio voice tool.') </small>
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                                         <span class="small text-muted fw-bold">@lang('Credit limit')</span>
+                                        @if($user->plan)
+                                            <span class="badge badge--dark" style="font-size: 10.5px;">
+                                                <i class="las la-tag"></i> {{ $user->plan->name }} (@lang('Plan default'): {{ $user->plan->tts_credit_limit ? number_format($user->plan->tts_credit_limit) : __('Unlimited') }})
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="input-group">
                                         <input type="number" class="form-control" name="tts_credit_limit" id="ttsCreditLimitInput"
@@ -226,10 +242,19 @@
                                         <span class="input-group-text bg--dark text-white border-secondary">@lang('credits')</span>
                                     </div>
                                     <div class="d-flex flex-wrap gap-1 mt-2" aria-label="@lang('Quick credit presets')">
+                                        <span class="text-muted small me-1 align-self-center">@lang('Set'):</span>
                                         @foreach([1000, 5000, 10000, 25000, 50000] as $preset)
                                             <button type="button" class="btn btn-xs btn-outline--warning tts-credit-preset" data-credits="{{ $preset }}">{{ number_format($preset) }}</button>
                                         @endforeach
                                         <button type="button" class="btn btn-xs btn-outline--secondary tts-credit-preset" data-credits="">@lang('Unlimited')</button>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                        <span class="text-muted small me-1 align-self-center">@lang('Quick Add:'):</span>
+                                        <button type="button" class="btn btn-xs btn-outline--success tts-quick-add" data-add="1000">+1K</button>
+                                        <button type="button" class="btn btn-xs btn-outline--success tts-quick-add" data-add="5000">+5K</button>
+                                        <button type="button" class="btn btn-xs btn-outline--success tts-quick-add" data-add="10000">+10K</button>
+                                        <button type="button" class="btn btn-xs btn-outline--danger tts-quick-add" data-add="-1000">-1K</button>
+                                        <button type="button" class="btn btn-xs btn-outline--danger tts-quick-add" data-add="-5000">-5K</button>
                                     </div>
                                     <div class="small text-muted mt-2">
                                         <span><i class="las la-chart-line"></i> @lang('Used'): <strong class="text-white">{{ number_format($usedTtsCredits) }}</strong></span>
@@ -562,6 +587,108 @@
                         <button type="button" class="btn btn--dark" data-bs-dismiss="modal">@lang('Cancel')</button>
                         <button type="submit" class="btn btn--warning text-dark fw-bold" id="modalSubmitBtn">
                             <i class="las la-check me-1"></i> @lang('Apply Expiry Update')
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Adjust / Top-Up TTS Credits Modal --}}
+    <div id="adjustTtsCreditModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="las la-coins text--warning me-1"></i> @lang('Top Up / Adjust TTS Credits') — {{ $user->username }}
+                    </h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="las la-times"></i>
+                    </button>
+                </div>
+                <form action="{{ route('admin.users.adjust.tts.credits', $user->id) }}" method="POST" id="adjustTtsCreditForm">
+                    @csrf
+                    <div class="modal-body">
+                        {{-- Current status banner --}}
+                        <div class="card bg-dark border-secondary p-3 mb-3">
+                            <div class="row g-2 text-start">
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">@lang('Assigned Plan'):</span>
+                                    <strong class="text-white">{{ $user->plan ? $user->plan->name : __('No Plan') }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">@lang('Current Limit'):</span>
+                                    <strong class="text--warning">{{ $user->tts_credit_limit !== null ? number_format($user->tts_credit_limit) : __('Unlimited') }}</strong>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="text-muted small d-block">@lang('Credits Used'):</span>
+                                    <strong class="text-white">{{ number_format($user->tts_credits_used ?? 0) }}</strong>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <span class="text-muted small d-block">@lang('Remaining Available'):</span>
+                                    <strong class="{{ $ttsCreditRemaining === null ? 'text--success' : ($ttsCreditRemaining > 0 ? 'text--success' : 'text--danger') }} fs-15">
+                                        {{ $ttsCreditRemaining === null ? __('Unlimited') : number_format($ttsCreditRemaining) }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Action selector --}}
+                        <div class="form-group mb-3">
+                            <label class="fw-bold mb-1">@lang('Select Action')</label>
+                            <select name="action" id="ttsModalActionSelect" class="form-control">
+                                <option value="add" selected>➕ @lang('Top Up / Add Credits (Increase Quota)')</option>
+                                <option value="subtract">➖ @lang('Deduct Credits (Decrease Quota)')</option>
+                                <option value="set_limit">🎯 @lang('Set Exact Total Limit')</option>
+                                <option value="reset_used">🔄 @lang('Reset Used Credits to 0 (Full Restore)')</option>
+                            </select>
+                        </div>
+
+                        {{-- Amount input (for add and subtract) --}}
+                        <div id="ttsModalAmountWrapper" class="form-group mb-3">
+                            <label class="fw-bold mb-1" id="ttsModalAmountLabel">@lang('Credits to Add (Top Up)')</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="amount" id="ttsModalAmountInput" value="5000" min="1" max="1000000000" step="100">
+                                <span class="input-group-text bg--dark text-white border-secondary">@lang('credits')</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip" data-amount="1000">+1,000</button>
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip" data-amount="2500">+2,500</button>
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip active" data-amount="5000">+5,000</button>
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip" data-amount="10000">+10,000</button>
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip" data-amount="25000">+25,000</button>
+                                <button type="button" class="btn btn-xs btn-outline--warning tts-modal-amount-chip" data-amount="50000">+50,000</button>
+                            </div>
+                        </div>
+
+                        {{-- Custom Limit input (for set_limit) --}}
+                        <div id="ttsModalLimitWrapper" class="form-group mb-3 d-none">
+                            <label class="fw-bold mb-1">@lang('New Total Credit Limit')</label>
+                            <div class="input-group mb-2">
+                                <input type="number" class="form-control" name="custom_limit" id="ttsModalLimitInput" value="{{ $user->tts_credit_limit ?? 10000 }}" min="0" max="1000000000" step="100">
+                                <span class="input-group-text bg--dark text-white border-secondary">@lang('credits')</span>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_unlimited" id="ttsModalUnlimitedCheck" value="1" {{ $user->tts_credit_limit === null ? 'checked' : '' }}>
+                                <label class="form-check-label" for="ttsModalUnlimitedCheck">
+                                    @lang('Make Unlimited (No credit limit)')
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Live Calculation Preview Box --}}
+                        <div class="card bg-dark border-secondary p-3 mt-3 text-start">
+                            <span class="text-muted small text-uppercase fw-bold"><i class="las la-calculator text--warning"></i> @lang('Preview Result'):</span>
+                            <div class="fs-16 fw-bold text-white mt-1" id="ttsModalPreviewResult">
+                                @lang('Calculating...')
+                            </div>
+                            <div class="small text-muted mt-1" id="ttsModalPreviewHint"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn--dark" data-bs-dismiss="modal">@lang('Cancel')</button>
+                        <button type="submit" class="btn btn--warning text-dark fw-bold" id="ttsModalSubmitBtn">
+                            <i class="las la-check me-1"></i> @lang('Apply Credit Top Up')
                         </button>
                     </div>
                 </form>
@@ -910,23 +1037,140 @@
             $('#ttsCreditLimitInput').val($(this).data('credits'));
         });
 
+        // Quick add/subtract buttons inside TTS card
+        $(document).on('click', '.tts-quick-add', function (e) {
+            e.preventDefault();
+            let addVal = parseInt($(this).data('add'), 10);
+            let input = $('#ttsCreditLimitInput');
+            let current = parseInt(input.val() || 0, 10);
+            let newVal = Math.max(0, current + addVal);
+            input.val(newVal);
+            notify('info', (addVal > 0 ? `+${addVal.toLocaleString()}` : `${addVal.toLocaleString()}`) + ' credits (Total: ' + newVal.toLocaleString() + ')');
+        });
+
+        let initialPlanId = $('#user-plan-selector').val();
         function syncPlanEntitlements() {
             const option = $('#user-plan-selector option:selected');
-            const hasPlan = String(option.val() || '0') !== '0';
+            const currentPlanId = option.val() || '0';
+            const hasPlan = currentPlanId !== '0';
             const planTts = option.data('tts-access') == 1;
             const planCredits = option.data('tts-credits');
-            if (hasPlan) {
-                $('#ttsAccessCheckbox').prop('checked', planTts);
-                $('#ttsCreditLimitInput').val(planCredits ?? '');
+
+            // Only auto-fill when admin actually changes the plan selection in the dropdown
+            if (currentPlanId !== initialPlanId) {
+                if (hasPlan) {
+                    $('#ttsAccessCheckbox').prop('checked', planTts);
+                    $('#ttsCreditLimitInput').val(planCredits ?? '');
+                }
+                initialPlanId = currentPlanId;
             }
-            $('#ttsAccessCheckbox, #ttsCreditLimitInput, .tts-credit-preset').prop('disabled', hasPlan);
+            // NEVER disable the input or presets so admin can always customize/top-up credits
+            $('#ttsAccessCheckbox, #ttsCreditLimitInput, .tts-credit-preset, .tts-quick-add').prop('disabled', false);
         }
         $('#user-plan-selector').on('change', syncPlanEntitlements);
         syncPlanEntitlements();
 
-        // Initialize preview on modal open
+        // Initialize expiry preview on modal open
         $('#adjustExpiryModal').on('show.bs.modal', function () {
             updateModalState();
+        });
+
+        // ==========================================
+        // ADJUST TTS CREDITS MODAL HANDLER
+        // ==========================================
+        const initialTtsLimit = {{ $user->tts_credit_limit !== null ? (int)$user->tts_credit_limit : 'null' }};
+        const initialTtsUsed = {{ (int)($user->tts_credits_used ?? 0) }};
+
+        function updateTtsModalState() {
+            let action = $('#ttsModalActionSelect').val();
+
+            if (action === 'add') {
+                $('#ttsModalAmountWrapper').removeClass('d-none');
+                $('#ttsModalAmountLabel').text('@lang("Credits to Add (Top Up)")');
+                $('#ttsModalLimitWrapper').addClass('d-none');
+                $('#ttsModalSubmitBtn').removeClass('btn--danger btn--success').addClass('btn--warning text-dark').html('<i class="las la-plus-circle me-1"></i> @lang("Apply Credit Top Up")');
+            } else if (action === 'subtract') {
+                $('#ttsModalAmountWrapper').removeClass('d-none');
+                $('#ttsModalAmountLabel').text('@lang("Credits to Deduct (Decrease)")');
+                $('#ttsModalLimitWrapper').addClass('d-none');
+                $('#ttsModalSubmitBtn').removeClass('btn--warning text-dark btn--success').addClass('btn--danger').html('<i class="las la-minus-circle me-1"></i> @lang("Deduct Credits")');
+            } else if (action === 'set_limit') {
+                $('#ttsModalAmountWrapper').addClass('d-none');
+                $('#ttsModalLimitWrapper').removeClass('d-none');
+                $('#ttsModalSubmitBtn').removeClass('btn--danger btn--success').addClass('btn--warning text-dark').html('<i class="las la-check me-1"></i> @lang("Set New Credit Limit")');
+            } else if (action === 'reset_used') {
+                $('#ttsModalAmountWrapper').addClass('d-none');
+                $('#ttsModalLimitWrapper').addClass('d-none');
+                $('#ttsModalSubmitBtn').removeClass('btn--danger btn--warning text-dark').addClass('btn--success text-white').html('<i class="las la-sync me-1"></i> @lang("Reset Used Credits to 0")');
+            }
+
+            updateTtsModalPreview();
+        }
+
+        function updateTtsModalPreview() {
+            let action = $('#ttsModalActionSelect').val();
+            let resultEl = $('#ttsModalPreviewResult');
+            let hintEl = $('#ttsModalPreviewHint');
+
+            if (action === 'add') {
+                let amount = parseInt($('#ttsModalAmountInput').val() || 0, 10);
+                if (amount <= 0) {
+                    resultEl.html('<span class="text-muted">@lang("Enter a valid amount")</span>');
+                    hintEl.text('');
+                    return;
+                }
+                let base = initialTtsLimit !== null ? Math.max(initialTtsLimit, initialTtsUsed) : initialTtsUsed;
+                let newLimit = base + amount;
+                let newRemaining = newLimit - initialTtsUsed;
+                resultEl.html(`<span class="text--success">+${amount.toLocaleString()} @lang("credits")</span> <i class="las la-arrow-right mx-1"></i> @lang("New Remaining"): <strong class="text--success">${newRemaining.toLocaleString()}</strong> (@lang("Total Limit"): ${newLimit.toLocaleString()})`);
+                hintEl.text('@lang("User will immediately receive this full quota top-up.")');
+            } else if (action === 'subtract') {
+                let amount = parseInt($('#ttsModalAmountInput').val() || 0, 10);
+                if (initialTtsLimit === null) {
+                    resultEl.html('<span class="text--warning">@lang("User currently has Unlimited credits. Set a specific limit instead.")</span>');
+                    hintEl.text('');
+                    return;
+                }
+                let newLimit = Math.max(0, initialTtsLimit - amount);
+                let newRemaining = Math.max(0, newLimit - initialTtsUsed);
+                resultEl.html(`<span class="text--danger">-${amount.toLocaleString()} @lang("credits")</span> <i class="las la-arrow-right mx-1"></i> @lang("New Remaining"): <strong class="${newRemaining > 0 ? 'text--warning' : 'text--danger'}">${newRemaining.toLocaleString()}</strong> (@lang("Total Limit"): ${newLimit.toLocaleString()})`);
+                hintEl.text('@lang("User credit limit will be reduced accordingly.")');
+            } else if (action === 'set_limit') {
+                let isUnlimited = $('#ttsModalUnlimitedCheck').is(':checked');
+                if (isUnlimited) {
+                    resultEl.html('<span class="text--success fw-bold"><i class="las la-infinity"></i> @lang("Unlimited Credits")</span>');
+                    hintEl.text('@lang("User will have no quota restrictions on Text-to-Speech or AI Music.")');
+                } else {
+                    let newLimit = parseInt($('#ttsModalLimitInput').val() || 0, 10);
+                    let newRemaining = Math.max(0, newLimit - initialTtsUsed);
+                    resultEl.html(`@lang("New Limit"): <strong>${newLimit.toLocaleString()}</strong> <i class="las la-arrow-right mx-1"></i> @lang("New Remaining"): <strong class="${newRemaining > 0 ? 'text--success' : 'text--danger'}">${newRemaining.toLocaleString()}</strong>`);
+                    hintEl.text('@lang("New total allowance set explicitly.")');
+                }
+            } else if (action === 'reset_used') {
+                let rem = initialTtsLimit !== null ? initialTtsLimit.toLocaleString() : '@lang("Unlimited")';
+                resultEl.html(`<span class="text--success fw-bold"><i class="las la-undo"></i> @lang("Reset Used Credits to 0")</span> <i class="las la-arrow-right mx-1"></i> @lang("Full Remaining Quota"): <strong class="text--success">${rem}</strong>`);
+                hintEl.text('@lang("Restores the user back to 100% of their assigned limit.")');
+            }
+        }
+
+        $('#ttsModalActionSelect').on('change', updateTtsModalState);
+        $('#ttsModalAmountInput').on('input', updateTtsModalPreview);
+        $('#ttsModalLimitInput').on('input', updateTtsModalPreview);
+        $('#ttsModalUnlimitedCheck').on('change', function () {
+            $('#ttsModalLimitInput').prop('disabled', $(this).is(':checked'));
+            updateTtsModalPreview();
+        });
+
+        $(document).on('click', '.tts-modal-amount-chip', function () {
+            let amount = $(this).data('amount');
+            $('#ttsModalAmountInput').val(amount);
+            $('.tts-modal-amount-chip').removeClass('btn--warning text-dark active').addClass('btn-outline--warning');
+            $(this).removeClass('btn-outline--warning').addClass('btn--warning text-dark active');
+            updateTtsModalPreview();
+        });
+
+        $('#adjustTtsCreditModal').on('show.bs.modal', function () {
+            updateTtsModalState();
         });
 
     })(jQuery);

@@ -663,15 +663,18 @@ class ManageUsersController extends Controller
                 ->update(['revoked_at' => now(), 'updated_at' => now()]);
         }
 
-        // A selected plan is the source of truth for all plan entitlements.
-        // Manual TTS values are only valid for users on No Plan.
+        // A selected plan provides default baseline entitlements.
+        // If the user's plan was changed in this submission, initialize plan defaults
+        // unless custom TTS settings were explicitly submitted.
         $selectedPlan = null;
         if ((int) $user->plan_id > 0) {
             $selectedPlan = \App\Models\Plan::active()->find($user->plan_id);
-            $user->tts_access = (bool) ($selectedPlan?->tts_access);
-            $user->tts_credit_limit = ($selectedPlan && $selectedPlan->tts_access)
-                ? $selectedPlan->tts_credit_limit
-                : null;
+            if ($previousPlanId !== (int) $user->plan_id && !$request->has('tts_access_submitted')) {
+                $user->tts_access = (bool) ($selectedPlan?->tts_access);
+                $user->tts_credit_limit = ($selectedPlan && $selectedPlan->tts_access)
+                    ? $selectedPlan->tts_credit_limit
+                    : null;
+            }
         }
 
         // Plan-selected accounts are applied after the form fields and are
@@ -792,6 +795,82 @@ class ManageUsersController extends Controller
         }
 
         $notify[] = ['success', "Expiry for @{$user->username} updated to {$formattedExpiry} ({$statusBadge})!"];
+        return back()->withNotify($notify);
+    }
+
+    public function adjustTtsCredits(Request $request, $id)
+    {
+        $request->validate([
+            'action' => 'required|in:add,subtract,set_limit,reset_used',
+            'amount' => 'nullable|integer|min:1|max:1000000000',
+            'custom_limit' => 'nullable|integer|min:0|max:1000000000',
+            'is_unlimited' => 'nullable|boolean',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        // Ensure user has TTS access enabled if credits are being adjusted
+        $user->tts_access = true;
+
+        $currentLimit = $user->tts_credit_limit;
+        $currentUsed = (int) ($user->tts_credits_used ?? 0);
+
+        switch ($request->action) {
+            case 'add':
+                $amount = (int) ($request->amount ?: 1000);
+                if ($currentLimit === null) {
+                    $user->tts_credit_limit = $currentUsed + $amount;
+                } else {
+                    $base = max($currentLimit, $currentUsed);
+                    $user->tts_credit_limit = $base + $amount;
+                }
+                $msg = 'Added ' . number_format($amount) . " TTS credits to @{$user->username}.";
+                break;
+
+            case 'subtract':
+                $amount = (int) ($request->amount ?: 1000);
+                if ($currentLimit === null) {
+                    $notify[] = ['error', 'User currently has unlimited TTS credits. Please set a specific limit first.'];
+                    return back()->withNotify($notify);
+                }
+                $user->tts_credit_limit = max(0, $currentLimit - $amount);
+                $msg = 'Subtracted ' . number_format($amount) . " TTS credits from @{$user->username}.";
+                break;
+
+            case 'set_limit':
+                if ($request->boolean('is_unlimited')) {
+                    $user->tts_credit_limit = null;
+                    $msg = "TTS credits set to Unlimited for @{$user->username}.";
+                } else {
+                    $newLimit = $request->filled('custom_limit') ? (int) $request->custom_limit : null;
+                    $user->tts_credit_limit = $newLimit;
+                    $msg = 'TTS credit limit set to ' . ($newLimit !== null ? number_format($newLimit) : 'Unlimited') . " for @{$user->username}.";
+                }
+                break;
+
+            case 'reset_used':
+                $user->tts_credits_used = 0;
+                $msg = "Reset used TTS credits to 0 for @{$user->username}. Full quota restored.";
+                break;
+        }
+
+        $user->save();
+
+        $newRemaining = $user->tts_credit_limit === null ? null : max(0, (int) $user->tts_credit_limit - (int) $user->tts_credits_used);
+        $formattedRemaining = $newRemaining === null ? 'Unlimited' : number_format($newRemaining);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg . " (Remaining: {$formattedRemaining})",
+                'tts_credit_limit' => $user->tts_credit_limit,
+                'tts_credits_used' => $user->tts_credits_used,
+                'tts_remaining' => $newRemaining,
+                'tts_remaining_formatted' => $formattedRemaining,
+            ]);
+        }
+
+        $notify[] = ['success', $msg . " (Remaining: {$formattedRemaining})"];
         return back()->withNotify($notify);
     }
 

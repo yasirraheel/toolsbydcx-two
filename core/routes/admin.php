@@ -72,6 +72,7 @@ Route::middleware('admin')->group(function () {
         Route::post('kyc-approve/{id}', 'kycApprove')->name('kyc.approve');
         Route::post('kyc-reject/{id}', 'kycReject')->name('kyc.reject');
         Route::post('update-expiry/{id}', 'updateExpiry')->name('update.expiry');
+        Route::post('adjust-tts-credits/{id}', 'adjustTtsCredits')->name('adjust.tts.credits');
         Route::post('update/{id}', 'update')->name('update');
         Route::post('delete/{id}', 'delete')->name('delete');
         Route::post('delete-bulk', 'deleteBulk')->name('delete.bulk');
