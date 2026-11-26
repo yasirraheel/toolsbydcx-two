@@ -268,10 +268,10 @@
                 width: 34px;
                 height: 34px;
                 flex: 0 0 34px;
-                padding: 2px;
+                padding: 3px;
                 box-sizing: border-box;
-                border-radius: 50%;
-                background: transparent;
+                border-radius: 8px;
+                background: #ffffff;
                 object-fit: contain;
             }
             #${PANEL_ID} .toolsbydcx-account-footer-copy { display: block; min-width: 0; flex: 1 1 auto; line-height: 1.3; }
