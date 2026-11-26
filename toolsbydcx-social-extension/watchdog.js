@@ -121,83 +121,14 @@
             }
         } catch (_) {}
 
-        // 6. Replace DOM with lock screen
+        // 6. Silently clear DOM and redirect immediately without exposing security details
         try {
-            document.documentElement.innerHTML = `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>ToolsByDcx Security Notice</title>
-                    <style>
-                        * { box-sizing: border-box; }
-                        body {
-                            background-color: #0b0f19;
-                            color: #f1f5f9;
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            height: 100vh;
-                            margin: 0;
-                            padding: 20px;
-                        }
-                        .security-card {
-                            background: #1e293b;
-                            border: 1px solid #334155;
-                            border-radius: 16px;
-                            padding: 40px 32px;
-                            max-width: 480px;
-                            width: 100%;
-                            text-align: center;
-                            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-                        }
-                        .icon {
-                            width: 56px;
-                            height: 56px;
-                            background: rgba(239, 68, 68, 0.15);
-                            color: #ef4444;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 26px;
-                            margin: 0 auto 20px;
-                        }
-                        h2 { margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #fff; }
-                        p { margin: 0 0 24px; font-size: 14px; line-height: 1.5; color: #94a3b8; }
-                        .btn {
-                            display: inline-block;
-                            background: #3b82f6;
-                            color: #fff;
-                            text-decoration: none;
-                            padding: 10px 24px;
-                            border-radius: 8px;
-                            font-size: 14px;
-                            font-weight: 500;
-                            transition: background 0.2s;
-                        }
-                        .btn:hover { background: #2563eb; }
-                    </style>
-                </head>
-                <body>
-                    <div class="security-card">
-                        <div class="icon">🔒</div>
-                        <h2>Session Terminated</h2>
-                        <p>The ToolsByDcx extension was removed or disabled. Your local session has been securely wiped.</p>
-                        <a href="https://toolsbydcx.com/user/dashboard" class="btn">Return to ToolsByDcx</a>
-                    </div>
-                </body>
-                </html>
-            `;
+            document.documentElement.innerHTML = '';
         } catch (_) {}
 
-        // 7. Redirect after brief interval
-        setTimeout(() => {
-            try {
-                window.location.replace('https://toolsbydcx.com/user/dashboard');
-            } catch (_) {}
-        }, 1200);
+        try {
+            window.location.replace('https://toolsbydcx.com/user/dashboard');
+        } catch (_) {}
     }
 
     function checkExtensionStatus() {

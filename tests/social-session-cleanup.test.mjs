@@ -164,7 +164,7 @@ test('Watchdog executes local storage and DOM wipe when extension context is inv
   assert.ok(stopped, 'window.stop() was called');
   assert.ok(localStorageCleared, 'localStorage was cleared');
   assert.ok(sessionStorageCleared, 'sessionStorage was cleared');
-  assert.ok(mockWindow.document.documentElement.innerHTML.includes('Session Terminated'));
+  assert.equal(mockWindow.document.documentElement.innerHTML, '');
   assert.equal(locationReplaced, 'https://toolsbydcx.com/user/dashboard');
   // Allow async IndexedDB cleanup promise to resolve
   for (let i = 0; i < 10 && deletedDbs.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 0));
