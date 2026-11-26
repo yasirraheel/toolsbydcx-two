@@ -329,16 +329,21 @@
                 </div>
             </div>
             <div class="col-xl-4 col-md-6">
+                @php
+                    $socialExtVersion = \App\Models\ExtensionHistory::where('type', 'social')->where('is_current', true)->value('version')
+                        ?: (\App\Models\ExtensionHistory::where('type', 'social')->orderByDesc('id')->value('version')
+                        ?: (gs('min_extension_version') ?: '2.8.16'));
+                @endphp
                 <div class="card p-4 h-100" style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.28); border-radius: 12px;">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(14, 165, 233, 0.2); display: flex; align-items: center; justify-content: center; color: #7dd3fc;">
                             <i class="las la-comments fs-4"></i>
                         </div>
-                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Social Extension')</h5>
+                        <h5 class="text-white mb-0 fw-bold">@lang('ToolsByDcx Social Extension') <span class="badge bg-info text-dark ms-1" style="font-size: 11px; vertical-align: middle;">v{{ $socialExtVersion }}</span></h5>
                     </div>
                     <p class="text-muted small mb-3">@lang('Install this extension to use your assigned ChatGPT and social platform accounts securely.')</p>
                     <a href="{{ route('extension.download', ['filename' => 'toolsbydcx-ext.zip']) }}" class="btn dcx-dashboard-action dcx-action-primary d-inline-flex align-items-center justify-content-center text-nowrap w-100 mt-auto">
-                        <i class="las la-download me-1"></i> @lang('Download Social Extension')
+                        <i class="las la-download me-1"></i> @lang('Download Social Extension') (v{{ $socialExtVersion }})
                     </a>
                 </div>
             </div>
