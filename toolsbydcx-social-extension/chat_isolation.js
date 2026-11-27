@@ -569,7 +569,7 @@
         const pageText = String(document.body?.textContent || '')
             .replace(/\s+/g, ' ')
             .trim();
-        if (!/you\s+don't\s+have\s+access\s+to\s+this\s+conversation/i.test(pageText)) return false;
+        if (!/you\s+don(?:['\u2019])t\s+have\s+access\s+to\s+this\s+conversation/i.test(pageText)) return false;
 
         const chat = state.serverChats.find((item) => item.id === chatId);
         const officialShareUrl = String(chat?.officialShareUrl || '').trim();
