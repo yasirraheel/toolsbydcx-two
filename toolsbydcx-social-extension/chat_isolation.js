@@ -555,6 +555,17 @@
 
     const isOfficialShareUrl = (value) => /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(String(value || ''));
 
+    // A ChatGPT conversation URL is tied to the currently authenticated
+    // ChatGPT account. The official share URL is account-independent and is
+    // persisted by the panel, so prefer it whenever the active account has
+    // changed and the private conversation would otherwise show an access
+    // error.
+    const chatNavigationHref = (chat) => {
+        const officialShareUrl = String(chat?.officialShareUrl || '').trim();
+        if (isOfficialShareUrl(officialShareUrl)) return officialShareUrl;
+        return `/c/${encodeURIComponent(String(chat?.id || ''))}`;
+    };
+
     const persistOfficialShareUrl = async (chatId, officialShareUrl) => {
         if (!CHAT_ID_RE.test(String(chatId || '')) || !isOfficialShareUrl(officialShareUrl)) {
             throw new Error('Invalid official ChatGPT share URL.');
@@ -1120,7 +1131,7 @@
                 row.dataset.chatId = chat.id;
                 const link = document.createElement('a');
                 link.className = 'toolsbydcx-chat-link';
-                link.href = `/c/${encodeURIComponent(chat.id)}`;
+                link.href = chatNavigationHref(chat);
                 row.appendChild(link);
 
                 const pinButton = document.createElement('button');
@@ -1193,6 +1204,9 @@
             const deleteButton = row.querySelector('.toolsbydcx-delete-chat');
             const loadingTitle = !hasUsableChatTitle(title);
             if (link) {
+                const navigationHref = chatNavigationHref(chat);
+                if (link.getAttribute('href') !== navigationHref) link.setAttribute('href', navigationHref);
+                link.dataset.toolsbydcxNavigation = isOfficialShareUrl(navigationHref) ? 'official-share' : 'private';
                 if (loadingTitle) {
                     link.textContent = '';
                     link.dataset.loading = 'true';
