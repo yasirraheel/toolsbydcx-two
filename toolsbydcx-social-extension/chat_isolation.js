@@ -555,15 +555,29 @@
 
     const isOfficialShareUrl = (value) => /^https:\/\/(?:chatgpt\.com|chat\.openai\.com)\/share\/[A-Za-z0-9_-]+(?:[?#].*)?$/i.test(String(value || ''));
 
-    // A ChatGPT conversation URL is tied to the currently authenticated
-    // ChatGPT account. The official share URL is account-independent and is
-    // persisted by the panel, so prefer it whenever the active account has
-    // changed and the private conversation would otherwise show an access
-    // error.
-    const chatNavigationHref = (chat) => {
+    // Keep the normal navigation private. Private conversations preserve the
+    // full ChatGPT experience and its account-specific limits. The saved
+    // official share URL is used only if ChatGPT rejects this private URL.
+    const privateChatHref = (chat) => `/c/${encodeURIComponent(String(chat?.id || ''))}`;
+    let accessFallbackInFlight = false;
+
+    const redirectToOfficialShareOnAccessError = () => {
+        if (accessFallbackInFlight) return false;
+        const chatId = currentChatId();
+        if (!chatId) return false;
+
+        const pageText = String(document.body?.textContent || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!/you\s+don't\s+have\s+access\s+to\s+this\s+conversation/i.test(pageText)) return false;
+
+        const chat = state.serverChats.find((item) => item.id === chatId);
         const officialShareUrl = String(chat?.officialShareUrl || '').trim();
-        if (isOfficialShareUrl(officialShareUrl)) return officialShareUrl;
-        return `/c/${encodeURIComponent(String(chat?.id || ''))}`;
+        if (!isOfficialShareUrl(officialShareUrl)) return false;
+
+        accessFallbackInFlight = true;
+        window.location.replace(officialShareUrl);
+        return true;
     };
 
     const persistOfficialShareUrl = async (chatId, officialShareUrl) => {
@@ -1131,7 +1145,7 @@
                 row.dataset.chatId = chat.id;
                 const link = document.createElement('a');
                 link.className = 'toolsbydcx-chat-link';
-                link.href = chatNavigationHref(chat);
+                link.href = privateChatHref(chat);
                 row.appendChild(link);
 
                 const pinButton = document.createElement('button');
@@ -1204,9 +1218,9 @@
             const deleteButton = row.querySelector('.toolsbydcx-delete-chat');
             const loadingTitle = !hasUsableChatTitle(title);
             if (link) {
-                const navigationHref = chatNavigationHref(chat);
+                const navigationHref = privateChatHref(chat);
                 if (link.getAttribute('href') !== navigationHref) link.setAttribute('href', navigationHref);
-                link.dataset.toolsbydcxNavigation = isOfficialShareUrl(navigationHref) ? 'official-share' : 'private';
+                link.dataset.toolsbydcxNavigation = 'private';
                 if (loadingTitle) {
                     link.textContent = '';
                     link.dataset.loading = 'true';
@@ -1323,6 +1337,7 @@
             }
             renderChats();
             scheduleArchive();
+            redirectToOfficialShareOnAccessError();
         } finally {
             state.syncInFlight = false;
         }
@@ -1369,6 +1384,7 @@
                 // as soon as ChatGPT has committed that DOM change.
                 scheduleLiveSync();
                 scheduleArchive();
+                redirectToOfficialShareOnAccessError();
             }
         });
         state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
