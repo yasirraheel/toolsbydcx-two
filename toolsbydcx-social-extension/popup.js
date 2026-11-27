@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         platformsContainer: document.getElementById('platforms-container'),
     };
 
+    // MV3 blocks inline event attributes in extension pages. Keep the logo
+    // fallback here so popup.html remains CSP-compliant.
+    const brandLogo = document.getElementById('brand-logo-image');
+    brandLogo?.addEventListener('error', () => {
+        brandLogo.style.display = 'none';
+    }, { once: true });
+
     const API_URL = 'https://toolsbydcx.com/api/extension';
 
     // Set version tag dynamically from manifest
