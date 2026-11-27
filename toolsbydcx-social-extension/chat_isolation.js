@@ -118,6 +118,21 @@
                 visibility: hidden !important;
                 pointer-events: none !important;
             }
+            /* Temporary chat is not part of the Social experience. Hide the
+               native control before it can paint, including current and older
+               ChatGPT aria/test-id variants. */
+            html[data-toolsbydcx-chat-isolation="loading"] button[aria-label*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="loading"] [role="button"][aria-label*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="loading"] button[title*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="loading"] [data-testid*="temporary-chat" i],
+            html[data-toolsbydcx-chat-isolation="active"] button[aria-label*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="active"] [role="button"][aria-label*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="active"] button[title*="temporary chat" i],
+            html[data-toolsbydcx-chat-isolation="active"] [data-testid*="temporary-chat" i] {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
             #${PANEL_ID} {
                 all: initial;
                 box-sizing: border-box;
@@ -631,6 +646,39 @@
         if (!target) return false;
         target.classList.add('toolsbydcx-host-sidebar-hidden');
         return true;
+    };
+
+    const hideTemporaryChatControl = () => {
+        const selectors = [
+            'button[aria-label*="temporary chat" i]',
+            '[role="button"][aria-label*="temporary chat" i]',
+            'button[title*="temporary chat" i]',
+            '[data-testid*="temporary-chat" i]',
+            '[data-testid*="temp-chat" i]'
+        ].join(',');
+        let hidden = false;
+        document.querySelectorAll(selectors).forEach((element) => {
+            if (element.closest?.(`#${PANEL_ID}`)) return;
+            element.style.setProperty('display', 'none', 'important');
+            element.style.setProperty('visibility', 'hidden', 'important');
+            element.style.setProperty('pointer-events', 'none', 'important');
+            hidden = true;
+        });
+
+        // Tooltip text is mounted separately on hover in some ChatGPT builds.
+        // Hide only small, exact temporary-chat labels so unrelated page text
+        // is never affected.
+        document.querySelectorAll('[role="tooltip"], [data-radix-popper-content-wrapper]').forEach((element) => {
+            if (element.closest?.(`#${PANEL_ID}`)) return;
+            const text = String(element.textContent || '').replace(/\s+/g, ' ').trim();
+            const rect = element.getBoundingClientRect?.();
+            if (!/^temporary\s+chat$/i.test(text) || (rect && (rect.width > 280 || rect.height > 100))) return;
+            element.style.setProperty('display', 'none', 'important');
+            element.style.setProperty('visibility', 'hidden', 'important');
+            element.style.setProperty('pointer-events', 'none', 'important');
+            hidden = true;
+        });
+        return hidden;
     };
 
     const hidePublicLinkBanner = () => {
@@ -1366,9 +1414,12 @@
         createPanel();
         setIsolationState('active');
         hideNativeSidebar();
+        hideTemporaryChatControl();
         hidePublicLinkBanner();
         window.requestAnimationFrame(hideNativeSidebar);
+        window.requestAnimationFrame(hideTemporaryChatControl);
         window.setTimeout(hideNativeSidebar, 250);
+        window.setTimeout(hideTemporaryChatControl, 250);
 
         state.observer = new MutationObserver((mutations) => {
             let contentChanged = false;
@@ -1378,6 +1429,7 @@
             }
             if (contentChanged) {
                 if (!document.querySelector('.toolsbydcx-host-sidebar-hidden')) hideNativeSidebar();
+                hideTemporaryChatControl();
                 hidePublicLinkBanner();
                 // A first message creates the /c/{id} route and native title
                 // asynchronously. Debounce a sync so the custom list updates

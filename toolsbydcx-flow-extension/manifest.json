@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ToolsByDcx Flow Main",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Automates Google Flow sign-in in Chrome, Edge, and Kiwi with the paired Flow Guard extension.",
   "icons": {
     "16": "icons/icon16.png",
